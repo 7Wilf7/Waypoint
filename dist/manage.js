@@ -13,7 +13,7 @@ function translate(){
 }
 document.querySelector('.language-toggle').addEventListener('click',()=>{root.dataset.language=root.dataset.language==='en'?'zh':'en';try{localStorage.setItem('waypoint-language',root.dataset.language);}catch{}translate();});
 document.querySelector('.manage-theme').addEventListener('click',()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('waypoint-theme',root.dataset.theme);}catch{}translate();});
-const messages={invalid_password:'invalidPassword',english_required:'englishRequired',article_body_required:'englishRequired',title_date_required:'titleDateRequired',file_too_large:'fileTooLarge',file_type:'fileType',invalid_metrics:'invalidMetrics',invalid_result:'invalidMetrics',invalid_wechat_url:'invalidWechat'};
+const messages={invalid_password:'invalidPassword',password_length:'passwordLength',password_mismatch:'passwordMismatch',password_unchanged:'passwordUnchanged',auth_changed:'signInAgain',owner_required:'signInAgain',english_required:'englishRequired',article_body_required:'englishRequired',title_date_required:'titleDateRequired',file_too_large:'fileTooLarge',file_type:'fileType',invalid_metrics:'invalidMetrics',invalid_result:'invalidMetrics',invalid_wechat_url:'invalidWechat'};
 async function api(path,options){const response=await fetch('./api/'+path,options);let data;try{data=await response.json();}catch{throw new Error('unavailable');}if(!response.ok)throw new Error(data.error||'unavailable');return data;}
 function renderList(){
   const list=document.querySelector('.managed-entries');list.replaceChildren();
@@ -57,8 +57,18 @@ form.addEventListener('submit',async event=>{
 });
 translate();
 const signin=document.querySelector('.owner-signin'),logout=document.querySelector('.manage-logout');
-async function refreshSession(){const session=await api('session');uploadMode=session.uploads;signin.hidden=session.owner;logout.hidden=!session.owner;document.querySelector('.manage-workspace').hidden=!session.owner;records=session.owner?(await api('manage/entries')).entries:[];renderList();}
+async function refreshSession(){const session=await api('session');uploadMode=session.uploads;signin.hidden=session.owner;logout.hidden=!session.owner;document.querySelector('.manage-account').hidden=!session.owner;document.querySelector('.manage-workspace').hidden=!session.owner;records=session.owner?(await api('manage/entries')).entries:[];renderList();}
 signin.addEventListener('submit',async event=>{event.preventDefault();const button=signin.querySelector('button');button.disabled=true;status.textContent='';try{await api('login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:signin.elements.password.value})});signin.reset();await refreshSession();}catch(error){status.textContent=words()[messages[error.message]||'unavailable'];}finally{button.disabled=false;}});
 logout.addEventListener('click',async()=>{logout.disabled=true;try{await api('logout',{method:'POST'});location.reload();}catch{status.textContent=words().unavailable;logout.disabled=false;}});
+const passwordForm=document.querySelector('.password-editor'),passwordStatus=document.querySelector('#password-status');
+function passwordMessage(key){passwordStatus.dataset.i18n=key;passwordStatus.textContent=words()[key];}
+passwordForm.addEventListener('submit',async event=>{
+  event.preventDefault();const values=Object.fromEntries(new FormData(passwordForm));
+  if(values.newPassword!==values.confirmPassword){passwordMessage('passwordMismatch');return;}
+  passwordForm.querySelectorAll('input,button').forEach(e=>e.disabled=true);passwordMessage('saving');
+  try{await api('manage/password',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(values)});passwordForm.reset();passwordMessage('passwordSaved');}
+  catch(error){passwordMessage(messages[error.message]||'passwordFailed');if(['owner_required','auth_changed'].includes(error.message)){passwordForm.reset();status.textContent=words().signInAgain;try{await refreshSession();}catch{status.textContent=words().unavailable;}}}
+  finally{passwordForm.querySelectorAll('input,button').forEach(e=>e.disabled=false);}
+});
 try{await refreshSession();}
 catch{status.textContent=words().unavailable;const retry=document.createElement('button');retry.className='button button-quiet';retry.textContent=words().retry;retry.addEventListener('click',()=>location.reload());status.after(retry);}

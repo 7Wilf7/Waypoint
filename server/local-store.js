@@ -3,7 +3,17 @@ import {resolve} from 'node:path';
 
 export class LocalStore {
   mode='local';
+  authWrites=Promise.resolve();
   constructor(directory){this.directory=resolve(directory);}
+  async auth(){const bytes=await this.read('auth.json');return bytes?JSON.parse(bytes):null;}
+  saveAuth(record,previous) {
+    const update=this.authWrites.then(async()=>{
+      const current=await this.auth();
+      if(current?.version!==previous?.version)throw new Error('auth_changed');
+      await this.write('auth.json',JSON.stringify(record));
+    });
+    this.authWrites=update.catch(()=>{});return update;
+  }
   async read(path) {try{return await readFile(resolve(this.directory,path));}catch(error){if(error.code==='ENOENT')return null;throw error;}}
   async write(path,value) {
     await mkdir(this.directory,{recursive:true});

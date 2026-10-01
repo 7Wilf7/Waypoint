@@ -19,6 +19,7 @@
   .pointer-bubble { position:fixed; left:0; top:0; z-index:30; width:68px; height:68px; display:grid; place-items:center; border-radius:50%; background:var(--button-bg); color:var(--button-text); font-size:.875rem; pointer-events:none; opacity:0; visibility:hidden; box-shadow:0 8px 24px rgb(0 0 0 / 12%); transition:opacity 150ms ease,visibility 150ms; }
   .pointer-bubble.is-visible {opacity:1;visibility:visible;}
   .pointer-bubble span { text-align:center; }
+  .note-row,.journal-card,.project-card .button {cursor:pointer;}
   .note-preview { transition:opacity 160ms ease,visibility 160ms; }
   @media (hover:hover) and (pointer:fine) {
     .button:hover::before {transform:translateY(0);}
@@ -26,10 +27,6 @@
   }
   @media (prefers-reduced-motion:reduce),(hover:none),(pointer:coarse) { .pointer-bubble {display:none;} }
   html[data-input="keyboard"] .pointer-bubble, html.reading .pointer-bubble {display:none;}
-  @media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
-    html.pointer-feedback:not(.reading):not([data-input="keyboard"]) :is(a[href],button:not([disabled])),
-    html.pointer-feedback:not(.reading):not([data-input="keyboard"]) :is(a[href],button:not([disabled])) * {cursor:none;}
-  }
   html[data-input="keyboard"] .button::before {transition:none;}
   @media (prefers-reduced-motion:reduce) { .button::before {transition:none;} }
   .site-nav {grid-template-columns:repeat(4,1fr);}
@@ -76,6 +73,15 @@
   .owner-signin input {width:100%;padding:12px 14px;font:inherit;background:var(--surface);color:var(--text);border:1px solid var(--line-strong);border-radius:8px;}
   .owner-signin .button {align-self:flex-start;}
   .manage-logout {margin-top:16px;}
+  .manage-account {margin-block:24px 36px;}
+  .password-settings {border-block:1px solid var(--line);padding-block:20px;}
+  .password-settings summary {width:fit-content;font-size:1rem;cursor:pointer;}
+  .password-editor {display:flex;flex-direction:column;gap:20px;max-width:440px;margin-top:28px;}
+  .password-editor label {display:flex;flex-direction:column;gap:12px;font-size:1rem;}
+  .password-editor input {width:100%;padding:12px 14px;font:inherit;background:var(--surface);color:var(--text);border:1px solid var(--line-strong);border-radius:8px;}
+  .password-editor .button {align-self:flex-start;}
+  #password-status {font-size:1rem;line-height:1.7;}
+  #password-status:empty {display:none;}
   .manage-home {margin-left:auto;font-size:1rem;}
   .manage-theme {padding:10px;background:transparent;border:1px solid var(--line);border-radius:30px;color:var(--text);font-size:.875rem;}
   #manage-status {font-size:1rem;line-height:1.8;min-height:2em;margin-top:32px;overflow-wrap:anywhere;}

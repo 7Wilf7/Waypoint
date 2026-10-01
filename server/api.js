@@ -1,6 +1,7 @@
 import {handleUpload} from '@vercel/blob/client';
+import {BlobPreconditionFailedError} from '@vercel/blob';
 import {ID,MAX_FILE,validateEntry,fileType} from './content.js';
-import {isOwner,checkPassword,sessionCookie,sameOrigin} from './auth.js';
+import {isOwner,checkPassword,sessionCookie,sameOrigin,hasOwnerCookie,credentialSettings,changedCredentials} from './auth.js';
 
 const json=(value,status=200,headers={})=>Response.json(value,{status,headers:{'cache-control':'no-store','x-content-type-options':'nosniff',...headers}});
 async function readJson(request,limit=180000) {
@@ -9,14 +10,17 @@ async function readJson(request,limit=180000) {
   try{return JSON.parse(raw);}catch{throw new Error('invalid_entry');}
 }
 export async function handle(request,store,env=process.env) {
-  const url=new URL(request.url),path=url.pathname,owner=isOwner(request,env);
+  const url=new URL(request.url),path=url.pathname;
+  if(path==='/api/entries'&&request.method==='GET')return json({entries:(await store.entries()).filter(entry=>entry.published)});
+  const authRecord=path==='/api/login'||hasOwnerCookie(request)?await store.auth():null;
+  const credentials=credentialSettings(env,authRecord),owner=isOwner(request,credentials);
   if(path==='/api/session'&&request.method==='GET')return json({owner,uploads:store.mode});
   if(path==='/api/login'&&request.method==='POST') {
     if(!sameOrigin(request))return json({error:'same_origin_required'},403);
-    if(!env.WAYPOINT_PASSWORD_HASH||!env.WAYPOINT_SESSION_SECRET)return json({error:'unavailable'},503);
+    if(!credentials.WAYPOINT_PASSWORD_HASH||!credentials.WAYPOINT_SESSION_SECRET)return json({error:'unavailable'},503);
     let data;try{data=await readJson(request,1000);}catch{return json({error:'invalid_password'},400);}
-    if(!checkPassword(data.password,env.WAYPOINT_PASSWORD_HASH))return json({error:'invalid_password'},401);
-    return json({owner:true},200,{'set-cookie':sessionCookie(request,env)});
+    if(!data||!checkPassword(data.password,credentials.WAYPOINT_PASSWORD_HASH))return json({error:'invalid_password'},401);
+    return json({owner:true},200,{'set-cookie':sessionCookie(request,credentials)});
   }
   if(path==='/api/logout'&&request.method==='POST') {
     if(!sameOrigin(request))return json({error:'same_origin_required'},403);
@@ -42,7 +46,14 @@ export async function handle(request,store,env=process.env) {
     if(!owner)return json({error:'owner_required'},403);
     if(request.method!=='GET'&&!sameOrigin(request))return json({error:'same_origin_required'},403);
   }
-  if(path==='/api/entries'&&request.method==='GET')return json({entries:(await store.entries()).filter(entry=>entry.published)});
+  if(path==='/api/manage/password'&&request.method==='POST') {
+    let record;try{record=changedCredentials(await readJson(request,2500),credentials);}catch(error){return json({error:error.message},400);}
+    try{await store.saveAuth(record,authRecord);}catch(error){
+      if(error instanceof BlobPreconditionFailedError||error.message==='auth_changed'||error.message.includes('already exists'))return json({error:'auth_changed'},409);
+      throw error;
+    }
+    return json({changed:true},200,{'set-cookie':sessionCookie(request,credentialSettings(env,record))});
+  }
   if(path==='/api/manage/entries'&&request.method==='GET')return json({entries:await store.entries()});
   const item=path.match(/^\/api\/manage\/entries\/([a-z0-9-]{1,64})$/i);
   if(item&&request.method==='PUT') {

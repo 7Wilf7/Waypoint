@@ -213,6 +213,7 @@ function initPointerFeedback() {
   const label=bubble.querySelector('span');
   const preview=document.querySelector('.note-preview');
   const selector='a[href],button:not([disabled])';
+  const circleTargets='.note-row,.journal-card,.project-card .button';
   const magnets='.button,.site-nav a,.language-toggle,.theme-toggle,.footer-link,.preview-tab';
   let active=null, magnet=null, bounds=null, frame=0, previous=0, previewShowing=false;
   const destination=[0,0,0,0], position=[0,0,0,0], velocity=[0,0,0,0];
@@ -235,24 +236,20 @@ function initPointerFeedback() {
   }
   function schedule(){if(!frame&&allowed())frame=requestAnimationFrame(tick);}
   function clearMagnet(){if(magnet)magnet.style.removeProperty('transform');magnet=null;bounds=null;position[0]=position[1]=destination[0]=destination[1]=velocity[0]=velocity[1]=0;}
-  function reset(){cancelAnimationFrame(frame);frame=0;previous=0;active=null;previewShowing=false;root.classList.remove('pointer-feedback');bubble.classList.remove('is-visible');clearMagnet();velocity.fill(0);}
+  function reset(){cancelAnimationFrame(frame);frame=0;previous=0;active=null;previewShowing=false;bubble.classList.remove('is-visible');clearMagnet();velocity.fill(0);}
   function cursorLabel(element) {
     const en=root.dataset.language==='en';
     if(element.matches('.note-row,.journal-card'))return en?'Read':'阅读';
-    if(element.matches('.preview-tab'))return en?'View':'预览';
-    if(element.matches('.theme-toggle,.language-toggle'))return en?'Switch':'切换';
-    if(element.matches('a[target="_blank"]'))return en?'Open':'打开';
-    return en?'Explore':'探索';
+    return en?'View':'预览';
   }
   document.addEventListener('pointermove',event=>{
     if(event.pointerType!=='mouse'||!allowed())return;
     const element=event.target.closest(selector);
     if(element!==active){clearMagnet();active=element;if(active?.matches(magnets)){magnet=active;bounds=active.getBoundingClientRect();}}
-    const visible=Boolean(active&&!active.matches('.skip-link'));
+    const visible=Boolean(active?.matches(circleTargets));
     bubble.classList.toggle('is-visible',visible);
-    root.classList.toggle('pointer-feedback',visible);
     if(active)label.textContent=cursorLabel(active);
-    // The circle is the cursor itself: keep its center exact, even during fast moves.
+    // The circle supplements the native hand cursor; keep its center exact.
     bubble.style.transform='translate3d('+event.clientX+'px,'+event.clientY+'px,0) translate(-50%,-50%)';
     if(magnet&&bounds){destination[0]=clamp((event.clientX-bounds.left-bounds.width/2)*.22,-9,9);destination[1]=clamp((event.clientY-bounds.top-bounds.height/2)*.22,-7,7);}
     const showPreview=preview.classList.contains('is-visible');

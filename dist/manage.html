@@ -5,6 +5,18 @@
     <p id="manage-status" role="status" aria-live="polite"></p>
     <form class="owner-signin" hidden><p data-i18n="ownerOnly">使用管理密码登录后整理内容。</p><label><span data-i18n="password">管理密码</span><input name="password" type="password" autocomplete="current-password" required maxlength="256"/></label><button class="button button-primary" type="submit" data-i18n="signIn">登录</button></form>
     <button class="button button-quiet manage-logout" type="button" hidden data-i18n="signOut">退出登录</button>
+    <section class="manage-account" hidden>
+      <details class="password-settings"><summary data-i18n="changePassword">修改密码</summary>
+        <form class="password-editor">
+          <label><span data-i18n="currentPassword">当前密码</span><input name="currentPassword" type="password" autocomplete="current-password" required maxlength="256"/></label>
+          <label><span data-i18n="newPassword">新密码</span><input name="newPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="128"/></label>
+          <label><span data-i18n="confirmPassword">确认新密码</span><input name="confirmPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="128"/></label>
+          <p class="editor-help" data-i18n="passwordHelp">新密码至少 10 个字符。修改后，其他设备需要重新登录。</p>
+          <p id="password-status" role="status" aria-live="polite"></p>
+          <button class="button button-primary" type="submit" data-i18n="savePassword">保存新密码</button>
+        </form>
+      </details>
+    </section>
     <div class="manage-workspace" hidden><aside class="manage-sidebar"><div class="manage-new"><button class="button button-primary" id="new-race" type="button" data-i18n="newRace">新增比赛</button><button class="button button-quiet" id="new-article" type="button" data-i18n="newArticle">新增文章</button></div><h2 data-i18n="entries">我的内容</h2><div class="managed-entries"></div></aside>
       <form class="entry-editor" hidden><input name="id" type="hidden"/><input name="kind" type="hidden"/>
         <div class="editor-grid"><label><span data-i18n="titleZh">中文标题</span><input name="titleZh" maxlength="160" required/></label><label><span data-i18n="titleEn">英文标题</span><input name="titleEn" maxlength="160"/></label><label><span data-i18n="date">日期</span><input name="date" type="date" required/></label><label class="race-field"><span data-i18n="raceCategory">比赛类型</span><select name="category"><option value="Trail" data-i18n="trail">越野跑</option><option value="Road" data-i18n="road">公路跑</option><option value="Hyrox">Hyrox</option><option value="Spartan">Spartan</option><option value="Other" data-i18n="other">其他</option></select></label></div>

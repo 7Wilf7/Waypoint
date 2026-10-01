@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {handle} from '../server/api.js';
 import {LocalStore} from '../server/local-store.js';
 import {hashPassword,isOwner} from '../server/auth.js';
+import {BlobPreconditionFailedError} from '@vercel/blob';
 
 let directory,store,cookie;
 const env={WAYPOINT_PASSWORD_HASH:hashPassword('test-owner-password'),WAYPOINT_SESSION_SECRET:'test-session-secret-'.repeat(3)};
@@ -28,6 +29,7 @@ test('password login, signed session, forged headers, tampering and logout',asyn
   assert.equal((await(await call('/api/session',{headers:{cookie}})).json()).owner,true);
   for(const identity of [{},{'oai-authenticated-user-id':'owner','oai-authenticated-user-email':'owner@example.test'},{cookie:cookie+'bad'}])assert.equal((await call('/api/manage/entries',{headers:identity})).status,403);
   assert.equal(isOwner(request('/api/session',{headers:{cookie:cookie.replace(/=\d+/, '=1')}}),env),false);
+  assert.equal(isOwner(request('/api/session',{headers:{cookie:cookie.replace(/\.[^.]+$/,'.'+'é'.repeat(43))}}),env),false);
   const logout=await call('/api/logout',{method:'POST',headers:{...headers,cookie}});assert.match(logout.headers.get('set-cookie'),/Max-Age=0/);
 });
 test('authenticated writes reject cross-origin requests',async()=>{
@@ -65,4 +67,32 @@ test('large direct uploads are finalized and streamed; oversize and anonymous to
 });
 test('invalid dates, missing English, unsafe article links, unknown files and PDF-as-photo are rejected',async()=>{
   for(const changes of [{date:'2026-02-30'},{published:true,titleEn:''},{photos:['missing-photo']},{photos:['test-certificate']},{kind:'article',published:true,wechatUrl:'javascript:alert(1)'},{kind:'article',published:true,wechatUrl:'https://mp.weixin.qq.com.evil.test/article'}])assert.equal((await write({...race,...changes})).status,400);
+});
+test('changing the owner password requires current credentials, persists and revokes old sessions',async()=>{
+  const authDirectory=await mkdtemp(join(tmpdir(),'waypoint-password-test-'));const authStore=new LocalStore(authDirectory);
+  const authCall=(path,options={})=>handle(request(path,options),authStore,env);
+  const login=password=>authCall('/api/login',{method:'POST',headers,body:JSON.stringify({password})});
+  try {
+    const initial=await login('test-owner-password');const oldCookie=initial.headers.get('set-cookie').split(';')[0];
+    const input={currentPassword:'test-owner-password',newPassword:'new-test-owner-password',confirmPassword:'new-test-owner-password'};
+    const change=(data=input,extra={},session=oldCookie)=>authCall('/api/manage/password',{method:'POST',headers:{...headers,cookie:session,...extra},body:JSON.stringify(data)});
+    assert.equal((await change(input,{},'')).status,403);assert.equal((await change(input,{origin:'https://evil.test'})).status,403);
+    for(const changes of [{currentPassword:'wrong'},{newPassword:'short',confirmPassword:'short'},{confirmPassword:'does-not-match'},{newPassword:'test-owner-password',confirmPassword:'test-owner-password'}])assert.equal((await change({...input,...changes})).status,400);
+    assert.equal(await authStore.auth(),null);
+    const conflictStore=Object.create(authStore);conflictStore.saveAuth=async()=>{throw new BlobPreconditionFailedError();};
+    const conflict=await handle(request('/api/manage/password',{method:'POST',headers:{...headers,cookie:oldCookie},body:JSON.stringify(input)}),conflictStore,env);assert.equal(conflict.status,409);assert.equal((await conflict.json()).error,'auth_changed');
+    const changed=await change();assert.equal(changed.status,200);const newCookie=changed.headers.get('set-cookie').split(';')[0];
+    assert.equal((await login('test-owner-password')).status,401);
+    assert.equal((await authCall('/api/manage/entries',{headers:{cookie:oldCookie}})).status,403);
+    assert.equal((await(await authCall('/api/session',{headers:{cookie:oldCookie}})).json()).owner,false);
+    assert.equal((await(await authCall('/api/session',{headers:{cookie:newCookie}})).json()).owner,true);
+    assert.equal((await login(input.newPassword)).status,200);
+    assert.equal((await handle(request('/api/login',{method:'POST',headers,body:JSON.stringify({password:input.newPassword})}),new LocalStore(authDirectory),env)).status,200);
+    const saved=await authStore.read('auth.json');assert.equal(saved.toString().includes(input.newPassword),false);
+    const second={currentPassword:input.newPassword,newPassword:'second-test-owner-password',confirmPassword:'second-test-owner-password'};
+    assert.equal((await change(second,{},newCookie)).status,200);
+    assert.equal((await authCall('/api/manage/entries',{headers:{cookie:newCookie}})).status,403);
+    assert.equal((await login(second.newPassword)).status,200);
+    await assert.rejects(authStore.saveAuth({version:'stale'},null),/auth_changed/);
+  }finally{await rm(authDirectory,{recursive:true,force:true});}
 });

@@ -47,4 +47,4 @@ for (const product of ['aevum','ultreia','viatica','sidera']) for (const locale 
 const backend = spawnSync(process.execPath,['--test',resolve(root,'../scripts/api.test.mjs')],{encoding:'utf8'});
 if(backend.status!==0)throw new Error(backend.stdout+backend.stderr);
 console.log('JavaScript syntax, assets, navigation, complete language dictionaries, and both reading editions passed.');
-console.log('Owner authorization, publication visibility, file validation, draft media privacy, and input validation passed.');
+console.log('Owner authorization, password changes and session revocation, publication visibility, file validation, draft media privacy, and input validation passed.');

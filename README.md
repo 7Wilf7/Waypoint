@@ -80,3 +80,11 @@ Photos and certificates use authenticated direct-to-Blob uploads, preserving the
 Pushes to `main` deploy production automatically. The original Sites deployment and its Git remote are retained as a legacy snapshot; future work uses GitHub and Vercel.
 
 The 2026-10-01 Vercel migration passed anonymous homepage access, owner login/logout, race and article draft/save/reopen/publish/withdraw, bilingual reading, a real 6 MB image and PDF certificate upload, public streamed downloads, immediate draft-media privacy, and forged identity rejection. Cursor centers were measured against moving mouse coordinates with zero offset; keyboard and reduced-motion restore the native cursor. Mobile layout was browser-emulated; physical-phone testing remains unverified. Verification records were removed after testing.
+
+## Change the owner password
+
+Open `/manage.html`, sign in, and expand **Change password**. Enter the current password and enter your new password twice (10–128 characters). The browser does not save the new password in local storage. The private Blob store keeps only a salted scrypt hash and a session version; changing the password revokes other sessions while keeping the current browser signed in. Password changes survive redeployment and use conditional writes to prevent an older request from overwriting a newer change.
+
+The local `.local/admin-access.txt` file contains the initial password. After changing it on the website, use your own new password and save it in your password manager. Local development credentials are independent from the production Blob record.
+
+Contextual hover circles are limited to project entry, notes, articles, and race cards. The native hand cursor remains visible; navigation, language/theme switches, preview tabs, and ordinary buttons keep their own feedback.
