@@ -53,3 +53,61 @@ export const notes = {
     link: { href: 'https://aevum.center/', label: '访问 Aevum' }
   }
 };
+
+export const notesEn = {
+  trail: {
+    category: 'FIELD NOTES / TRAILS · A RACE EXCERPT',
+    title: 'A bed full of gear. A start after dark.',
+    lead: 'Before the race even starts, getting ready is already an experience of its own.',
+    paragraphs: [
+      'I laid all the food and mandatory equipment out on the bed. It covered the whole thing. I’d never filled a bed quite like that before. Once everything was packed into my running vest, it was heavy and bulging.',
+      'We started at eight thirty in the evening. After a loop through the old town and a few kilometres, I was feeling pretty good. There was a fair bit of road in the first half, including a very long tunnel. My body felt light, and the route seemed to be going smoothly.',
+      'I stuck to my fuelling plan. I watched the time, had a gel each hour, and took electrolytes and glucose tablets on schedule. At each aid station, I could still manage instant noodles. My appetite was good.',
+      'The time I gained early on was meant to give me room for the high-altitude climbing later. There was a long way to go. At that stage, the task was very concrete: eat on time, keep running, and get myself to the next aid station, one step at a time.',
+      'These are the details I want to keep: the bed before departure, the heavy pack, the roads we covered in the dark, and the feeling of moving easily. The story of the race starts here, too.'
+    ]
+  },
+  memory: {
+    category: 'BUILDING / IDEAS · AEVUM',
+    title: 'I want AI to remember what I’ve already saved',
+    lead: 'If I’ve already recorded something, I’d like to bring it up again without having to explain it from the beginning.',
+    paragraphs: [
+      'I record training, races, spending, travel plans, and notes in different places. Those records are often connected. Getting ready for a race involves training, but also flights, hotels, transfers, and equipment.',
+      'What I want from Aevum is specific: when I naturally mention a project or a race, it should find the information I’ve saved, connect the related pieces, and carry on the conversation with me.',
+      'If I mention “Gongga,” for example, I’d like it to know which project I mean and find its race details, expenses, and preparation notes. It should distinguish what I spent this month from what I spent on the entire project.',
+      'Finding information is only the first step. It also needs to read the relevant content, distinguish recorded facts from inference, and let me open the original sources. When the data changes, the answer should change with it.',
+      'I’m still working on this. The value is in making the records I leave behind useful again when I actually need them.'
+    ]
+  },
+  waypoint: {
+    category: 'PERSONAL / LIFE · A SPACE OF MY OWN',
+    title: 'Just a place of my own',
+    lead: 'I can’t quite explain what prompted it. I just wanted to make a personal website.',
+    paragraphs: [
+      'The first idea was simple: someone could open my URL and get a rough sense of who I am. I haven’t fully figured out what belongs here, or what it will eventually become.',
+      'But there are already a few things worth bringing together. Races I’ve run, reports I’ve written, personal apps I’ve built with AI, and ideas that have slowly taken shape through those experiences.',
+      'Usually, each of these occupies a different corner of my life. Here, I’d like to give them a shared home, so someone can follow a piece of writing or a project and get to know me a little better.',
+      'A waypoint is a point along a route. This website can start with one point, too. Whatever I want to keep next, I can add as I go.'
+    ]
+  },
+  aevum: {
+    category: 'SELECTED PROJECT / PERSONAL APP',
+    title: 'Aevum',
+    lead: 'Training, finances, a calendar, and notes in one everyday place of my own.',
+    paragraphs: [
+      'Aevum is a personal app I’m developing with the help of AI. It brings several tools I use regularly into one place, with shared navigation, settings, and a conversation interface.',
+      'Ultreia handles training, races, and recovery. Viatica handles finances, projects, and assets. Sidera handles the calendar and notes. Aevum connects those parts through an overview, AI conversations, and memory.',
+      'I use it mainly on my phone, and it also supports the web and Android. Each part keeps its own data and functions, while the everyday experience is intended to feel coherent and easy to use.',
+      'What I’m continuing to refine is how naturally it can use information I’ve already recorded. When I mention a race, a project, or an experience, I want it to find related content, read the relevant parts, distinguish different reporting scopes, and give me sources I can open.',
+      'Building the app is also teaching me to describe my needs more clearly and judge whether a feature actually solves a problem. It serves my life while evolving with my understanding.'
+    ],
+    products: [
+      { name: 'Ultreia', label: 'Training · Races · Recovery', image: './assets/ultreia.png' },
+      { name: 'Viatica', label: 'Finances · Projects · Assets', image: './assets/viatica.png' },
+      { name: 'Sidera', label: 'Calendar · Notes', image: './assets/sidera.png' }
+    ],
+    link: { href: 'https://aevum.center/', label: 'Visit Aevum' }
+  }
+};
+
+export const notesByLanguage = { zh: notes, en: notesEn };
