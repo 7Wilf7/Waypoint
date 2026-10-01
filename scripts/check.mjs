@@ -44,7 +44,7 @@ for (const note of Object.values(notes)) {
   for (const product of note.products || []) await access(resolve(root, product.image));
 }
 for (const product of ['aevum','ultreia','viatica','sidera']) for (const locale of ['zh','en']) await access(resolve(root,'assets/app-'+product+'-'+locale+'.jpg'));
-const backend = spawnSync(process.execPath,['--test',resolve(root,'../scripts/worker.test.mjs')],{encoding:'utf8'});
+const backend = spawnSync(process.execPath,['--test',resolve(root,'../scripts/api.test.mjs')],{encoding:'utf8'});
 if(backend.status!==0)throw new Error(backend.stdout+backend.stderr);
 console.log('JavaScript syntax, assets, navigation, complete language dictionaries, and both reading editions passed.');
 console.log('Owner authorization, publication visibility, file validation, draft media privacy, and input validation passed.');

@@ -1,7 +1,8 @@
 import {copy} from './i18n.js';
+import {upload as uploadBlob} from './upload-client.js';
 const root=document.documentElement,form=document.querySelector('.entry-editor'),status=document.querySelector('#manage-status');
 const words=()=>copy[root.dataset.language==='en'?'en':'zh'];
-let records=[],photos=[],certificates=[],busy=false;
+let records=[],photos=[],certificates=[],busy=false,uploadMode='local';
 const field=name=>form.elements.namedItem(name);
 function translate(){
   const w=words();root.lang=root.dataset.language==='en'?'en':'zh-CN';document.title='Waypoint · '+w.manage;
@@ -12,7 +13,7 @@ function translate(){
 }
 document.querySelector('.language-toggle').addEventListener('click',()=>{root.dataset.language=root.dataset.language==='en'?'zh':'en';try{localStorage.setItem('waypoint-language',root.dataset.language);}catch{}translate();});
 document.querySelector('.manage-theme').addEventListener('click',()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('waypoint-theme',root.dataset.theme);}catch{}translate();});
-const messages={english_required:'englishRequired',article_body_required:'englishRequired',title_date_required:'titleDateRequired',file_too_large:'fileTooLarge',file_type:'fileType',invalid_metrics:'invalidMetrics',invalid_result:'invalidMetrics',invalid_wechat_url:'invalidWechat'};
+const messages={invalid_password:'invalidPassword',english_required:'englishRequired',article_body_required:'englishRequired',title_date_required:'titleDateRequired',file_too_large:'fileTooLarge',file_type:'fileType',invalid_metrics:'invalidMetrics',invalid_result:'invalidMetrics',invalid_wechat_url:'invalidWechat'};
 async function api(path,options){const response=await fetch('./api/'+path,options);let data;try{data=await response.json();}catch{throw new Error('unavailable');}if(!response.ok)throw new Error(data.error||'unavailable');return data;}
 function renderList(){
   const list=document.querySelector('.managed-entries');list.replaceChildren();
@@ -37,7 +38,12 @@ async function upload(event,values,photo){
   const input=event.target,files=[...input.files];if(!files.length)return;
   if(files.length+values.length>20){status.textContent=words().mediaLimit;input.value='';return;}
   setBusy(true);status.textContent=words().uploading;
-  try {for(const file of files){if(file.size>8*1024*1024)throw new Error('file_too_large');if(!['image/jpeg','image/png','image/webp',...(photo?[]:['application/pdf'])].includes(file.type))throw new Error('file_type');const id=crypto.randomUUID();await api('manage/media/'+id+'?name='+encodeURIComponent(file.name),{method:'PUT',headers:{'content-type':file.type},body:file});values.push(id);renderMedia();}status.textContent='';}
+  try {for(const file of files){if(file.size>8*1024*1024)throw new Error('file_too_large');if(!['image/jpeg','image/png','image/webp',...(photo?[]:['application/pdf'])].includes(file.type))throw new Error('file_type');const id=crypto.randomUUID();
+    if(uploadMode==='blob') {
+      await uploadBlob('media/'+id,file,{access:'private',handleUploadUrl:'/api/manage/upload',clientPayload:JSON.stringify({id}),contentType:file.type});
+      await api('manage/media/'+id,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({filename:file.name})});
+    }else await api('manage/media/'+id+'?name='+encodeURIComponent(file.name),{method:'PUT',headers:{'content-type':file.type},body:file});
+    values.push(id);renderMedia();}status.textContent='';}
   catch(error){status.textContent=words()[messages[error.message]||'saveFailed'];}
   finally{input.value='';setBusy(false);}
 }
@@ -50,5 +56,9 @@ form.addEventListener('submit',async event=>{
   finally{setBusy(false);}
 });
 translate();
-try{const session=await api('session');if(!session.owner)document.querySelector('.owner-signin').hidden=false;else {records=(await api('manage/entries')).entries;document.querySelector('.manage-workspace').hidden=false;renderList();}}
+const signin=document.querySelector('.owner-signin'),logout=document.querySelector('.manage-logout');
+async function refreshSession(){const session=await api('session');uploadMode=session.uploads;signin.hidden=session.owner;logout.hidden=!session.owner;document.querySelector('.manage-workspace').hidden=!session.owner;records=session.owner?(await api('manage/entries')).entries:[];renderList();}
+signin.addEventListener('submit',async event=>{event.preventDefault();const button=signin.querySelector('button');button.disabled=true;status.textContent='';try{await api('login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:signin.elements.password.value})});signin.reset();await refreshSession();}catch(error){status.textContent=words()[messages[error.message]||'unavailable'];}finally{button.disabled=false;}});
+logout.addEventListener('click',async()=>{logout.disabled=true;try{await api('logout',{method:'POST'});location.reload();}catch{status.textContent=words().unavailable;logout.disabled=false;}});
+try{await refreshSession();}
 catch{status.textContent=words().unavailable;const retry=document.createElement('button');retry.className='button button-quiet';retry.textContent=words().retry;retry.addEventListener('click',()=>location.reload());status.after(retry);}

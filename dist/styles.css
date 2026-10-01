@@ -25,7 +25,11 @@
     .button-primary:hover {color:#16171b;}
   }
   @media (prefers-reduced-motion:reduce),(hover:none),(pointer:coarse) { .pointer-bubble {display:none;} }
-  html[data-input="keyboard"] .pointer-bubble {display:none;}
+  html[data-input="keyboard"] .pointer-bubble, html.reading .pointer-bubble {display:none;}
+  @media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
+    html.pointer-feedback:not(.reading):not([data-input="keyboard"]) :is(a[href],button:not([disabled])),
+    html.pointer-feedback:not(.reading):not([data-input="keyboard"]) :is(a[href],button:not([disabled])) * {cursor:none;}
+  }
   html[data-input="keyboard"] .button::before {transition:none;}
   @media (prefers-reduced-motion:reduce) { .button::before {transition:none;} }
   .site-nav {grid-template-columns:repeat(4,1fr);}
@@ -67,6 +71,11 @@
   .manage-main {padding-block:150px 100px;}
   .manage-main h1 {font-size:clamp(2rem,4vw,4rem);letter-spacing:-.04em;line-height:1.4;margin:24px 0;animation:none;}
   .manage-intro {color:var(--muted);font-size:1rem;}
+  .owner-signin {max-width:440px;display:flex;flex-direction:column;gap:24px;margin-top:32px;}
+  .owner-signin label {display:flex;flex-direction:column;gap:12px;}
+  .owner-signin input {width:100%;padding:12px 14px;font:inherit;background:var(--surface);color:var(--text);border:1px solid var(--line-strong);border-radius:8px;}
+  .owner-signin .button {align-self:flex-start;}
+  .manage-logout {margin-top:16px;}
   .manage-home {margin-left:auto;font-size:1rem;}
   .manage-theme {padding:10px;background:transparent;border:1px solid var(--line);border-radius:30px;color:var(--text);font-size:.875rem;}
   #manage-status {font-size:1rem;line-height:1.8;min-height:2em;margin-top:32px;overflow-wrap:anywhere;}

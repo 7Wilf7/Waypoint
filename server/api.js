@@ -1,0 +1,90 @@
+import {handleUpload} from '@vercel/blob/client';
+import {ID,MAX_FILE,validateEntry,fileType} from './content.js';
+import {isOwner,checkPassword,sessionCookie,sameOrigin} from './auth.js';
+
+const json=(value,status=200,headers={})=>Response.json(value,{status,headers:{'cache-control':'no-store','x-content-type-options':'nosniff',...headers}});
+async function readJson(request,limit=180000) {
+  const raw=await request.text();
+  if(raw.length>limit)throw new Error('entry_too_large');
+  try{return JSON.parse(raw);}catch{throw new Error('invalid_entry');}
+}
+export async function handle(request,store,env=process.env) {
+  const url=new URL(request.url),path=url.pathname,owner=isOwner(request,env);
+  if(path==='/api/session'&&request.method==='GET')return json({owner,uploads:store.mode});
+  if(path==='/api/login'&&request.method==='POST') {
+    if(!sameOrigin(request))return json({error:'same_origin_required'},403);
+    if(!env.WAYPOINT_PASSWORD_HASH||!env.WAYPOINT_SESSION_SECRET)return json({error:'unavailable'},503);
+    let data;try{data=await readJson(request,1000);}catch{return json({error:'invalid_password'},400);}
+    if(!checkPassword(data.password,env.WAYPOINT_PASSWORD_HASH))return json({error:'invalid_password'},401);
+    return json({owner:true},200,{'set-cookie':sessionCookie(request,env)});
+  }
+  if(path==='/api/logout'&&request.method==='POST') {
+    if(!sameOrigin(request))return json({error:'same_origin_required'},403);
+    return json({owner:false},200,{'set-cookie':sessionCookie(request,env,true)});
+  }
+  if(path==='/api/manage/upload'&&request.method==='POST'&&store.mode==='blob') {
+    let body;try{body=await readJson(request,10000);}catch{return json({error:'invalid_media'},400);}
+    // Signed Blob callbacks have no owner cookie. The SDK verifies their signature.
+    if(body.type!=='blob.upload-completed'&&(!owner||!sameOrigin(request)))return json({error:'owner_required'},403);
+    try {
+      const result=await handleUpload({request,body,
+        onBeforeGenerateToken:async(pathname,clientPayload)=>{
+          if(!owner||!sameOrigin(request))throw new Error('owner_required');
+          const payload=JSON.parse(clientPayload||'{}');
+          if(!ID.test(payload.id||'')||pathname!=='media/'+payload.id)throw new Error('invalid_media');
+          return {allowedContentTypes:['image/jpeg','image/png','image/webp','application/pdf'],maximumSizeInBytes:MAX_FILE,addRandomSuffix:false,allowOverwrite:false,validUntil:Date.now()+15*60*1000};
+        },onUploadCompleted:async()=>{}
+      });
+      return json(result);
+    }catch{return json({error:'upload_failed'},400);}
+  }
+  if(path.startsWith('/api/manage/')) {
+    if(!owner)return json({error:'owner_required'},403);
+    if(request.method!=='GET'&&!sameOrigin(request))return json({error:'same_origin_required'},403);
+  }
+  if(path==='/api/entries'&&request.method==='GET')return json({entries:(await store.entries()).filter(entry=>entry.published)});
+  if(path==='/api/manage/entries'&&request.method==='GET')return json({entries:await store.entries()});
+  const item=path.match(/^\/api\/manage\/entries\/([a-z0-9-]{1,64})$/i);
+  if(item&&request.method==='PUT') {
+    let entry;try{entry=validateEntry(await readJson(request));}catch(error){return json({error:error.message},400);}
+    if(entry.id!==item[1])return json({error:'invalid_entry'},400);
+    for(const id of [...entry.photos,...entry.certificates]) {
+      const meta=await store.media(id);
+      if(!meta||(entry.photos.includes(id)&&!meta.mime.startsWith('image/')))return json({error:'invalid_media'},400);
+    }
+    await store.saveEntry(entry);return json({entry});
+  }
+  const upload=path.match(/^\/api\/manage\/media\/([a-z0-9-]{1,64})$/i);
+  if(upload&&((store.mode==='local'&&request.method==='PUT')||request.method==='POST')) {
+    const id=upload[1];let bytes,filename;
+    if(request.method==='PUT') {
+      if(Number(request.headers.get('content-length'))>MAX_FILE)return json({error:'file_too_large'},413);
+      bytes=new Uint8Array(await request.arrayBuffer());filename=url.searchParams.get('name')||'';
+    }else {
+      let data;try{data=await readJson(request,1000);}catch{return json({error:'invalid_media'},400);}
+      filename=typeof data.filename==='string'?data.filename:'';
+      const file=await store.file(id);
+      if(!file)return json({error:'invalid_media'},400);
+      if(file.size>MAX_FILE){await file.body.cancel();return json({error:'file_too_large'},413);}
+      bytes=new Uint8Array(await new Response(file.body).arrayBuffer());
+    }
+    if(!bytes.length||bytes.length>MAX_FILE)return json({error:'file_too_large'},413);
+    const mime=fileType(bytes);if(!mime)return json({error:'file_type'},400);
+    if(request.method==='PUT')await store.saveFile(id,bytes);
+    await store.saveMedia({id,mime,filename:filename.trim().slice(0,160),size:bytes.length});return json({id});
+  }
+  const media=path.match(/^\/media\/([a-z0-9-]{1,64})$/i);
+  if(media&&['GET','HEAD'].includes(request.method)) {
+    const id=media[1];
+    if(!owner&&!(await store.entries()).some(entry=>entry.published&&(entry.photos.includes(id)||entry.certificates.includes(id))))return new Response('Not found',{status:404});
+    const meta=await store.media(id);if(!meta)return new Response('Not found',{status:404});
+    const file=request.method==='GET'?await store.file(id):null;
+    if(request.method==='GET'&&!file)return new Response('Not found',{status:404});
+    // Stream large photos; do not buffer the response inside a Vercel Function.
+    return new Response(file?.body||null,{headers:{'content-type':meta.mime,'content-length':String(meta.size),'cache-control':'private, no-store','x-content-type-options':'nosniff',...(meta.mime==='application/pdf'?{'content-disposition':'inline; filename="certificate.pdf"'}:{})}});
+  }
+  return json({error:'not_found'},404);
+}
+export async function safeHandle(request,store,env=process.env) {
+  try{return await handle(request,store,env);}catch(error){console.error('Waypoint request failed',error.name);return json({error:'unavailable'},503);}
+}

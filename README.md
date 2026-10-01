@@ -1,0 +1,80 @@
+# Waypoint
+
+Wilf 吴凡的个人网站。包含个人介绍、比赛记录、Aevum 四入口真实界面预览、公众号「凡有所念」的文章区、片段与笔记、近况，以及完整的中英文与浅色／深色主题切换。
+
+Public website: [Open Waypoint](https://waypoint-wilf-wu.vercel.app).
+
+Source: [7Wilf7/Waypoint](https://github.com/7Wilf7/Waypoint).
+
+## Run
+
+```sh
+cd /Users/wilf/Dev/Waypoint/site
+npm run dev
+```
+
+Install Node.js 24 and run:
+
+```sh
+npm install
+npm run setup:admin
+npm run build
+npm run dev
+```
+
+Open `http://127.0.0.1:4173`. The same owner-password login is used in local development and production; no identity headers are trusted. Local content is stored under ignored `.local/content/`. Owner credentials are generated once in `.local/admin-access.txt` and `.env.local`; never commit them.
+
+`npm run build` bundles the direct-upload client and copies only public frontend files into generated `public/`. Server source, credentials, local content, and verification artifacts stay outside that output. `npm run check` verifies languages, assets, navigation, login, publication visibility, private files, and input validation.
+
+## Files
+
+- `dist/index.html`: homepage content and semantic structure.
+- `dist/styles.css`: theme tokens, layout, responsive styles, and interaction states.
+- `dist/app.js`: theme preference, reading dialog, navigation, and pointer feedback.
+- `dist/content.js`: reading content and project details.
+- `dist/i18n.js`: complete authored Chinese and English interface copy.
+- `dist/motion.js`: one-time chapter entrances, a damped spring for the mountain view, and visual writing previews.
+- `dist/journal.js`: published race/article cards and the four-screen App preview.
+- `dist/manage.html` and `manage.js`: owner content editing, drafts, publication, and uploads.
+- `server/`: signed owner sessions, content validation, private Blob storage, and local development storage.
+- `api/index.js`: Vercel Node.js function entry point.
+- `vercel.json`: public frontend routing and API/media rewrites.
+- `dist/assets/`: local image assets; no runtime image dependencies.
+
+## Content and assets
+
+The introduction and three reading pieces are first drafts prepared from Wilf's stated interests, previous writing, and Aevum's product documentation. They are editable content, not newly confirmed autobiographical statements. The race piece is an edited excerpt, not a complete race report. The Aevum link comes from its repository documentation and opens its existing login-capable application.
+
+The mountain landscape is original AI-generated visual artwork, not a photograph of Wilf or a particular race/location. The prompt and original are retained in the local workspace `.work-assets/`. Product logos were copied from the local Aevum repository. The eight App screenshots are rendered from an isolated Aevum source copy with a local fixture account, in Chinese and English, at its documented 412×906 phone baseline. They show actual app UI with demo data and do not contain Wilf's private finances or notes. The website does not connect to Aevum's private data or services.
+
+## Managing content
+
+Open `/manage.html` and sign in with the owner password; signed-in owners also see a management link in the footer. Add a race or an article, fill the Chinese and English editions, attach photos or certificates, and save a draft or publish it on the homepage. Returning a published item to draft removes it from discovery. Draft files and unreferenced uploads are only accessible to the owner. The homepage shows a truthful empty state until records are published; no race results or WeChat articles have been invented. The two original WeChat article links/texts remain to be supplied.
+
+See [Aevum integration assessment](docs/AEVUM-INTEGRATION.md) for the proposed later synchronization boundary.
+
+The opening greeting runs once per browser-tab session. Links have contextual pointer feedback, the writing preview follows the pointer, buttons have a damped magnetic response and a rolling fill, and the App screens transition on deliberate selection. Keyboard and reduced-motion use stay immediate.
+
+## Verification
+
+Verify both languages and both themes at phone, tablet, and large desktop widths; language and theme persistence; article/project reading; language switching inside the reader; Escape and browser Back; keyboard focus; and reduced motion. Desktop mobile emulation does not constitute physical-device verification.
+
+The reading scale is fluid: main body text is 18px on small screens and grows to 22px on large desktop screens with the browser's normal 16px base. The content area also expands on large displays. Motion is for this occasional personal-site visit: an opening reveal, one entrance per chapter, subtle spring-driven image depth, a navigation indicator, and writing previews on wide screens with a mouse. Reduced-motion preferences remove movement, and keyboard actions remain immediate.
+
+The first release passed layout checks at 360–1440px in both themes, theme persistence, all four reading dialogs, direct reading links, keyboard access, browser Back, and reduced motion. Screenshots and recorded results are in `verification/`. No browser errors or warnings were recorded.
+
+## Design references
+
+The five browser references were inspected on 2026-10-01: React Bits (`https://reactbits.dev/`), Originkit (`https://www.originkit.dev/`), Uiverse (`https://uiverse.io/`), 21st.dev (`https://21st.dev/`), and Aceternity UI (`https://ui.aceternity.com/`). Aceternity loaded successfully after its retry action.
+
+The design adapts their restrained dark surfaces, pronounced typography, rounded navigation, image composition, subtle pointer spotlight, and immediate press feedback into a personal editorial layout. It does not reuse third-party component source or their marketing copy.
+
+The 2026-10-01 enhancement passed owner/publication/file-validation backend tests, actual browser race and article editing, image/PDF upload, save/reopen/publish/return-to-draft, bilingual reader and browser Back, 360/412/768/1440/2560px layout checks in both languages and themes, preview switching, the first-session greeting, keyboard interaction, and reduced-motion preferences. Physical-phone validation remains pending. App preview screenshots use a local demonstration account, never production personal records.
+
+## Vercel deployment
+
+Connect the GitHub repository to Vercel with the Other framework preset; the build command and output directory are set in `vercel.json`. Connect a **private** Vercel Blob store in Hong Kong (hkg1). It creates `BLOB_READ_WRITE_TOKEN` automatically. Add `WAYPOINT_PASSWORD_HASH` and `WAYPOINT_SESSION_SECRET` from your generated local settings as sensitive production/preview environment variables. The website itself is public. The management API requires a signed, expiring, HttpOnly owner session and same-origin writes.
+
+Photos and certificates use authenticated direct-to-Blob uploads, preserving the 8 MB per-file limit. The server checks actual file signatures before accepting media; public downloads are streamed through the API and are available only while referenced by a published entry. Drafts and original Blob URLs stay private. Content does not live in the GitHub repository or ephemeral Function storage.
+
+Pushes to `main` deploy production automatically. The original Sites deployment and its Git remote are retained as a legacy snapshot; future work uses GitHub and Vercel.

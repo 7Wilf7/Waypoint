@@ -2,8 +2,10 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, dirname, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import worker from '../worker/index.js';
-import {localEnv} from './local-storage.mjs';
+import {safeHandle} from '../server/api.js';
+import {LocalStore} from '../server/local-store.js';
+try{process.loadEnvFile(resolve(import.meta.dirname,'../.env.local'));}catch(error){if(error.code!=='ENOENT')throw error;}
+const store=new LocalStore(resolve(import.meta.dirname,'../.local/content'));
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
 const port = Number(process.env.WAYPOINT_PORT || 4173);
@@ -14,12 +16,9 @@ const server = createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1:'+port);
     if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/media/')) {
       const headers=new Headers(request.headers);
-      // Developer identity exists only in this loopback preview. Production uses dispatch identity.
-      headers.set('oai-authenticated-user-id','local-preview');
-      headers.set('oai-authenticated-user-email',localEnv.WAYPOINT_OWNER_EMAIL);
       const chunks=[];
       for await(const chunk of request) {chunks.push(chunk);if(chunks.reduce((n,c)=>n+c.length,0)>9*1024*1024){response.writeHead(413).end();return;}}
-      const result=await worker.fetch(new Request(url,{method:request.method,headers,...(['GET','HEAD'].includes(request.method)?{}:{body:Buffer.concat(chunks)})}),localEnv);
+      const result=await safeHandle(new Request(url,{method:request.method,headers,...(['GET','HEAD'].includes(request.method)?{}:{body:Buffer.concat(chunks)})}),store);
       response.writeHead(result.status,Object.fromEntries(result.headers));
       response.end(Buffer.from(await result.arrayBuffer()));
       return;

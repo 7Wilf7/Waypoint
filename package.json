@@ -6,11 +6,16 @@
   "scripts": {
     "dev": "node scripts/preview.mjs",
     "build": "node scripts/build.mjs",
-    "db:generate": "drizzle-kit generate",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "setup:admin": "node scripts/setup-admin.mjs"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.11",
-    "drizzle-orm": "^0.45.3"
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.8.0"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

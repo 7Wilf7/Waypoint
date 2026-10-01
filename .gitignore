@@ -7,3 +7,9 @@ verification/
 .local/
 dist/server/
 dist/.openai/
+.vercel
+.env*
+.vercel/
+public/
+dist/upload-client.js
+!.env.example
