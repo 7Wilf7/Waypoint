@@ -50,7 +50,25 @@
   .preview-heading p {margin-top:18px;color:var(--muted);}
   .preview-stage {display:grid;grid-template-columns:minmax(240px,390px) minmax(0,1fr);gap:clamp(48px,8vw,130px);align-items:center;max-width:1020px;margin:60px auto 0;}
   .preview-screen {border-radius:36px;padding:10px;background:#111215;border:1px solid #45484f;box-shadow:0 24px 80px rgb(0 0 0 / 15%);overflow:hidden;}
-  .preview-screen img {width:100%;height:auto;aspect-ratio:412/906;object-fit:contain;border-radius:27px;display:block;background:#000;}
+  .preview-device {width:100%;min-width:0;}
+  .preview-display {position:relative;aspect-ratio:412/838;overflow:hidden;border-radius:27px 27px 0 0;background:#000;}
+  .preview-page {position:absolute;inset:0;}
+  .preview-page[hidden],.preview-message[hidden] {display:none;}
+  .preview-image {width:100%;height:100%;object-fit:contain;display:block;background:#000;user-select:none;pointer-events:none;}
+  .preview-hotspot {position:absolute;background:transparent;border:0;padding:0;border-radius:7px;}
+  .preview-hotspot:active {background:rgb(255 255 255 / 12%);}
+  .preview-hotspot:focus-visible {outline:2px solid #d7dfb4;outline-offset:-2px;background:rgb(255 255 255 / 8%);}
+  @media (hover:hover) and (pointer:fine) { .preview-hotspot:hover {background:rgb(255 255 255 / 6%);} }
+  .preview-message {position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;color:#c6c8ce;font-size:1rem;line-height:1.6;text-align:center;padding:28px;}
+  .preview-retry {border:1px solid #70737b;border-radius:20px;background:transparent;color:#f1f2f5;padding:9px 18px;font:inherit;}
+  .preview-product-nav {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:5px 3px 2px;border-top:1px solid #303238;background:#000;border-radius:0 0 27px 27px;}
+  .preview-product-tab {display:flex;flex-direction:column;align-items:center;gap:5px;min-height:64px;padding:5px 2px;border:1px solid transparent;border-radius:12px;color:#8e9199;background:transparent;font:inherit;font-size:.75rem;transition:background 150ms ease,border-color 150ms ease;}
+  .preview-product-tab img {width:30px;height:30px;object-fit:contain;}
+  .preview-product-tab.is-active {color:#d3d6df;background:#111215;border-color:#51545e;}
+  .preview-product-tab[data-app="ultreia"].is-active {color:#bcc79b;border-color:#6e7757;}
+  .preview-product-tab[data-app="viatica"].is-active {color:#d6c292;border-color:#8b7850;}
+  .preview-product-tab[data-app="sidera"].is-active {color:#bbc7f0;border-color:#59698f;}
+  .preview-caption {min-height:1.5em;margin-top:18px;color:var(--muted);font-size:.875rem;text-align:center;line-height:1.5;}
   .preview-options {display:flex;flex-direction:column;gap:6px;}
   .preview-tab {display:flex;align-items:center;gap:20px;background:transparent;border:0;border-top:1px solid var(--line);padding:24px 10px;text-align:left;color:var(--muted);min-height:100px;position:relative;}
   .preview-tab.is-active {color:var(--text);}
@@ -124,7 +142,8 @@
     .races-section {padding-block:70px;}
     .race-entries,.article-entries {grid-template-columns:1fr;}
     .preview-stage {display:flex;flex-direction:column-reverse;gap:28px;margin-top:30px;}
-    .preview-screen {width:min(100%,300px);border-radius:30px;}
+    .preview-device {width:min(100%,340px);}
+    .preview-screen {border-radius:30px;}
     .preview-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px 16px;}
     .preview-tab {min-height:86px;padding:14px 3px;gap:10px;}
     .preview-tab img {width:32px;height:32px;}

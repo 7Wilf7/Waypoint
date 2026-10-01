@@ -4,9 +4,10 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { notes, notesByLanguage } from '../dist/content.js';
 import { copy } from '../dist/i18n.js';
+import {previewProducts,previewScreens} from '../dist/preview-screens.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
-for (const filename of ['app.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'manage.js']) {
+for (const filename of ['app.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'manage.js']) {
   const result = spawnSync(process.execPath, ['--check', resolve(root, filename)], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr);
 }
@@ -43,8 +44,24 @@ for (const match of html.matchAll(/href="#read\/([^"]+)"/g)) {
 for (const note of Object.values(notes)) {
   for (const product of note.products || []) await access(resolve(root, product.image));
 }
-for (const product of ['aevum','ultreia','viatica','sidera']) for (const locale of ['zh','en']) await access(resolve(root,'assets/app-'+product+'-'+locale+'.jpg'));
+const nav=html.match(/<nav class="site-nav"[\s\S]*?<\/nav>/)[0];
+const navIds=[...nav.matchAll(/href="#([^"]+)"/g)].map(match=>match[1]);
+const sectionIds=[...html.matchAll(/<section[^>]+id="([^"]+)"/g)].map(match=>match[1]).filter(id=>navIds.includes(id));
+if(navIds.join(',')!==sectionIds.join(','))throw new Error('Navigation order differs from page sections');
+for(const [app,product] of Object.entries(previewProducts))for(const [view,label] of Object.entries(product.views))for(const locale of ['zh','en']) {
+  const screen=previewScreens[app+'/'+view+'/'+locale];
+  if(!screen||!copy[locale][label])throw new Error('Incomplete preview: '+app+'/'+view+'/'+locale);
+  await access(resolve(root,screen.src));
+  for(const spot of screen.hotspots) {
+    if(!product.views[spot.view]||!copy[locale][spot.label])throw new Error('Invalid preview target');
+    const [x,y,width,height]=spot.bounds;
+    if(x<0||y<0||width<=0||height<=0||x+width>100.01||y+height>100.01)throw new Error('Preview button is outside its screen');
+  }
+}
+const previewTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/preview.test.mjs')],{encoding:'utf8'});
+if(previewTests.status!==0)throw new Error(previewTests.stdout+previewTests.stderr);
 const backend = spawnSync(process.execPath,['--test',resolve(root,'../scripts/api.test.mjs')],{encoding:'utf8'});
 if(backend.status!==0)throw new Error(backend.stdout+backend.stderr);
 console.log('JavaScript syntax, assets, navigation, complete language dictionaries, and both reading editions passed.');
+console.log('Interactive bilingual preview routes and interrupted product/language selections passed.');
 console.log('Owner authorization, password changes and session revocation, publication visibility, file validation, draft media privacy, and input validation passed.');

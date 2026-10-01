@@ -38,25 +38,3 @@ export async function initJournal() {
   renderJournal();document.dispatchEvent(new Event('journal-ready'));
   try {const response=await fetch('./api/session');if(response.ok)document.querySelector('.manage-link').hidden=!(await response.json()).owner;}catch{/* The reader remains available without a management link. */}
 }
-
-let activeApp='aevum',animation=null;
-export function updateAppPreview() {
-  const image=document.querySelector('.preview-screen img');
-  const locale=root.dataset.language==='en'?'en':'zh';
-  image.src='./assets/app-'+activeApp+'-'+locale+'.jpg';image.alt=activeApp+' · '+words().previewImage;
-}
-export function initAppPreview() {
-  document.querySelectorAll('.preview-tab').forEach(button=>button.addEventListener('click',event=>{
-    if(button.dataset.app===activeApp)return;
-    animation?.cancel();activeApp=button.dataset.app;
-    document.querySelectorAll('.preview-tab').forEach(item=>{const active=item===button;item.classList.toggle('is-active',active);item.setAttribute('aria-pressed',String(active));});
-    const image=document.querySelector('.preview-screen img');
-    if(event.detail===0||matchMedia('(prefers-reduced-motion: reduce)').matches){updateAppPreview();return;}
-    const apply=()=>{
-      if(activeApp!==button.dataset.app)return;
-      updateAppPreview();animation=image.animate([{opacity:.2,transform:'translateY(10px) scale(.98)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:280,easing:'cubic-bezier(0.23, 1, 0.32, 1)'});
-    };
-    animation=image.animate([{opacity:1},{opacity:.2}],{duration:100,easing:'ease'});animation.finished.then(apply,()=>{});
-  }));
-  updateAppPreview();
-}

@@ -1,7 +1,8 @@
 import { notesByLanguage } from './content.js';
 import { copy } from './i18n.js';
 import { initMotion, initWelcome } from './motion.js';
-import { initJournal, getEntry, renderJournal, initAppPreview, updateAppPreview } from './journal.js';
+import { initJournal, getEntry, renderJournal } from './journal.js';
+import { initAppPreview, updateAppPreview } from './app-preview.js';
 
 const root = document.documentElement;
 const themeButton = document.querySelector('.theme-toggle');
@@ -179,18 +180,28 @@ const indicator = document.createElement('span');
 indicator.className = 'nav-indicator';
 indicator.setAttribute('aria-hidden', 'true');
 document.querySelector('.site-nav').prepend(indicator);
-const sectionObserver = new IntersectionObserver(entries => {
-  const active = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-  if (!active || readingKey) return;
+const navSections=navLinks.map(link=>document.querySelector(link.getAttribute('href')));
+let navFrame=0;
+function updateNavigation() {
+  navFrame=0;
+  if(readingKey)return;
+  const readingLine=document.querySelector('.site-header').getBoundingClientRect().bottom+Math.min(innerHeight*.12,80);
+  const active=navSections.filter(section=>section.getBoundingClientRect().top<=readingLine).at(-1);
+  indicator.classList.toggle('is-visible',Boolean(active));
   navLinks.forEach((link, index) => {
-    if (link.getAttribute('href') === '#' + active.target.id) {
+    if (active&&link.getAttribute('href') === '#' + active.id) {
       link.setAttribute('aria-current', 'location');
       indicator.style.transform = 'translateX(' + (index * 100) + '%)';
-      indicator.classList.add('is-visible');
     } else link.removeAttribute('aria-current');
   });
-}, { rootMargin: '-15% 0px -50% 0px', threshold: [0, 0.1, 0.3] });
-document.querySelectorAll('#about, #races, #projects, #writing').forEach(section => sectionObserver.observe(section));
+}
+function scheduleNavigation(){if(!navFrame)navFrame=requestAnimationFrame(updateNavigation);}
+window.addEventListener('scroll',scheduleNavigation,{passive:true});
+window.addEventListener('resize',scheduleNavigation);
+window.addEventListener('load',scheduleNavigation);
+new ResizeObserver(scheduleNavigation).observe(document.querySelector('main'));
+document.addEventListener('journal-ready',scheduleNavigation);
+scheduleNavigation();
 initJournal();
 initAppPreview();
 initWelcome().then(initMotion);

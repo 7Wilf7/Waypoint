@@ -1,6 +1,6 @@
 # Waypoint
 
-Wilf 吴凡的个人网站。包含个人介绍、比赛记录、Aevum 四入口真实界面预览、公众号「凡有所念」的文章区、片段与笔记、近况，以及完整的中英文与浅色／深色主题切换。
+Wilf 吴凡的个人网站。包含个人介绍、比赛记录、Aevum 四入口可点击界面导览、公众号「凡有所念」的文章区、片段与笔记、近况，以及完整的中英文与浅色／深色主题切换。
 
 Public website: [Open Waypoint](https://waypoint-wilf-wu.vercel.app).
 
@@ -34,7 +34,8 @@ Open `http://127.0.0.1:4173`. The same owner-password login is used in local dev
 - `dist/content.js`: reading content and project details.
 - `dist/i18n.js`: complete authored Chinese and English interface copy.
 - `dist/motion.js`: one-time chapter entrances, a damped spring for the mountain view, and visual writing previews.
-- `dist/journal.js`: published race/article cards and the four-screen App preview.
+- `dist/journal.js`: published race/article cards.
+- `dist/app-preview.js`, `preview-controller.js`, and `preview-screens.js`: prepared image loading, interrupted selection handling, and interactive App screen navigation.
 - `dist/manage.html` and `manage.js`: owner content editing, drafts, publication, and uploads.
 - `server/`: signed owner sessions, content validation, private Blob storage, and local development storage.
 - `api/index.js`: Vercel Node.js function entry point.
@@ -45,7 +46,7 @@ Open `http://127.0.0.1:4173`. The same owner-password login is used in local dev
 
 The introduction and three reading pieces are first drafts prepared from Wilf's stated interests, previous writing, and Aevum's product documentation. They are editable content, not newly confirmed autobiographical statements. The race piece is an edited excerpt, not a complete race report. The Aevum link comes from its repository documentation and opens its existing login-capable application.
 
-The mountain landscape is original AI-generated visual artwork, not a photograph of Wilf or a particular race/location. The prompt and original are retained in the local workspace `.work-assets/`. Product logos were copied from the local Aevum repository. The eight App screenshots are rendered from an isolated Aevum source copy with a local fixture account, in Chinese and English, at its documented 412×906 phone baseline. They show actual app UI with demo data and do not contain Wilf's private finances or notes. The website does not connect to Aevum's private data or services.
+The mountain landscape is original AI-generated visual artwork, not a photograph of Wilf or a particular race/location. The prompt and original are retained in the local workspace `.work-assets/`. Product logos were copied from the local Aevum repository. The App guide has 13 views in both Chinese and English, captured from an isolated Aevum source copy with fictional training, race, ledger, and note fixtures at its 412×906 phone baseline. English fixture titles and fixed labels are authored in the isolated capture copy; the original Aevum checkout is unchanged. The 412×838 content captures are paired with native buttons for the four products and measured button overlays for internal navigation. They contain no personal finances or notes, and do not connect to Aevum's private services. This is a browsable interface tour: editing, AI requests, imports, and cloud sync remain available in the linked application.
 
 ## Managing content
 
@@ -53,7 +54,7 @@ Open `/manage.html` and sign in with the owner password; signed-in owners also s
 
 See [Aevum integration assessment](docs/AEVUM-INTEGRATION.md) for the proposed later synchronization boundary.
 
-The opening greeting runs once per browser-tab session. Links have contextual pointer feedback, the writing preview follows the pointer, buttons have a damped magnetic response and a rolling fill, and the App screens transition on deliberate selection. Keyboard and reduced-motion use stay immediate.
+The opening greeting runs once per browser-tab session. Links have contextual pointer feedback, the writing preview follows the pointer, and buttons have a damped magnetic response and a rolling fill. App images are decoded before display, active products prewarm their internal views, and only the latest product/view/language selection can commit. A loading message replaces the old image while an uncached screen is prepared. Prepared screens update immediately with a 180 ms entrance; keyboard and reduced-motion use stay immediate. Switching products preserves the view last selected in each product. Navigation follows the same About / Races / Projects / Writing order as the page and measures section positions during scrolling.
 
 ## Verification
 
@@ -62,6 +63,8 @@ Verify both languages and both themes at phone, tablet, and large desktop widths
 The reading scale is fluid: main body text is 18px on small screens and grows to 22px on large desktop screens with the browser's normal 16px base. The content area also expands on large displays. Motion is for this occasional personal-site visit: an opening reveal, one entrance per chapter, subtle spring-driven image depth, a navigation indicator, and writing previews on wide screens with a mouse. Reduced-motion preferences remove movement, and keyboard actions remain immediate.
 
 The first release passed layout checks at 360–1440px in both themes, theme persistence, all four reading dialogs, direct reading links, keyboard access, browser Back, and reduced motion. Screenshots and recorded results are in `verification/`. No browser errors or warnings were recorded.
+
+The interactive preview update passed clicks through all 13 views in both languages, 12 consecutive Ultreia/Viatica switches with no stale product displayed, remembered Training subviews, keyboard and reduced-motion selection, all four navigation destinations, and 360/768/1440px layout checks in both languages and themes. Three local regressions cover out-of-order images, interrupted language/view changes, and loading failure/retry. `npm run check` and `npm run build` passed; physical-phone interaction remains unverified.
 
 ## Design references
 
