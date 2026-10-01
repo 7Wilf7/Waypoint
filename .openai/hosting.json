@@ -1,5 +1,5 @@
 {
   "project_id": "appgprj_6abd3f91162c8191a3a2c1e22beeacd3",
-  "d1": {"binding": "DB"},
-  "r2": {"binding": "BUCKET"}
+  "d1": "DB",
+  "r2": "BUCKET"
 }
