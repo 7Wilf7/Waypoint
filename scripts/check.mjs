@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { notes, notesByLanguage } from '../dist/content.js';
 import { copy } from '../dist/i18n.js';
-import {previewProducts,previewScreens} from '../dist/preview-screens.js';
+import {previewProducts,previewScreens,previewViewport} from '../dist/preview-screens.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
 for (const filename of ['app.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'manage.js']) {
@@ -52,8 +52,11 @@ for(const [app,product] of Object.entries(previewProducts))for(const [view,label
   const screen=previewScreens[app+'/'+view+'/'+locale];
   if(!screen||!copy[locale][label])throw new Error('Incomplete preview: '+app+'/'+view+'/'+locale);
   await access(resolve(root,screen.src));
+  const png=await readFile(resolve(root,screen.src));
+  if(png.toString('ascii',1,4)!=='PNG'||png.readUInt32BE(16)!==previewViewport.width*previewViewport.pixelRatio||png.readUInt32BE(20)!==previewViewport.height*previewViewport.pixelRatio)throw new Error('Preview resolution differs from its native 3x capture');
+  if(screen.hotspots.filter(spot=>spot.navigation==='product').length!==5)throw new Error('Preview must include the five native product/settings entries');
   for(const spot of screen.hotspots) {
-    if(!product.views[spot.view]||!copy[locale][spot.label])throw new Error('Invalid preview target');
+    if(!previewProducts[spot.app||app]?.views[spot.view]||!copy[locale][spot.label])throw new Error('Invalid preview target');
     const [x,y,width,height]=spot.bounds;
     if(x<0||y<0||width<=0||height<=0||x+width>100.01||y+height>100.01)throw new Error('Preview button is outside its screen');
   }

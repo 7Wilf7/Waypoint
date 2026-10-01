@@ -5,7 +5,12 @@
   "framework": null,
   "regions": ["hkg1"],
   "functions": {"api/index.js": {"maxDuration": 60}},
+  "redirects": [
+    {"source": "/manage.html", "destination": "/manage", "permanent": true},
+    {"source": "/manage/", "destination": "/manage", "permanent": true}
+  ],
   "rewrites": [
+    {"source": "/manage", "destination": "/manage.html"},
     {"source": "/api/:path*", "destination": "/api/index"},
     {"source": "/media/:path*", "destination": "/api/index"}
   ],

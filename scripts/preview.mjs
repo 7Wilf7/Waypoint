@@ -27,7 +27,12 @@ const server = createServer(async (request, response) => {
       response.writeHead(405, { Allow: 'GET, HEAD' }).end();
       return;
     }
-    const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
+    let pathname = decodeURIComponent(url.pathname);
+    if (['/manage.html','/manage/'].includes(pathname)) {
+      response.writeHead(308, {Location:'/manage'+url.search}).end();
+      return;
+    }
+    if(pathname==='/manage')pathname='/manage.html';
     const path = resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!path.startsWith(root + sep) || !(await stat(path)).isFile()) {
       response.writeHead(404).end('Not found');
