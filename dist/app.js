@@ -1,6 +1,7 @@
 import { notesByLanguage } from './content.js';
 import { copy } from './i18n.js';
-import { initMotion } from './motion.js';
+import { initMotion, initWelcome } from './motion.js';
+import { initJournal, getEntry, renderJournal, initAppPreview, updateAppPreview } from './journal.js';
 
 const root = document.documentElement;
 const themeButton = document.querySelector('.theme-toggle');
@@ -49,6 +50,8 @@ function applyLanguage(next, announce = false) {
   if (announce) announcement.textContent = text.languageChanged;
   else announcement.textContent = '';
   document.querySelector('.note-preview').classList.remove('is-visible');
+  renderJournal();
+  updateAppPreview();
 }
 
 applyLanguage(language());
@@ -73,7 +76,7 @@ window.addEventListener('storage', event => {
 });
 
 function renderNote(key, keyboard = false, preservePosition = false) {
-  const note = notes()[key];
+  const note = notes()[key] || getEntry(key);
   if (!note) return false;
   const position = dialog.scrollTop;
   readerTitle.textContent = note.title;
@@ -113,6 +116,17 @@ function renderNote(key, keyboard = false, preservePosition = false) {
     link.textContent = note.link.label;
     readerBody.append(link);
   }
+  if (note.photos?.length) {
+    const gallery=document.createElement('div');gallery.className='reader-gallery';
+    for (const [index,id] of note.photos.entries()) {const image=document.createElement('img');image.src='./media/'+id;image.alt=note.title+' · '+words().galleryPhoto+' '+(index+1);image.loading='lazy';gallery.append(image);}
+    readerBody.append(gallery);
+  }
+  if (note.certificates?.length) {
+    const section=document.createElement('div');section.className='reader-certificates';
+    const title=document.createElement('h3');title.textContent=words().raceCertificates;section.append(title);
+    for (const [index,id] of note.certificates.entries()) {const link=document.createElement('a');link.href='./media/'+id;link.target='_blank';link.rel='noopener';link.className='button button-quiet';link.textContent=words().viewMedia+' '+(index+1);section.append(link);}
+    readerBody.append(section);
+  }
   readingKey = key;
   document.title = note.title + ' — Waypoint';
   if (!dialog.open) {
@@ -126,10 +140,10 @@ function renderNote(key, keyboard = false, preservePosition = false) {
 }
 
 function applyRoute() {
-  const match = location.hash.match(/^#read\/([a-z]+)$/);
-  if (match && notes()[match[1]]) {
-    if (!dialog.open && !history.state?.reading) returnHash = match[1] === 'aevum' ? '#projects' : '#writing';
-    renderNote(match[1]);
+  const match = location.hash.match(/^#(read|entry)\/([a-z0-9-]+)$/i);
+  if (match && (notes()[match[2]] || getEntry(match[2]))) {
+    if (!dialog.open && !history.state?.reading) returnHash = match[2] === 'aevum' ? '#projects' : getEntry(match[2])?.kind === 'race' ? '#races' : '#writing';
+    renderNote(match[2]);
   } else if (dialog.open) {
     routing = true;
     dialog.close();
@@ -138,13 +152,13 @@ function applyRoute() {
 }
 
 document.addEventListener('click', event => {
-  const link = event.target.closest('a[href^="#read/"]');
+  const link = event.target.closest('a[href^="#read/"],a[href^="#entry/"]');
   if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
-  const key = link.getAttribute('href').slice(6);
-  if (!notes()[key]) return;
+  const key = link.getAttribute('href').split('/')[1];
+  if (!notes()[key] && !getEntry(key)) return;
   event.preventDefault();
-  if (!dialog.open) returnHash = location.hash.startsWith('#read/') ? (key === 'aevum' ? '#projects' : '#writing') : location.hash;
-  history.pushState({ reading: true }, '', '#read/' + key);
+  if (!dialog.open) returnHash = /^#(read|entry)\//.test(location.hash) ? (key === 'aevum' ? '#projects' : getEntry(key)?.kind === 'race' ? '#races' : '#writing') : location.hash;
+  history.pushState({ reading: true }, '', (notes()[key] ? '#read/' : '#entry/') + key);
   renderNote(key, event.detail === 0);
 });
 document.querySelector('.reader-close').addEventListener('click', () => dialog.close());
@@ -153,10 +167,11 @@ dialog.addEventListener('close', () => {
   root.classList.remove('reading');
   document.title = words().pageTitle;
   readingKey = null;
-  if (!routing && location.hash.startsWith('#read/')) history.replaceState(null, '', location.pathname + location.search + returnHash);
+  if (!routing && /^#(read|entry)\//.test(location.hash)) history.replaceState(null, '', location.pathname + location.search + returnHash);
 });
 window.addEventListener('popstate', applyRoute);
 window.addEventListener('hashchange', applyRoute);
+document.addEventListener('journal-ready',applyRoute);
 applyRoute();
 
 const navLinks = [...document.querySelectorAll('.site-nav a')];
@@ -175,5 +190,7 @@ const sectionObserver = new IntersectionObserver(entries => {
     } else link.removeAttribute('aria-current');
   });
 }, { rootMargin: '-15% 0px -50% 0px', threshold: [0, 0.1, 0.3] });
-document.querySelectorAll('#about, #projects, #writing').forEach(section => sectionObserver.observe(section));
-initMotion();
+document.querySelectorAll('#about, #races, #projects, #writing').forEach(section => sectionObserver.observe(section));
+initJournal();
+initAppPreview();
+initWelcome().then(initMotion);

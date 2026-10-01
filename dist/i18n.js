@@ -18,7 +18,7 @@ export const copy = {
     toolsTitle: '做自己的工具', toolsIntro: '我不是程序员。借助 AI，从自己的需要出发，边折腾边学，做出自己想用的应用。',
     wordsTitle: '把经历写下来', wordsIntro: '写赛记，也整理一些想法。很多当时没想明白的事情，在写下来的时候有了轮廓。',
     trailTag: 'TRAIL RUNNING', toolsTag: 'BUILDING WITH AI', wordsTag: 'WRITING & REFLECTION',
-    projectLabel: '02 / SELECTED PROJECT', projectAside: '从自己的需要出发。',
+    projectLabel: '03 / SELECTED PROJECT', projectAside: '从自己的需要出发。',
     projectTitle: '正在做的东西。', projectCount: 'ONE PROJECT, FOUR PARTS',
     projectTag: '个人应用', projectStatus: '持续打磨中',
     projectSummary: '给自己的生活，<br />做一个顺手的入口。',
@@ -27,7 +27,7 @@ export const copy = {
     familyLabel: 'Aevum 产品家族', aevumAlt: 'Aevum 标志',
     ultreia: '训练与赛事', viatica: '账本与资产', sidera: '日历与笔记',
     orbitTop: 'LIFE, CONNECTED.', orbitBottom: 'MADE FOR MY EVERYDAY',
-    writingLabel: '03 / FIELD NOTES', writingAside: '记下一点，留住一点。',
+    writingLabel: '04 / FIELD NOTES', writingAside: '记下一点，留住一点。',
     writingTitle: '路上，和脑海里。', writingCount: 'SELECTED NOTES / 03',
     noteTrailCategory: '山野 · 赛记片段', noteTrailTitle: '从床上铺满装备，到夜色里出发',
     noteTrailIntro: '关于赛前准备、按时补给，和前半程的那些感受。',
@@ -45,7 +45,13 @@ export const copy = {
     readerSignature: 'Wilf 吴凡 <span>— Waypoint</span>', close: '关闭阅读',
     toLight: '切换为浅色模式', toDark: '切换为深色模式',
     lightChanged: '已切换为浅色模式', darkChanged: '已切换为深色模式',
-    languageChanged: '已切换为中文', languageLabel: 'Switch to English'
+    languageChanged: '已切换为中文', languageLabel: 'Switch to English',
+    races:'比赛', raceLabel:'02 / RACE JOURNAL',raceTitle:'走过的比赛。',raceAside:'把山野里的经历留下来。',raceEmpty:'比赛记录还在整理。',raceRecord:'比赛记录',racePhotos:'比赛照片',raceCertificates:'完赛证书',raceDistance:'距离',raceAscent:'爬升',raceResult:'完赛时间',raceDetails:'查看记录',
+    channelName:'凡有所念',channelLabel:'公众号 · 凡有所念',channelIntro:'赛记与随笔，也写在公众号里。',channelEmpty:'文章尚未在这里发布。',wechatRead:'阅读公众号原文',notesLabel:'片段与笔记',
+    previewTitle:'打开 Aevum，看看里面。',previewIntro:'四个入口，放着日常里不同的事情。',previewDemo:'真实应用界面 · 演示数据',previewAevum:'总览与 AI 对话',previewUltreia:'训练记录与比赛',previewViatica:'收支与资产',previewSidera:'日历与笔记',previewImage:'App 界面预览',
+    manage:'内容管理',manageTitle:'整理下一段经历。',manageIntro:'比赛和文章可以先存为草稿，整理好再发布。',ownerOnly:'登录你的账号后管理内容。',signIn:'使用 ChatGPT 登录',newRace:'新增比赛',newArticle:'新增文章',entries:'我的内容',entriesEmpty:'还没有内容，从一场比赛或一篇文章开始。',draft:'草稿',published:'已发布',
+    titleZh:'中文标题',titleEn:'英文标题',date:'日期',raceCategory:'比赛类型',bodyZh:'中文正文',bodyEn:'英文正文',bodyHelp:'每段之间留一行空行。',wechatUrl:'公众号文章链接',photos:'照片',certificates:'证书',uploadHelp:'照片支持 JPG、PNG、WebP；证书也支持 PDF。每个文件最多 8 MB。',englishHelp:'发布时需要中英文标题和正文，草稿可以先只写中文。',saveDraft:'保存草稿',publish:'发布到首页',saving:'正在保存…',uploading:'正在上传…',savedDraft:'草稿已保存。',savedPublished:'已发布到首页。',removePhoto:'移除',viewMedia:'查看文件',unavailable:'暂时无法加载，请稍后重试。',retry:'重新加载',saveFailed:'保存失败，输入的内容还在，请稍后再试。',englishRequired:'发布前请补齐英文标题和正文。',titleDateRequired:'请填写中文标题和有效日期。',fileTooLarge:'每个文件最多 8 MB。',fileType:'请选择 JPG、PNG、WebP 图片或 PDF 证书。',invalidMetrics:'请检查距离、爬升和完赛时间（例如 08:32:10）。',invalidWechat:'请使用以 https://mp.weixin.qq.com/ 开头的文章链接。',mediaLimit:'照片和证书各最多 20 个。',galleryPhoto:'照片',
+    road:'公路跑',trail:'越野跑',other:'其他',appOpen:'打开 Aevum'
   },
   en: {
     pageTitle: 'Waypoint — A personal space by Wilf Wu',
@@ -65,7 +71,7 @@ export const copy = {
     toolsTitle: 'Tools of my own', toolsIntro: 'I’m not a programmer. With AI, I start with something I need, experiment as I learn, and build apps I want to use.',
     wordsTitle: 'Putting it into words', wordsIntro: 'I write race reports and work through ideas. Things that felt unclear at the time often take shape when I write them down.',
     trailTag: 'TRAIL RUNNING', toolsTag: 'BUILDING WITH AI', wordsTag: 'WRITING & REFLECTION',
-    projectLabel: '02 / SELECTED PROJECT', projectAside: 'Starting with my own needs.',
+    projectLabel: '03 / SELECTED PROJECT', projectAside: 'Starting with my own needs.',
     projectTitle: 'What I’m making.', projectCount: 'ONE PROJECT, FOUR PARTS',
     projectTag: 'PERSONAL APP', projectStatus: 'A work in progress',
     projectSummary: 'One familiar place<br />for everyday life.',
@@ -74,7 +80,7 @@ export const copy = {
     familyLabel: 'The Aevum product family', aevumAlt: 'Aevum logo',
     ultreia: 'Training & races', viatica: 'Finances & assets', sidera: 'Calendar & notes',
     orbitTop: 'LIFE, CONNECTED.', orbitBottom: 'MADE FOR MY EVERYDAY',
-    writingLabel: '03 / FIELD NOTES', writingAside: 'A few things worth keeping.',
+    writingLabel: '04 / FIELD NOTES', writingAside: 'A few things worth keeping.',
     writingTitle: 'On the trail. On my mind.', writingCount: 'SELECTED NOTES / 03',
     noteTrailCategory: 'TRAILS · A RACE EXCERPT', noteTrailTitle: 'A bed full of gear. A start after dark.',
     noteTrailIntro: 'Race preparation, staying on top of fuel, and how the early miles felt.',
@@ -92,6 +98,12 @@ export const copy = {
     readerSignature: 'Wilf Wu <span>— Waypoint</span>', close: 'Close reading',
     toLight: 'Switch to light mode', toDark: 'Switch to dark mode',
     lightChanged: 'Switched to light mode', darkChanged: 'Switched to dark mode',
-    languageChanged: 'Switched to English', languageLabel: 'Switch to Chinese'
+    languageChanged: 'Switched to English', languageLabel: 'Switch to Chinese',
+    races:'Races',raceLabel:'02 / RACE JOURNAL',raceTitle:'Races along the way.',raceAside:'Keeping a little of the trail.',raceEmpty:'My race journal is taking shape.',raceRecord:'RACE JOURNAL',racePhotos:'Race photos',raceCertificates:'Finisher certificates',raceDistance:'Distance',raceAscent:'Elevation gain',raceResult:'Finish time',raceDetails:'Explore the race',
+    channelName:'Fan You Suo Nian',channelLabel:'WECHAT · FAN YOU SUO NIAN',channelIntro:'Race reports and reflections, also shared on WeChat.',channelEmpty:'No articles have been published here yet.',wechatRead:'Read the original on WeChat',notesLabel:'Excerpts & notes',
+    previewTitle:'A look inside Aevum.',previewIntro:'Four familiar places for different parts of everyday life.',previewDemo:'Actual app interface · Demo data',previewAevum:'Overview & AI conversations',previewUltreia:'Training & race records',previewViatica:'Finances & assets',previewSidera:'Calendar & notes',previewImage:'App interface preview',
+    manage:'Manage content',manageTitle:'Keep the next experience.',manageIntro:'Save races and articles as drafts. Publish them when they’re ready.',ownerOnly:'Sign in to your account to manage content.',signIn:'Sign in with ChatGPT',newRace:'New race',newArticle:'New article',entries:'My content',entriesEmpty:'Start with a race or an article.',draft:'Draft',published:'Published',
+    titleZh:'Chinese title',titleEn:'English title',date:'Date',raceCategory:'Race type',bodyZh:'Chinese text',bodyEn:'English text',bodyHelp:'Leave a blank line between paragraphs.',wechatUrl:'WeChat article link',photos:'Photos',certificates:'Certificates',uploadHelp:'Photos: JPG, PNG or WebP. Certificates also support PDF. Up to 8 MB per file.',englishHelp:'Both language editions are required for publication. A draft can start in Chinese.',saveDraft:'Save draft',publish:'Publish on the homepage',saving:'Saving…',uploading:'Uploading…',savedDraft:'Draft saved.',savedPublished:'Published on the homepage.',removePhoto:'Remove',viewMedia:'View file',unavailable:'Unable to load right now. Please try again.',retry:'Reload',saveFailed:'Couldn’t save. Your input is still here; please try again.',englishRequired:'Add the English title and text before publishing.',titleDateRequired:'Add a Chinese title and a valid date.',fileTooLarge:'Each file must be 8 MB or smaller.',fileType:'Choose a JPG, PNG, WebP image or a PDF certificate.',invalidMetrics:'Check the distance, elevation gain and finish time (for example, 08:32:10).',invalidWechat:'Use an article link starting with https://mp.weixin.qq.com/.',mediaLimit:'Up to 20 photos and 20 certificates.',galleryPhoto:'Photo',
+    road:'Road running',trail:'Trail running',other:'Other',appOpen:'Open Aevum'
   }
 };

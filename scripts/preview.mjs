@@ -2,6 +2,8 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, dirname, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import worker from '../worker/index.js';
+import {localEnv} from './local-storage.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
 const port = Number(process.env.WAYPOINT_PORT || 4173);
@@ -9,6 +11,19 @@ const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=u
 
 const server = createServer(async (request, response) => {
   try {
+    const url = new URL(request.url, 'http://127.0.0.1:'+port);
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/media/')) {
+      const headers=new Headers(request.headers);
+      // Developer identity exists only in this loopback preview. Production uses dispatch identity.
+      headers.set('oai-authenticated-user-id','local-preview');
+      headers.set('oai-authenticated-user-email',localEnv.WAYPOINT_OWNER_EMAIL);
+      const chunks=[];
+      for await(const chunk of request) {chunks.push(chunk);if(chunks.reduce((n,c)=>n+c.length,0)>9*1024*1024){response.writeHead(413).end();return;}}
+      const result=await worker.fetch(new Request(url,{method:request.method,headers,...(['GET','HEAD'].includes(request.method)?{}:{body:Buffer.concat(chunks)})}),localEnv);
+      response.writeHead(result.status,Object.fromEntries(result.headers));
+      response.end(Buffer.from(await result.arrayBuffer()));
+      return;
+    }
     if (!['GET', 'HEAD'].includes(request.method)) {
       response.writeHead(405, { Allow: 'GET, HEAD' }).end();
       return;

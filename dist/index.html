@@ -25,6 +25,7 @@
     <script type="module" src="./app.js"></script>
   </head>
   <body>
+    <div class="welcome-screen" aria-hidden="true" hidden><span class="welcome-brand">Waypoint.</span><p class="welcome-word"></p><span class="welcome-line"></span><span class="welcome-signature">WILF WU / GUANGZHOU</span></div>
     <a class="skip-link" href="#main" data-i18n="skip">跳到主要内容</a>
     <header class="site-header">
       <div class="header-inner">
@@ -34,6 +35,7 @@
         </a>
         <nav class="site-nav" aria-label="主要导航" data-i18n-aria="navLabel">
           <a href="#about" data-i18n="about">关于</a>
+          <a href="#races" data-i18n="races">比赛</a>
           <a href="#writing" data-i18n="writing">文字</a>
           <a href="#projects" data-i18n="projects">项目</a>
         </nav>
@@ -78,6 +80,8 @@
         </div>
       </section>
 
+      <section class="section-shell races-section" id="races" aria-labelledby="races-heading"><div class="section-topline"><span class="eyebrow" data-i18n="raceLabel">02 / RACE JOURNAL</span><span class="section-aside" data-i18n="raceAside">把山野里的经历留下来。</span></div><div class="section-heading-row"><h2 id="races-heading" data-i18n="raceTitle">走过的比赛。</h2></div><div class="race-entries" aria-live="polite"></div></section>
+
       <section class="section-shell projects-section" id="projects" aria-labelledby="projects-heading">
         <div class="section-topline"><span class="eyebrow" data-i18n="projectLabel">02 / SELECTED PROJECT</span><span class="section-aside" data-i18n="projectAside">从自己的需要出发。</span></div>
         <div class="section-heading-row"><h2 id="projects-heading" data-i18n="projectTitle">正在做的东西。</h2><span class="section-count" data-i18n="projectCount">ONE PROJECT, FOUR PARTS</span></div>
@@ -92,11 +96,24 @@
             <span class="visual-coordinate coordinate-top" data-i18n="orbitTop">LIFE, CONNECTED.</span><span class="visual-coordinate coordinate-bottom" data-i18n="orbitBottom">MADE FOR MY EVERYDAY</span>
           </div>
         </article>
+        <div class="app-preview">
+          <div class="preview-heading"><h3 data-i18n="previewTitle">打开 Aevum，看看里面。</h3><p data-i18n="previewIntro">四个入口，放着日常里不同的事情。</p></div>
+          <div class="preview-stage"><div class="preview-screen"><img src="./assets/app-aevum-zh.jpg" alt="Aevum App 界面预览" width="412" height="906" /></div><div class="preview-options" role="group" aria-label="App 预览" data-i18n-aria="previewImage">
+            <button class="preview-tab is-active" data-app="aevum" aria-pressed="true"><span class="preview-tab-number">01</span><img src="./assets/aevum.png" alt=""/><span><strong>Aevum</strong><span data-i18n="previewAevum">总览与 AI 对话</span></span></button>
+            <button class="preview-tab" data-app="ultreia" aria-pressed="false"><span class="preview-tab-number">02</span><img src="./assets/ultreia.png" alt=""/><span><strong>Ultreia</strong><span data-i18n="previewUltreia">训练记录与比赛</span></span></button>
+            <button class="preview-tab" data-app="viatica" aria-pressed="false"><span class="preview-tab-number">03</span><img src="./assets/viatica.png" alt=""/><span><strong>Viatica</strong><span data-i18n="previewViatica">收支与资产</span></span></button>
+            <button class="preview-tab" data-app="sidera" aria-pressed="false"><span class="preview-tab-number">04</span><img src="./assets/sidera.png" alt=""/><span><strong>Sidera</strong><span data-i18n="previewSidera">日历与笔记</span></span></button>
+            <p class="preview-provenance" data-i18n="previewDemo">真实应用界面 · 演示数据</p>
+          </div></div>
+        </div>
       </section>
 
       <section class="section-shell writing-section" id="writing" aria-labelledby="writing-heading">
         <div class="section-topline"><span class="eyebrow" data-i18n="writingLabel">03 / FIELD NOTES</span><span class="section-aside" data-i18n="writingAside">记下一点，留住一点。</span></div>
         <div class="section-heading-row"><h2 id="writing-heading" data-i18n="writingTitle">路上，和脑海里。</h2><span class="section-count" data-i18n="writingCount">SELECTED NOTES / 03</span></div>
+        <div class="channel-heading"><div><p class="eyebrow" data-i18n="channelLabel">公众号 · 凡有所念</p><h3 data-i18n="channelName">凡有所念</h3><p data-i18n="channelIntro">赛记与随笔，也写在公众号里。</p></div></div>
+        <div class="article-entries" aria-live="polite"></div>
+        <p class="notes-label eyebrow" data-i18n="notesLabel">片段与笔记</p>
         <div class="notes-list">
           <a class="note-row" href="#read/trail"><span class="note-index">01</span><div class="note-text"><span class="note-category" data-i18n="noteTrailCategory">山野 · 赛记片段</span><h3 data-i18n="noteTrailTitle">从床上铺满装备，到夜色里出发</h3><p data-i18n="noteTrailIntro">关于赛前准备、按时补给，和前半程的那些感受。</p></div><span class="note-end"><span data-i18n="readExcerpt">阅读片段</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></span></a>
           <a class="note-row" href="#read/memory"><span class="note-index">02</span><div class="note-text"><span class="note-category" data-i18n="noteMemoryCategory">创造 · Aevum</span><h3 data-i18n="noteMemoryTitle">让 AI 记得我已经留下的东西</h3><p data-i18n="noteMemoryIntro">说起一个项目，能自然地找到相关记录，而不用从头解释。</p></div><span class="note-end"><span data-i18n="readThought">阅读想法</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></span></a>
@@ -111,7 +128,7 @@
 
       <footer class="site-footer section-shell">
         <div class="footer-main"><p class="eyebrow" data-i18n="footerLabel">THE NEXT WAYPOINT</p><p class="footer-statement" data-i18n="footerStatement">下一站，<br /><span>还没想好。</span></p><a class="footer-link" href="#home"><span data-i18n="back">回到起点</span> <span aria-hidden="true">↑</span></a></div>
-        <div class="footer-bottom"><span data-i18n="signature">Waypoint · Wilf 吴凡</span><span data-i18n="location">广州，中国</span><span>© 2026</span></div>
+        <div class="footer-bottom"><span data-i18n="signature">Waypoint · Wilf 吴凡</span><span data-i18n="location">广州，中国</span><span>© 2026</span><a class="manage-link" href="./manage.html" data-i18n="manage" hidden>内容管理</a></div>
       </footer>
     </main>
 
@@ -120,6 +137,7 @@
       <article class="reader-content"><p class="eyebrow" id="reader-category"></p><h2 id="reader-title"></h2><p class="reader-lead" id="reader-lead"></p><div class="reader-body" id="reader-body"></div><p class="reader-signature" data-i18n="readerSignature">Wilf 吴凡 <span>— Waypoint</span></p></article>
     </dialog>
     <div class="note-preview" aria-hidden="true"><div class="preview-art"><img src="./assets/mountain.jpg" alt="" /></div><span class="preview-category"></span></div>
+    <div class="pointer-bubble" aria-hidden="true"><span></span></div>
     <div class="theme-announcement sr-only" role="status" aria-live="polite"></div>
   </body>
 </html>

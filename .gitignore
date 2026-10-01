@@ -4,3 +4,6 @@ node_modules/
 verification/
 *.tar.gz
 *.log
+.local/
+dist/server/
+dist/.openai/
