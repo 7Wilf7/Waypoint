@@ -273,4 +273,8 @@ function initPointerFeedback() {
   window.addEventListener('blur',reset);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)reset();});
   reduce.addEventListener('change',reset);fine.addEventListener('change',reset);
+  new MutationObserver(()=>{
+    if(root.classList.contains('reading')){if(active)reset();}
+    else if(active)label.textContent=cursorLabel(active);
+  }).observe(root,{attributes:true,attributeFilter:['class','data-language']});
 }
