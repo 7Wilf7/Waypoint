@@ -80,6 +80,7 @@ function renderNote(key, keyboard = false, preservePosition = false) {
   const note = notes()[key] || getEntry(key);
   if (!note) return false;
   const position = dialog.scrollTop;
+  document.querySelector('.reader-brand').textContent=note.kind==='race'?'Waypoint / '+words().races:words().readerBrand;
   readerTitle.textContent = note.title;
   document.querySelector('#reader-category').textContent = note.category;
   document.querySelector('#reader-lead').textContent = note.lead;

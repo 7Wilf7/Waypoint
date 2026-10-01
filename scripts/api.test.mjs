@@ -36,6 +36,13 @@ test('authenticated writes reject cross-origin requests',async()=>{
   assert.equal((await write(race,{origin:'https://another.test'})).status,403);
   assert.equal((await write(race,{'sec-fetch-site':'cross-site'})).status,403);
 });
+test('article publication retains its original date through publish and withdrawal',async()=>{
+  const article={id:'original-article',kind:'article',published:true,titleZh:'原文日期测试',titleEn:'Original date test',date:'2024-09-07',bodyZh:'测试正文',bodyEn:'Test body',photos:[],certificates:[],wechatUrl:'https://mp.weixin.qq.com/s/test-article'};
+  assert.equal((await write(article)).status,200);
+  assert.equal((await(await call('/api/entries')).json()).entries.find(entry=>entry.id===article.id).date,'2024-09-07');
+  assert.equal((await write({...article,published:false})).status,200);
+  assert.equal((await store.entries()).find(entry=>entry.id===article.id).date,'2024-09-07');
+});
 test('drafts persist across store instances, publish, then disappear when returned to draft',async()=>{
   assert.equal((await write(race)).status,200);assert.equal((await(await call('/api/entries')).json()).entries.length,0);
   assert.equal((await new LocalStore(directory).entries())[0].titleZh,race.titleZh);

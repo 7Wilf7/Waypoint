@@ -7,19 +7,20 @@ import { copy } from '../dist/i18n.js';
 import {previewProducts,previewScreens,previewViewport} from '../dist/preview-screens.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
-for (const filename of ['app.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'manage.js']) {
+for (const filename of ['app.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'race-utils.js', 'race-archive.js', 'manage.js']) {
   const result = spawnSync(process.execPath, ['--check', resolve(root, filename)], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr);
 }
 const html = await readFile(resolve(root, 'index.html'), 'utf8');
 const manager = await readFile(resolve(root, 'manage.html'), 'utf8');
+const archive = await readFile(resolve(root, 'races.html'), 'utf8');
 const translationKeys = Object.keys(copy.zh);
 if (translationKeys.length !== Object.keys(copy.en).length) throw new Error('Translation editions differ');
 for (const key of translationKeys) {
   if (!copy.en[key] || !copy.zh[key]) throw new Error('Missing translation: ' + key);
   if (/\p{Script=Han}/u.test(copy.en[key])) throw new Error('Untranslated English copy: ' + key);
 }
-for (const match of (html+manager).matchAll(/data-i18n(?:-aria|-alt)?="([^"]+)"/g)) {
+for (const match of (html+manager+archive).matchAll(/data-i18n(?:-aria|-alt)?="([^"]+)"/g)) {
   if (!copy.zh[match[1]] || !copy.en[match[1]]) throw new Error('Unknown translation: ' + match[1]);
 }
 for (const [locale, edition] of Object.entries(notesByLanguage)) {
@@ -65,6 +66,9 @@ const previewTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts
 if(previewTests.status!==0)throw new Error(previewTests.stdout+previewTests.stderr);
 const backend = spawnSync(process.execPath,['--test',resolve(root,'../scripts/api.test.mjs')],{encoding:'utf8'});
 if(backend.status!==0)throw new Error(backend.stdout+backend.stderr);
+const raceTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/races.test.mjs')],{encoding:'utf8'});
+if(raceTests.status!==0)throw new Error(raceTests.stdout+raceTests.stderr);
 console.log('JavaScript syntax, assets, navigation, complete language dictionaries, and both reading editions passed.');
 console.log('Interactive bilingual preview routes and interrupted product/language selections passed.');
 console.log('Owner authorization, password changes and session revocation, publication visibility, file validation, draft media privacy, and input validation passed.');
+console.log('Race categories, divisions, original dates, representative selection, result formatting, and archive ordering passed.');

@@ -1,3 +1,4 @@
+import {raceCategories} from '../dist/race-utils.js';
 export const ID = /^[a-z0-9-]{1,64}$/i;
 export const MAX_FILE = 8 * 1024 * 1024;
 const text = (value, limit = 60000) => typeof value === 'string' ? value.trim().slice(0, limit) : '';
@@ -21,7 +22,8 @@ export function validateEntry(input) {
       if (url.protocol !== 'https:' || url.hostname !== 'mp.weixin.qq.com' || url.username || url.password) throw new Error('invalid_wechat_url');
     }
   } else {
-    entry.category = ['Trail','Road','Hyrox','Spartan','Other'].includes(input.category) ? input.category : 'Trail';
+    entry.category = raceCategories.includes(input.category) ? input.category : 'Trail';
+    entry.subtype = text(input.subtype,80);
     for (const field of ['distance','ascent']) {
       const number = input[field] === '' || input[field] == null ? null : Number(input[field]);
       if (number !== null && (!Number.isFinite(number) || number < 0 || number > (field === 'distance' ? 10000 : 100000))) throw new Error('invalid_metrics');

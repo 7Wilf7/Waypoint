@@ -7,10 +7,13 @@
   "functions": {"api/index.js": {"maxDuration": 60}},
   "redirects": [
     {"source": "/manage.html", "destination": "/manage", "permanent": true},
-    {"source": "/manage/", "destination": "/manage", "permanent": true}
+    {"source": "/manage/", "destination": "/manage", "permanent": true},
+    {"source": "/races.html", "destination": "/races", "permanent": true},
+    {"source": "/races/", "destination": "/races", "permanent": true}
   ],
   "rewrites": [
     {"source": "/manage", "destination": "/manage.html"},
+    {"source": "/races", "destination": "/races.html"},
     {"source": "/api/:path*", "destination": "/api/index"},
     {"source": "/media/:path*", "destination": "/api/index"}
   ],

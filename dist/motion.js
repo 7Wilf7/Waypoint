@@ -213,7 +213,7 @@ function initPointerFeedback() {
   const label=bubble.querySelector('span');
   const preview=document.querySelector('.note-preview');
   const selector='a[href],button:not([disabled])';
-  const circleTargets='.note-row,.journal-card,.project-card .button';
+  const circleTargets='.note-row,.journal-card,.race-card,.project-card .button';
   const magnets='.button,.site-nav a,.language-toggle,.theme-toggle,.footer-link,.preview-tab';
   let active=null, magnet=null, bounds=null, frame=0, previous=0, previewShowing=false;
   const destination=[0,0,0,0], position=[0,0,0,0], velocity=[0,0,0,0];
@@ -239,7 +239,7 @@ function initPointerFeedback() {
   function reset(){cancelAnimationFrame(frame);frame=0;previous=0;active=null;previewShowing=false;bubble.classList.remove('is-visible');clearMagnet();velocity.fill(0);}
   function cursorLabel(element) {
     const en=root.dataset.language==='en';
-    if(element.matches('.note-row,.journal-card'))return en?'Read':'阅读';
+    if(element.matches('.note-row,.journal-card,.race-card'))return en?'Read':'阅读';
     return en?'View':'预览';
   }
   document.addEventListener('pointermove',event=>{

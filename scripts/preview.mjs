@@ -28,11 +28,12 @@ const server = createServer(async (request, response) => {
       return;
     }
     let pathname = decodeURIComponent(url.pathname);
-    if (['/manage.html','/manage/'].includes(pathname)) {
-      response.writeHead(308, {Location:'/manage'+url.search}).end();
+    if (['/manage.html','/manage/','/races.html','/races/'].includes(pathname)) {
+      response.writeHead(308, {Location:(pathname.startsWith('/races')?'/races':'/manage')+url.search}).end();
       return;
     }
     if(pathname==='/manage')pathname='/manage.html';
+    if(pathname==='/races')pathname='/races.html';
     const path = resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!path.startsWith(root + sep) || !(await stat(path)).isFile()) {
       response.writeHead(404).end('Not found');

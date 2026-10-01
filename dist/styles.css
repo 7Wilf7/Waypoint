@@ -32,7 +32,7 @@
   .site-nav {grid-template-columns:repeat(4,1fr);}
   .nav-indicator {width:calc((100% - 8px)/4);}
   .races-section {padding-block:110px;border-top:1px solid var(--line);}
-  .race-entries {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:44px;}
+  .race-entries {display:block;margin-top:44px;}
   .journal-empty {grid-column:1/-1;color:var(--muted);padding:24px 0;border-top:1px solid var(--line);font-size:1rem;}
   .journal-card {border-top:1px solid var(--line);display:block;transition:color 180ms ease;}
   .journal-cover {width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;margin-bottom:20px;}
@@ -652,7 +652,7 @@
     .brand { font-size: 1rem; }
     .header-controls { gap: 8px; }
     .language-toggle, .theme-toggle { width: 44px; height: 44px; }
-    .site-nav { grid-column: 1 / -1; grid-row: 2; margin: 0 auto; width: min(100%, 380px); }
+    .site-nav { position:relative;left:auto;transform:none;grid-column: 1 / -1; grid-row: 2; margin: 0 auto; width: min(100%, 380px); }
     .site-nav a { min-height: 44px; padding: 8px 16px; font-size: 1rem; }
     .nav-indicator { inset: 2px auto 2px 2px; width: calc((100% - 4px) / 3); }
     .hero { padding-top: 20px; gap: 25px; }
@@ -711,5 +711,117 @@
     .nav-indicator { transition: opacity 150ms ease; }
     .language-toggle:active { transform: none; }
     .note-preview { display: none; }
+  }
+}
+
+@layer experience {
+  .race-overview {display:flex;gap:clamp(28px,6vw,90px);border-top:1px solid var(--line);padding:28px 0 36px;}
+  .race-overview-stat {display:flex;flex-direction:column;gap:7px;}
+  .race-overview-stat strong {font-size:clamp(1.8rem,3.2vw,2.8rem);font-weight:500;letter-spacing:-.05em;font-variant-numeric:tabular-nums;}
+  .race-overview-stat span {color:var(--muted);font-size:.875rem;}
+  .race-showcase {display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,60px);}
+  .race-card {cursor:pointer;}
+  .race-spotlight {position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:space-between;gap:36px;min-height:480px;border:1px solid var(--line);border-radius:20px;background:var(--surface-raised);padding:clamp(24px,3vw,44px);}
+  .race-spotlight::before {content:'';position:absolute;z-index:-1;right:-220px;top:-160px;width:760px;height:760px;border-radius:50%;background:repeating-radial-gradient(ellipse at center,transparent 0 22px,var(--line) 23px 24px,transparent 25px 36px);opacity:.55;transform:scaleY(.8) rotate(-25deg);pointer-events:none;}
+  .race-spotlight-top {display:flex;justify-content:space-between;align-items:center;gap:14px;}
+  .race-format-tag {font-size:.8rem;letter-spacing:.025em;color:var(--muted);line-height:1.5;}
+  .race-spotlight .race-format-tag {border:1px solid var(--line);border-radius:100px;padding:6px 12px;color:var(--text);}
+  .race-spotlight .eyebrow {font-size:.75rem;color:var(--muted);}
+  .race-spotlight-photo {position:absolute;inset:0;z-index:-1;width:100%;height:100%;object-fit:cover;opacity:.16;}
+  .race-feature-date {color:var(--muted);font-size:.875rem;margin-bottom:14px;}
+  .race-spotlight h3 {font-size:clamp(1.5rem,2.3vw,2.1rem);line-height:1.5;letter-spacing:-.025em;max-width:24ch;}
+  .race-feature-result {display:block;margin-top:24px;font:400 clamp(2.6rem,5.2vw,5rem)/1.15 "SFMono-Regular",Consolas,"Liberation Mono",monospace;letter-spacing:-.075em;font-variant-numeric:tabular-nums;}
+  .race-feature-metrics {display:flex;gap:30px;margin-top:28px;}
+  .race-feature-metrics div {display:flex;flex-direction:column;gap:5px;}
+  .race-feature-metrics strong {font-size:1.1rem;font-weight:500;font-variant-numeric:tabular-nums;}
+  .race-feature-metrics span,.race-feature-link {font-size:.8rem;color:var(--muted);}
+  .race-feature-link {margin-top:18px;}
+  .race-highlights {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 24px;align-content:stretch;}
+  .race-highlight {display:flex;flex-direction:column;justify-content:center;gap:10px;border-top:1px solid var(--line);padding:22px 8px;min-width:0;border-radius:4px;transition:background-color 160ms ease-out;}
+  .race-highlight:last-child:nth-child(odd) {grid-column:1/-1;}
+  .race-highlight-heading {display:flex;flex-direction:column;gap:4px;}
+  .race-highlight .race-format-tag {font-size:1rem;color:var(--text);}
+  .race-highlight-context {font-size:.75rem;line-height:1.5;color:var(--muted);}
+  .race-highlight-result {font:400 clamp(1.5rem,2.3vw,2.3rem)/1.2 "SFMono-Regular",Consolas,"Liberation Mono",monospace;letter-spacing:-.065em;font-variant-numeric:tabular-nums;}
+  .race-highlight-name {font-size:.8rem;line-height:1.6;color:var(--muted);}
+  .race-showcase-footer {display:flex;justify-content:space-between;align-items:center;gap:24px;margin-top:32px;}
+  .race-showcase-footer p {font-size:.875rem;color:var(--muted);line-height:1.7;max-width:42ch;}
+  .race-archive-link {flex-shrink:0;}
+  .race-archive-main {padding-top:150px;}
+  .race-back-link {display:inline-flex;gap:10px;align-items:center;font-size:.875rem;color:var(--muted);padding:12px 0;min-height:44px;}
+  .race-archive-heading {padding:40px 0 48px;}
+  .race-archive-heading h1 {font-size:clamp(3rem,6vw,6rem);letter-spacing:-.055em;line-height:1.25;margin-top:20px;animation:none;}
+  .race-archive-intro {max-width:48ch;color:var(--muted);margin-top:26px;font-size:1.05rem;line-height:1.8;}
+  .race-archive-controls {position:sticky;top:var(--race-header-bottom,110px);z-index:5;background:var(--bg);padding:18px 0;border-block:1px solid var(--line);}
+  .race-filters {display:flex;flex-wrap:wrap;gap:8px;}
+  .race-filter {display:inline-flex;align-items:center;justify-content:center;gap:12px;background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:100px;padding:11px 17px;min-height:44px;font:inherit;font-size:.875rem;line-height:1.3;cursor:pointer;transition:background-color 160ms ease-out,color 160ms ease-out;}
+  .race-filter[aria-pressed="true"] {background:var(--button-bg);color:var(--button-text);border-color:var(--button-bg);}
+  .race-filter-count {font-size:.75rem;font-variant-numeric:tabular-nums;opacity:.65;}
+  .race-filter:active {transform:scale(.97);}
+  .race-archive-summary {display:flex;justify-content:space-between;gap:18px;padding:24px 0;color:var(--muted);font-size:.875rem;line-height:1.6;}
+  .race-archive-best {color:var(--text);font-variant-numeric:tabular-nums;}
+  .race-year {margin:18px 0 64px;}
+  .race-year-heading {display:flex;align-items:baseline;gap:16px;margin-bottom:18px;}
+  .race-year-heading h2 {font-size:clamp(2rem,3vw,2.8rem);letter-spacing:-.045em;font-weight:500;}
+  .race-year-heading span {font-size:.8rem;color:var(--muted);}
+  .archive-race {border-top:1px solid var(--line);}
+  .archive-race:last-child {border-bottom:1px solid var(--line);}
+  .archive-race-summary {display:grid;grid-template-columns:90px minmax(0,1fr) auto 24px;gap:24px;align-items:center;list-style:none;cursor:pointer;padding:25px 8px;transition:background-color 160ms ease-out;}
+  .archive-race-summary::-webkit-details-marker {display:none;}
+  .archive-race-date {font-size:.875rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .archive-race-title {min-width:0;}
+  .archive-race-title h3 {font-size:clamp(1.1rem,1.6vw,1.5rem);font-weight:500;letter-spacing:-.02em;line-height:1.6;margin-top:5px;overflow-wrap:anywhere;}
+  .archive-race-course {font-size:.8rem;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums;}
+  .archive-race-result {font:400 clamp(1.2rem,2vw,1.9rem)/1.3 "SFMono-Regular",Consolas,"Liberation Mono",monospace;letter-spacing:-.06em;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .archive-race-arrow {font-size:1.3rem;color:var(--muted);text-align:right;}
+  .archive-race[open] .archive-race-arrow {transform:rotate(90deg);}
+  .archive-race[open] .archive-race-summary {background:var(--surface);}
+  .archive-race-detail {padding:28px 30px 36px;margin-bottom:16px;background:var(--surface);border-radius:0 0 12px 12px;}
+  .archive-record-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;}
+  .archive-record-metrics div {display:flex;flex-direction:column;gap:9px;}
+  .archive-record-metrics dt,.archive-media-empty {font-size:.8rem;color:var(--muted);}
+  .archive-record-metrics dd {font-size:1rem;font-variant-numeric:tabular-nums;}
+  .archive-media-empty {margin-top:28px;line-height:1.8;}
+  .archive-record-body {font-size:1rem;line-height:1.9;margin-top:26px;white-space:pre-line;}
+  .race-archive-footer {border-top:1px solid var(--line);padding:34px 0 60px;display:flex;justify-content:space-between;gap:20px;align-items:center;font-size:.8rem;color:var(--muted);}
+  @media (hover:hover) and (pointer:fine) {
+    .race-highlight:hover,.archive-race-summary:hover {background:var(--surface);}
+    .race-filter:not([aria-pressed="true"]):hover {background:var(--surface);color:var(--text);}
+  }
+  @media (max-width:850px) {
+    .race-showcase {grid-template-columns:1fr;}
+    .race-spotlight {min-height:440px;}
+    .race-highlights {gap:6px 20px;}
+    .race-showcase-footer {align-items:flex-start;flex-direction:column;}
+  }
+  @media (max-width:600px) {
+    .race-overview {justify-content:space-between;gap:14px;padding-top:22px;}
+    .race-overview-stat strong {font-size:1.65rem;}
+    .race-overview-stat span {font-size:.75rem;}
+    .race-spotlight {padding:25px;min-height:430px;gap:36px;}
+    .race-spotlight h3 {font-size:1.55rem;}
+    .race-feature-result {font-size:2.8rem;}
+    .race-highlight {padding:20px 5px;}
+    .race-highlight-result {font-size:1.55rem;}
+    .race-archive-main {padding-top:52px;}
+    .race-archive-heading {padding:26px 0 32px;}
+    .race-archive-heading h1 {font-size:2.8rem;}
+    .race-archive-intro {font-size:1rem;margin-top:18px;}
+    .race-archive-controls {padding:14px 0;}
+    .race-filters {gap:7px;}
+    .race-filter {font-size:.8rem;padding:10px 13px;gap:9px;}
+    .race-archive-summary {flex-direction:column;gap:4px;}
+    .archive-race-summary {grid-template-columns:minmax(0,1fr) auto 16px;gap:8px 16px;padding:22px 3px;}
+    .archive-race-date {grid-column:1/-1;font-size:.8rem;}
+    .archive-race-title h3 {font-size:1.05rem;}
+    .archive-race-result {font-size:1.22rem;}
+    .archive-race-arrow {font-size:1.1rem;}
+    .archive-race-detail {padding:22px 18px 28px;}
+    .archive-record-metrics {grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;}
+    .archive-record-metrics dd {font-size:.875rem;}
+    .race-archive-footer {flex-wrap:wrap;}
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .race-filter,.race-highlight,.archive-race-summary {transition:none;}
   }
 }

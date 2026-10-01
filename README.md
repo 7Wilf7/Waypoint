@@ -34,7 +34,8 @@ Open `http://127.0.0.1:4173`. The same owner-password login is used in local dev
 - `dist/content.js`: reading content and project details.
 - `dist/i18n.js`: complete authored Chinese and English interface copy.
 - `dist/motion.js`: one-time chapter entrances, a damped spring for the mountain view, and visual writing previews.
-- `dist/journal.js`: published race/article cards.
+- `dist/journal.js`: representative race results and published article cards.
+- `dist/races.html`, `race-archive.js`, and `race-utils.js`: full race archive, category filters, recorded results, and representative selection.
 - `dist/app-preview.js`, `preview-controller.js`, and `preview-screens.js`: prepared image loading, interrupted selection handling, and interactive App screen navigation.
 - `dist/manage.html` and `manage.js`: owner content editing, drafts, publication, and uploads.
 - `server/`: signed owner sessions, content validation, private Blob storage, and local development storage.
@@ -52,7 +53,11 @@ The App guide includes 13 main views and the shared native Settings screen in Ch
 
 ## Managing content
 
-Open `/manage` and sign in with the owner password; signed-in owners also see a management link in the footer. The previous `/manage.html` address redirects permanently to `/manage`, preserving query parameters. Management remains part of this same website. Add a race or an article, fill the Chinese and English editions, attach photos or certificates, and save a draft or publish it on the homepage. Returning a published item to draft removes it from discovery. Draft files and unreferenced uploads are only accessible to the owner. The homepage shows a truthful empty state until records are published; no race results or WeChat articles have been invented. The two original WeChat article links/texts remain to be supplied.
+Open `/manage` and sign in with the owner password; signed-in owners also see a management link in the footer. The previous `/manage.html` address redirects permanently to `/manage`, preserving query parameters. Management remains part of this same website. Add a race or an article, fill the Chinese and English editions, attach photos or certificates, and save a draft or publish it. Both titles are required for publication; race descriptions may be empty, while articles need both text editions. Returning a published item to draft removes it from discovery. Draft files and unreferenced uploads are only accessible to the owner. The two original WeChat article texts and publication dates remain to be supplied; no article body or publication date has been fabricated.
+
+The homepage presents one representative per populated race format, with the latest trail record as its main feature. Road formats show personal bests; Spartan shows the highest recorded tier; HYROX keeps its division. `/races` contains every published race, grouped by original year, with category filters, finish times, and expandable course details, photos, and certificates. Category selection is reflected in the URL and supports browser Back. `/races.html` and `/races/` redirect to the clean archive address.
+
+On 2026-10-01 Wilf authorized a one-time import of all his Aevum races. The authenticated race list contained 39 records: 32 historical races with finish times (8 half marathons, 3 marathons, 11 trail races, 8 Spartan races, 1 HYROX, and 1 10K), plus 7 targets without results. Historical records are published and targets remain drafts, including a past-dated target that Aevum had not marked complete. Names, dates, results, categories, divisions, and recorded course metrics are preserved; missing distances are left empty. English race titles are translated for the website. Photos and certificates can be attached later to the existing records. Race content remains in private Blob storage; original database identifiers, source extracts, and import backups stay outside the repository and public build. This is a one-time import, not continuing synchronization.
 
 See [Aevum integration assessment](docs/AEVUM-INTEGRATION.md) for the proposed later synchronization boundary.
 
@@ -69,6 +74,8 @@ The first release passed layout checks at 360–1440px in both themes, theme per
 The earlier interactive preview update passed clicks through all 13 views in both languages, 12 consecutive Ultreia/Viatica switches with no stale product displayed, remembered Training subviews, keyboard and reduced-motion selection, all four navigation destinations, and 360/768/1440px layout checks in both languages and themes. Three local regressions cover out-of-order images, interrupted language/view changes, and loading failure/retry. `npm run check` and `npm run build` passed; physical-phone interaction remains unverified.
 
 The native HD preview update passed all 34 page states, three right-hand default-page resets after visiting deeper pages, native Settings entry/return, keyboard focus retention, reduced motion, and 12 consecutive Ultreia/Viatica switches with no stale visible image. All images loaded at 1236×2718, every page had exactly five native footer entries, and Sidera had no duplicate footer. Layout checks passed at 360/768/1440px in both languages and themes without horizontal overflow. Local `/manage` loaded correctly, while `/manage.html` and `/manage/` returned 308 redirects. No homepage browser errors or warnings were recorded. Physical-phone interaction remains unverified.
+
+The race archive update compares all 32 rendered names, dates, categories, and times against the source extract. All six filters, keyboard expansion, focus retention, browser Back, English titles/divisions, and owner save/reopen were checked. Homepage and archive layouts passed at 360/768/1440px in both languages and themes (24 combinations) without horizontal overflow. Regression checks cover representative selection across differing trail distances and Spartan tiers, preserving missing metrics and original dates, and retaining an article's original date through publication and withdrawal. Physical-phone interaction remains unverified.
 
 ## Design references
 
