@@ -49,7 +49,7 @@
   .preview-heading p {margin-top:18px;color:var(--muted);}
   .preview-stage {display:grid;grid-template-columns:minmax(240px,390px) minmax(0,1fr);gap:clamp(48px,8vw,130px);align-items:center;max-width:1020px;margin:60px auto 0;}
   .preview-screen {border-radius:36px;padding:10px;background:#111215;border:1px solid #45484f;box-shadow:0 24px 80px rgb(0 0 0 / 15%);overflow:hidden;}
-  .preview-screen img {width:100%;aspect-ratio:412/906;object-fit:cover;border-radius:27px;display:block;background:#000;}
+  .preview-screen img {width:100%;height:auto;aspect-ratio:412/906;object-fit:contain;border-radius:27px;display:block;background:#000;}
   .preview-options {display:flex;flex-direction:column;gap:6px;}
   .preview-tab {display:flex;align-items:center;gap:20px;background:transparent;border:0;border-top:1px solid var(--line);padding:24px 10px;text-align:left;color:var(--muted);min-height:100px;position:relative;}
   .preview-tab.is-active {color:var(--text);}
