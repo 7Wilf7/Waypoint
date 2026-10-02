@@ -1,6 +1,6 @@
 # Waypoint
 
-Wilf 吴凡的个人网站。包含个人介绍、比赛记录、Aevum 四入口可点击界面导览、公众号「凡有所念」的文章区、片段与笔记、近况，以及完整的中英文与浅色／深色主题切换。
+Wilf 吴凡的个人网站。首页按「关于／山野／创造」组织，保留真实山野经历、完整赛事档案和 Aevum 四入口界面导览。采用正常浏览页面与黑白灰视觉，完整支持中英文、浅深主题与偏好记忆。没有独立的想法、近况或持续写作要求。
 
 Public website: [Open Waypoint](https://waypoint-wilf-wu.vercel.app).
 
@@ -24,16 +24,27 @@ npm run dev
 
 Open `http://127.0.0.1:4173`. The same owner-password login is used in local development and production; no identity headers are trusted. Local content is stored under ignored `.local/content/`. Owner credentials are generated once in `.local/admin-access.txt` and `.env.local`; never commit them.
 
-`npm run build` bundles the direct-upload client and copies only public frontend files into generated `public/`. Server source, credentials, local content, and verification artifacts stay outside that output. `npm run check` verifies languages, assets, navigation, login, publication visibility, private files, and input validation.
+`npm run build` bundles the direct-upload client, then copies only public frontend files into generated `public/`. Do not edit `dist/upload-client.js` or `public/`; they are generated. Server source, credentials, local content, and verification artifacts stay outside that output. `npm run check` verifies languages, assets, navigation, login, publication visibility, private files, and input validation.
+
+For same-network phone review, run `WAYPOINT_HOST=0.0.0.0 npm run dev` and open the computer's LAN address on the phone. The default server binds only to `127.0.0.1`. See [current experience acceptance](docs/EXPERIENCE-ACCEPTANCE.md) for review steps and verified boundaries. Production follows the latest successful Vercel deployment from `main`; verify the live page and its assets after each push.
 
 ## Files
 
 - `dist/index.html`: homepage content and semantic structure.
 - `dist/styles.css`: theme tokens, layout, responsive styles, and interaction states.
+- `dist/homepage.css`: editorial homepage composition, grayscale materials, responsive controls and reader layouts.
 - `dist/app.js`: theme preference, reading dialog, navigation, and pointer feedback.
+- `dist/surface-motion.js`: shared, gated material lighting and visual-surface depth; copy remains still.
+- `dist/homepage-copy.js`: authored Chinese and English copy for the current site direction.
+- `dist/hero-gallery.js`: decoded photo crossfades, manual navigation, pause controls, keyboard/touch input and gated autoplay.
+- `dist/elastic-details.js` and `elastic-details.css`: cursor impulses and damped return for existing noninteractive decorative details; no new objects or scene.
+- `dist/ambient-motion.js` and `ambient-motion.css`: independent grayscale background zoom, scroll-drawn curves and hover cues; content and App screens never scale.
+- `dist/ambient-audio.js`: quiet loop playback, browser autoplay recovery, explicit on/off control, reading/visibility suspension and a stored visit preference.
 - `dist/content.js`: reading content and project details.
 - `dist/i18n.js`: complete authored Chinese and English interface copy.
-- `dist/motion.js`: one-time chapter entrances, a damped spring for the mountain view, and visual writing previews.
+- `dist/motion.js`: first-heading entrance, pointer previews, interrupted magnetic feedback and motion initialization.
+- `dist/scroll-motion.js`: native-scroll timelines for segmented headings, passage emphasis, content entrances and section rules.
+- `dist/pointer-field.js` and `pointer-field.css`: drifting, diffusing grayscale cursor fog, region caustics and image refraction in one lazy WebGL renderer; App screens are cleared after the final composite.
 - `dist/journal.js`: representative race results and the latest three articles, with older articles expandable in place.
 - `dist/article-layout.js`: complete bilingual text reading, source headings, and safe legacy-layout validation.
 - `dist/article-utils.js`: original-time article sorting and full-edition reading estimates.
@@ -48,9 +59,15 @@ Open `http://127.0.0.1:4173`. The same owner-password login is used in local dev
 
 ## Content and assets
 
-The introduction and three reading pieces are first drafts prepared from Wilf's stated interests, previous writing, and Aevum's product documentation. They are editable content, not newly confirmed autobiographical statements. The race piece is an edited excerpt, not a complete race report. The Aevum link comes from its repository documentation and opens its existing login-capable application.
+The introduction follows Wilf's confirmed site direction and stated interests. The legacy static reading drafts remain accessible through their existing direct links; published race reports use the complete imported source described below. The Aevum link comes from its repository documentation and opens its existing login-capable application.
 
 The mountain landscape is original AI-generated visual artwork, not a photograph of Wilf or a particular race/location. The prompt and original are retained in the local workspace `.work-assets/`. Product logos were copied from the local Aevum repository.
+
+The rejected procedural landscape and exploration mode remain removed. At Wilf's latest request, the hero rotates only two supplied photographs: the night portrait from `d923fc52dd583db246411718bd4059de.jpg` and the lion-dance portrait from `23cdf9d1cba73dd53ead9b2a04216580.jpg`, supplied from his Desktop on 2026-10-02. The previous first photo and all its WebP variants were removed from the website. `dist/assets/hero/` contains four responsive WebP copies (about 461 KB), resized without altering their content or adding metadata. The Desktop originals remain untouched. Photographs retain their original colors within the grayscale interface; no race results or location claims are inferred from them. The retained mountain artwork is only a legacy reading-preview asset.
+
+Wilf clarified that the reference's cursor-pushed movement belongs on existing, unimportant noninteractive details. It is implemented as elastic feedback on small labels and decorative rings, without adding a sculpture frame, 3D objects or a Three.js dependency. Material grain is generated inline with SVG turbulence. Diffusing fog, image refraction, scroll typography variants, background zoom and hover feedback are original implementations informed by direct observation of [Lusion](https://lusion.co/); no Lusion models, media, music or source are bundled. Decorative movement uses fine pointers and pauses during reading, keyboard browsing, reduced motion, hidden/inactive pages and when offscreen.
+
+Background music is [“New Direction” by Kevin MacLeod](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100677), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The author permits streaming, redistribution and editing with credit. `dist/assets/audio/ambient.m4a` is a 156-second stereo AAC loop (about 1.93 MB), edited with a four-second crossfade from the original track and played quietly at volume 0.14. Visible bilingual footer credits state the title, author, source, license and edit. Source and modification details are in [audio credits](dist/assets/audio/CREDITS.md). Replace that file and update the credit to change the recording. Playback is attempted on entry; [browser autoplay policies](https://developer.chrome.com/blog/autoplay) can require a first click/tap. The header sound control always reflects actual playback; turning it off persists, and reading/hidden pages pause it.
 
 The App guide includes 13 main views and the shared native Settings screen in Chinese and English: 28 lossless PNG captures, covering 17 page states per language. Each image is captured at 1236×2718 pixels from the App's 412×906 phone baseline, including its original five-entry product/settings navigation. Measured button overlays provide internal navigation; no second footer is drawn by the website. The isolated Aevum source copy uses fictional training, races, ledger entries, notes, weather, six chat messages, and twelve memories grouped across the four products. English fixture titles and fixed labels are authored in the isolated capture copy; the original Aevum checkout is unchanged. The images contain no personal finances or notes and do not connect to private services. This is a browsable interface tour: editing, AI requests, imports, and cloud sync remain available in the linked application.
 
@@ -70,13 +87,23 @@ On 2026-10-02 Wilf supplied three saved WeChat HTML articles from his Desktop. T
 
 See [Aevum integration assessment](docs/AEVUM-INTEGRATION.md) for the proposed later synchronization boundary.
 
-The opening greeting runs once per browser-tab session. Links have contextual pointer feedback, the writing preview follows the pointer, and buttons have a damped magnetic response and a rolling fill. App images are decoded before display, active products prewarm their internal views, and only the latest product/view/language selection can commit. A loading message replaces the old image while an uncached screen is prepared. Prepared screens update immediately with a 180 ms entrance; keyboard and reduced-motion use stay immediate. The right-hand product entries always open Dashboard, Training / Activities, Ledger / Flow, and Calendar respectively. The native footer remembers each product's last normal view and provides the shared Settings page; Settings does not overwrite that remembered view. Keyboard focus follows internal page changes. Navigation follows the same About / Races / Projects / Writing order as the page and measures section positions during scrolling.
+The homepage uses normal document browsing with About / Trails / Making navigation and direct reading links. The exploration UI, invitation, discovered interactions and landscape scene download are removed. Old section and reading links remain valid. Language and theme preferences are preserved. The grayscale palettes cover buttons, selected navigation, hover, focus, reader and browser theme color.
+
+The motion system keeps native scrolling. Chapter headings unfold through line masks by character or word, passages brighten progressively, content surfaces enter and section rules extend with scroll position. Reveal endpoints are capped at the actual reachable document bottom, so footer text is fully visible at the end of the page. Stationary scroll does not complete an unfinished reveal; a completed passage remains readable. These display-only spans preserve authored wording and line breaks and rebuild without nesting when language changes. The full reading dialog remains stable. Neutral material light, visual-plane depth, magnetic controls and article/race previews accompany the timeline. Keyboard use, reduced motion and reading immediately show full copy; hidden pages and offscreen surfaces do not keep rendering.
+
+Mouse movement leaves a silver liquid ribbon across the homepage. The product visual carries local water-light caustics; eligible same-origin images receive local GPU refraction, and small logos follow the pointer lightly. The readable App screen is excluded from image and region passes and cleared from the final canvas, including trails entering from outside its boundary. The App device has no decorative tilt or light layer. Hero photos use their own crossfade and are excluded from GPU image redraws. Actual projected image corners retain parent perspective and clipping. Original image nodes, alt text and measured App hotspots remain intact. The one lazy renderer caps its frame at 1.6M pixels, each image at 1M pixels / 1536px long edge and all retained textures at 2.4M pixels / six entries. Decode identity checks discard superseded images, and offscreen textures are released. At idle or during keyboard, reading, reduced motion, coarse-pointer, visibility or blur gates, the overlay clears and stops. Shader failure and context loss retain normal browsing and original images.
+
+The hero places photographs beside the authored introduction on desktop and below it on phones. Photos crossfade every 5.8 seconds; only a decoded image can replace the current one. Previous/next buttons, left/right keys, touch swipes and an explicit pause/play button remain available. Hover, reading, hidden pages, blur and offscreen state suspend autoplay without resetting the current photo or a manual pause. Keyboard use and manual navigation pause autoplay; reduced motion disables it. Language changes preserve the photo and pause state while translating controls and alt text. A static first photo remains usable without JavaScript.
+
+Links retain contextual pointer feedback and article previews. App images are decoded before display, active products prewarm their internal views, and only the latest product/view/language selection can commit. A loading message replaces the old image while an uncached screen is prepared. Prepared screens update immediately with a 180 ms entrance; keyboard and reduced-motion use stay immediate. The right-hand product entries always open Dashboard, Training / Activities, Ledger / Flow, and Calendar respectively. The native footer remembers each product's last normal view and provides the shared Settings page; Settings does not overwrite that remembered view. Keyboard focus follows internal page changes.
 
 ## Verification
 
 Verify both languages and both themes at phone, tablet, and large desktop widths; language and theme persistence; article/project reading; language switching inside the reader; Escape and browser Back; keyboard focus; and reduced motion. Desktop mobile emulation does not constitute physical-device verification.
 
-The reading scale is fluid: main body text is 18px on small screens and grows to 22px on large desktop screens with the browser's normal 16px base. The content area also expands on large displays. Motion is for this occasional personal-site visit: an opening reveal, one entrance per chapter, subtle spring-driven image depth, a navigation indicator, and writing previews on wide screens with a mouse. Reduced-motion preferences remove movement, and keyboard actions remain immediate.
+The reading scale is fluid: main body text is 18px on small screens and grows to 22px on large desktop screens with the browser's normal 16px base. The content area also expands on large displays. Verify scroll-controlled progress both while stationary and when reversing an unfinished reveal, pointer effects in both themes, dynamic App image changes, and motion cleanup. Reduced-motion preferences stop ambient movement, and keyboard actions remain immediate.
+
+The current 2026-10-02 normal-browsing revision supersedes the rejected Browse/Explore design. Its scope and verification are recorded in [experience acceptance](docs/EXPERIENCE-ACCEPTANCE.md). The following paragraphs record earlier releases; their results are historical evidence, not a claim that every earlier workflow was repeated for this redesign.
 
 The first release passed layout checks at 360–1440px in both themes, theme persistence, all four reading dialogs, direct reading links, keyboard access, browser Back, and reduced motion. Screenshots and recorded results are in `verification/`. No browser errors or warnings were recorded.
 
@@ -116,8 +143,8 @@ Contextual hover circles are limited to project entry, notes, articles, and race
 
 ## Loading and transitions
 
-The first-visit greeting gates the page before its first paint. It is skippable, runs once per session, and is bypassed for reduced motion and direct content links. A four-second fallback releases the page if the main module fails to start; no-JavaScript visitors keep the static page and project image.
+The homepage paints immediately using stored language/theme preferences. It has no blocking greeting, exploration invitation or optional scene download. Typography entrances leave the content readable if JavaScript or observation fails.
 
 Race and journal lists, direct article links, app previews, media, and owner management show feedback while requests are pending. Indeterminate progress bars describe waiting without inventing a completion percentage. Slow reads explain the delay after five seconds; reads, including response bodies, time out after twenty seconds and offer a manual retry. Owner writes have a sixty-second deadline and are never automatically replayed; an uncertain outcome asks the owner to reload and confirm the result. Direct Blob uploads use actual byte progress.
 
-The race archive requests only published races through `/api/entries?kind=race`, preserving the public visibility rules while avoiding article bodies in that response. The loading checks cover the first-paint gate, request deadlines, failure and retry states, keyboard focus recovery, both languages and themes, and browser widths of 360, 768, and 1440 pixels. Physical-phone testing remains unverified.
+The race archive requests only published races through `/api/entries?kind=race`, preserving the public visibility rules while avoiding article bodies in that response. The loading checks cover immediate first paint, stored preferences, denied storage, request deadlines, and no automatic write replay. Browser verification covers failure/retry, keyboard focus recovery, both languages and themes, and widths of 360, 768, and 1440 pixels. Physical-phone testing remains unverified.

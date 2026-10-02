@@ -84,6 +84,6 @@ function load(event){
   })();
   return request;
 }
-document.querySelector('.site-nav a[href="/#races"]').setAttribute('aria-current','page');
+document.querySelector('.site-nav a[href="/#trails"]').setAttribute('aria-current','page');
 const header=document.querySelector('.site-header');new ResizeObserver(()=>root.style.setProperty('--race-header-bottom',Math.ceil(header.getBoundingClientRect().bottom)+'px')).observe(header);
 syncPreferences();await load();

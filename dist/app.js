@@ -1,8 +1,11 @@
 import { notesByLanguage } from './content.js';
 import { copy } from './i18n.js';
-import { initMotion, initWelcome } from './motion.js';
+import { initMotion } from './motion.js';
 import { initJournal, getEntry, renderJournal, journalState } from './journal.js';
 import { initAppPreview, updateAppPreview } from './app-preview.js';
+import { initHeroGallery } from './hero-gallery.js';
+import { initAmbientMotion } from './ambient-motion.js';
+import { initAmbientAudio } from './ambient-audio.js';
 import {renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
 
 const root = document.documentElement;
@@ -13,9 +16,11 @@ const themeColor = document.querySelector('meta[name="theme-color"]');
 const dialog = document.querySelector('.reader-dialog');
 const readerTitle = document.querySelector('#reader-title');
 const readerBody = document.querySelector('#reader-body');
-let returnHash = '#writing';
+let returnHash = '#trails';
 let readingKey = null;
 let routing = false;
+let readerOrigin = null;
+const readingDestination = key => ['aevum','memory'].includes(key) ? '#making' : ['about','waypoint'].includes(key) ? '#about' : getEntry(key)?.kind === 'race' ? '#races' : '#writing';
 
 const language = () => root.dataset.language === 'en' ? 'en' : 'zh';
 const words = () => copy[language()];
@@ -26,7 +31,7 @@ function syncThemeUI() {
   const label = dark ? words().toLight : words().toDark;
   themeButton.setAttribute('aria-label', label);
   themeButton.title = label;
-  themeColor.content = dark ? '#101113' : '#f5f6f8';
+  themeColor.content = dark ? '#101010' : '#f5f5f5';
 }
 
 function applyLanguage(next, announce = false) {
@@ -39,6 +44,7 @@ function applyLanguage(next, announce = false) {
   });
   document.querySelectorAll('[data-i18n-aria]').forEach(element => element.setAttribute('aria-label', text[element.dataset.i18nAria]));
   document.querySelectorAll('[data-i18n-alt]').forEach(element => element.alt = text[element.dataset.i18nAlt]);
+  document.querySelectorAll('[data-i18n-roledescription]').forEach(element => element.setAttribute('aria-roledescription', text[element.dataset.i18nRoledescription]));
   document.querySelector('meta[name="description"]').content = text.description;
   document.title = text.pageTitle;
   languageButtons.forEach(button => {
@@ -150,6 +156,7 @@ function renderNote(key, keyboard = false, preservePosition = false) {
     root.classList.add('reading');
     document.querySelector('.note-preview').classList.remove('is-visible');
     dialog.showModal();
+    document.dispatchEvent(new Event('waypoint-reader'));
   }
   dialog.scrollTop = preservePosition ? position : 0;
   return true;
@@ -171,13 +178,13 @@ function renderPendingNote(key) {
     }
     readerBody.append(error);
   }
-  if(!dialog.open){root.classList.add('reading');dialog.showModal();}
+  if(!dialog.open){root.classList.add('reading');dialog.showModal();document.dispatchEvent(new Event('waypoint-reader'));}
 }
 
 function applyRoute() {
   const match = location.hash.match(/^#(read|entry)\/([a-z0-9-]+)$/i);
   if (match && (notes()[match[2]] || getEntry(match[2]))) {
-    if (!dialog.open && !history.state?.reading) returnHash = match[2] === 'aevum' ? '#projects' : getEntry(match[2])?.kind === 'race' ? '#races' : '#writing';
+    if (!dialog.open && !history.state?.reading) returnHash = readingDestination(match[2]);
     renderNote(match[2]);
   } else if(match&&match[1]==='entry') {
     if(!dialog.open)returnHash=match[2].startsWith('race-')?'#races':'#writing';
@@ -195,18 +202,36 @@ document.addEventListener('click', event => {
   const key = link.getAttribute('href').split('/')[1];
   if (!notes()[key] && !getEntry(key)) return;
   event.preventDefault();
-  if (!dialog.open) returnHash = /^#(read|entry)\//.test(location.hash) ? (key === 'aevum' ? '#projects' : getEntry(key)?.kind === 'race' ? '#races' : '#writing') : location.hash;
+  readerOrigin = link;
+  if (!dialog.open) returnHash = /^#(read|entry)\//.test(location.hash) ? readingDestination(key) : location.hash;
   history.pushState({ reading: true }, '', (notes()[key] ? '#read/' : '#entry/') + key);
   renderNote(key, event.detail === 0);
 });
 document.querySelector('.reader-close').addEventListener('click', () => dialog.close());
 dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
 dialog.addEventListener('close', () => {
+  const fallbackHash = readingDestination(readingKey);
+  const readHash = '#' + (notes()[readingKey] ? 'read/' : 'entry/') + readingKey;
   clearLoading(readerBody);clearMedia(readerBody);
   root.classList.remove('reading');
   document.title = words().pageTitle;
   readingKey = null;
   if (!routing && /^#(read|entry)\//.test(location.hash)) history.replaceState(null, '', location.pathname + location.search + returnHash);
+  document.dispatchEvent(new Event('waypoint-reader'));
+  requestAnimationFrame(() => {
+    if(dialog.open)return;
+    const active=document.activeElement;
+    if(active!==document.body&&!dialog.contains(active)&&active?.getClientRects().length)return;
+    const currentOrigin = readerOrigin?.isConnected && readerOrigin.getAttribute('href') === readHash
+      ? readerOrigin : document.querySelector('a[href="' + readHash + '"]');
+    if(currentOrigin?.getClientRects().length)currentOrigin.focus({preventScroll:true});
+    else {
+      const anchor = /^#[a-z][\w-]*$/i.test(returnHash) ? returnHash : fallbackHash;
+      const section=document.querySelector(anchor);
+      const heading=section?.querySelector('h2')||document.querySelector('#trails-heading');
+      if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
+    }
+  });
 });
 window.addEventListener('popstate', applyRoute);
 window.addEventListener('hashchange', applyRoute);
@@ -243,4 +268,8 @@ document.addEventListener('journal-ready',scheduleNavigation);
 scheduleNavigation();
 initJournal();
 initAppPreview();
-initWelcome().then(initMotion);
+initMotion();
+initHeroGallery();
+initAmbientMotion();
+initAmbientAudio();
+import('./elastic-details.js').then(module => module.initElasticDetails()).catch(() => {});

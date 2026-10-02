@@ -9,7 +9,8 @@ const store=new LocalStore(resolve(import.meta.dirname,'../.local/content'));
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
 const port = Number(process.env.WAYPOINT_PORT || 4173);
-const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp' };
+const host = process.env.WAYPOINT_HOST || '127.0.0.1';
+const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.ogg': 'audio/ogg' };
 
 const server = createServer(async (request, response) => {
   try {
@@ -40,6 +41,25 @@ const server = createServer(async (request, response) => {
       return;
     }
     const body = await readFile(path);
+    if (['.mp3','.m4a','.ogg'].includes(extname(path))) {
+      const headers = {'Content-Type': mime[extname(path)], 'Cache-Control': 'no-cache', 'Accept-Ranges': 'bytes'};
+      if (request.headers.range) {
+        const match = /^bytes=(\d*)-(\d*)$/.exec(request.headers.range);
+        const start = match?.[1] ? Number(match[1]) : Math.max(0, body.length - Number(match?.[2]));
+        const end = match?.[1] && match?.[2] ? Math.min(Number(match[2]), body.length - 1) : body.length - 1;
+        if (!match || !Number.isSafeInteger(start) || start < 0 || start >= body.length || end < start) {
+          response.writeHead(416, {...headers, 'Content-Range': 'bytes */' + body.length}).end();
+          return;
+        }
+        const chunk = body.subarray(start, end + 1);
+        response.writeHead(206, {...headers, 'Content-Range': `bytes ${start}-${end}/${body.length}`, 'Content-Length': chunk.length});
+        response.end(request.method === 'HEAD' ? undefined : chunk);
+        return;
+      }
+      response.writeHead(200, {...headers, 'Content-Length': body.length});
+      response.end(request.method === 'HEAD' ? undefined : body);
+      return;
+    }
     response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream', 'Cache-Control': 'no-cache', 'Content-Length': body.length });
     response.end(request.method === 'HEAD' ? undefined : body);
   } catch (error) {
@@ -47,4 +67,4 @@ const server = createServer(async (request, response) => {
   }
 });
 server.on('error', error => { console.error(error.message); process.exitCode = 1; });
-server.listen(port, '127.0.0.1', () => console.log(`Waypoint is running at http://127.0.0.1:${port}`));
+server.listen(port, host, () => console.log(`Waypoint is running at http://${host}:${port}`));

@@ -1,0 +1,5 @@
+/* Temporary promotion exists only while an existing detail is settling. */
+.elastic-detail.is-elastic-moving {will-change:translate,rotate;}
+@media (prefers-reduced-motion:reduce) {
+  .elastic-detail.is-elastic-moving {will-change:auto;}
+}

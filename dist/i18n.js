@@ -1,3 +1,4 @@
+import {homepageCopy} from './homepage-copy.js';
 // Both editions are authored locally; switching language never sends visitor data.
 export const copy = {
   zh: {
@@ -121,3 +122,5 @@ export const copy = {
     raceTenK:'10K',raceHalf:'Half marathon',raceFull:'Marathon',raceSpartan:'Spartan',raceHyrox:'HYROX',raceSubtype:'Division / tier',raceRecorded:'recorded races',raceFormats:'race formats',raceYears:'seasons on the course',raceLatestRecord:'Latest record',racePersonalBest:'Personal best',raceHighestTier:'Highest tier',raceResultMissing:'Result not recorded',raceShowcaseNote:'A few representative races here. Every result is in the race archive.',raceViewAll:'Explore all {count} races',raceArchiveTitle:'The race archive.',raceArchiveDocumentTitle:'Race archive · Waypoint',raceArchiveIntro:'City roads, mountain trails, and obstacle courses. Browse each start and its recorded result by race format.',raceAll:'All races',raceFilterLabel:'Filter by race format',raceFilterSummary:'{category} · {count} races',raceInYear:'races',raceMediaEmpty:'Photos and certificates have not been added yet.',raceBackHome:'Back to the personal site',raceArchiveLink:'Race archive'
   }
 };
+
+for (const locale of ['zh','en']) Object.assign(copy[locale],homepageCopy[locale]);

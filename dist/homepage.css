@@ -1,0 +1,181 @@
+/* Native browsing with material depth; the independent decorative backdrop never moves copy. */
+.waypoint-home {overflow-x:clip;}
+.waypoint-home .section-shell,.waypoint-home .header-inner {width:calc(100% - clamp(40px,8vw,144px));max-width:1440px;}
+.waypoint-home .header-inner {height:88px;}
+.waypoint-home .site-header {border-bottom:1px solid var(--line);}
+.waypoint-home .brand {font-size:1.125rem;font-weight:550;letter-spacing:-.04em;}
+.waypoint-home .site-nav {border:0;box-shadow:none;background:transparent;}
+.waypoint-home .site-nav a {padding:10px 24px;font-size:1rem;}
+.waypoint-home .header-controls {gap:10px;}
+.waypoint-home .editorial-hero {display:block;width:100%;max-width:none;min-height:calc(100svh - 88px);padding:0;border-bottom:1px solid var(--line);overflow:clip;}
+.waypoint-home .hero-copy {padding:64px 0;min-height:calc(100svh - 170px);display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,1fr);gap:clamp(30px,5vw,80px);align-items:center;}
+.hero-writing {min-width:0;}
+.waypoint-home .hero-eyebrow {font-size:.75rem;letter-spacing:.12em;gap:12px;margin-bottom:35px;animation:none;}
+.live-dot {width:5px;height:5px;background:var(--text);border-radius:50%;flex:none;}
+.waypoint-home h1 {display:block;font-size:clamp(4rem,7.2vw,7.3rem);font-weight:450;line-height:1.15;letter-spacing:-.065em;margin:0;animation:none;}
+.waypoint-home h1 .type-ink>span {color:var(--muted);background:linear-gradient(165deg,var(--text),var(--muted) 44%,var(--text) 75%,var(--muted));background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+html[lang="en"] .waypoint-home h1 {font-size:clamp(2.8rem,5.4vw,5.7rem);line-height:1.12;letter-spacing:-.055em;}
+.type-line {display:block;overflow:clip;padding-block:.07em;margin-block:-.07em;}
+.type-ink {display:block;transform-origin:0 100%;}
+.scroll-unit {display:inline-block;transform-origin:50% 100%;}
+.scroll-word {display:inline-block;}
+.scroll-heading,.scroll-passage,.scroll-surface {transition:none;}
+.scroll-surface[data-scroll-progress]:not([data-scroll-progress="0.000"],[data-scroll-progress="1.000"]) {will-change:transform;}
+.scroll-heading .muted-heading {color:var(--muted);}
+.scroll-surface:has(>.scroll-rule) {position:relative;}
+.scroll-rule {position:absolute;left:0;right:0;bottom:-14px;height:1px;background:var(--line-strong);transform-origin:left;pointer-events:none;}
+.hero-bottom {display:flex;flex-direction:column;align-items:flex-start;gap:30px;margin-top:36px;}
+.waypoint-home .hero-statement {margin:0;font-size:1.125rem;line-height:1.7;animation:none;}
+.waypoint-home .hero-intro {font-size:1.125rem;line-height:1.8;margin:8px 0 0;color:var(--muted);animation:none;}
+.waypoint-home .hero-actions {display:flex;gap:28px;margin:0;flex-wrap:wrap;}
+.hero-link {display:flex;align-items:center;gap:30px;min-height:48px;font-size:.9375rem;padding:8px 0;border-bottom:1px solid var(--line-strong);}
+.hero-link-secondary {color:var(--muted);}
+.hero-link>span:last-child {font-size:1.4rem;}
+.hero-gallery {position:relative;min-width:0;width:100%;height:clamp(510px,calc(100svh - 280px),860px);margin:0;border-radius:18px;overflow:hidden;isolation:isolate;background:#171717;box-shadow:0 24px 70px rgb(0 0 0 / 12%);touch-action:pan-y pinch-zoom;}
+.hero-gallery-track,.hero-photo {position:absolute;inset:0;}
+.hero-gallery-track.material-surface {position:absolute;inset:0;transform:scale(1.035);}
+.hero-gallery-track>.material-light {z-index:2;background:linear-gradient(115deg,transparent 20%,rgb(255 255 255 / 48%) 48%,transparent 76%);}
+.hero-gallery-track.material-surface::after {display:none;}
+.hero-photo {opacity:0;transition:opacity 900ms var(--ease-out);pointer-events:none;}
+.hero-photo.is-active {opacity:1;pointer-events:auto;}
+.hero-photo img {display:block;width:100%;height:100%;object-fit:cover;object-position:50% 28%;}
+.hero-photo[data-photo="lion"] img {object-position:63% 25%;}
+.hero-gallery-bar {position:absolute;inset:auto 0 0;padding:28px 18px 18px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(transparent,rgb(0 0 0 / 76%));color:#fff;}
+.hero-gallery-label {font-size:.6875rem;letter-spacing:.11em;white-space:nowrap;}
+.hero-gallery-controls {display:flex;gap:4px;align-items:center;}
+.hero-gallery-controls[hidden] {display:none;}
+.hero-gallery-controls button {width:44px;height:44px;padding:0;display:grid;place-items:center;border:1px solid rgb(255 255 255 / 35%);border-radius:50%;background:rgb(0 0 0 / 35%);color:#fff;cursor:pointer;transition:background-color 180ms ease,transform 140ms var(--ease-out);}
+.hero-gallery-controls button:active {transform:scale(.96);background:rgb(255 255 255 / 20%);}
+.hero-gallery-controls button:focus-visible {outline:2px solid #fff;outline-offset:3px;}
+.hero-gallery-controls button:disabled {opacity:.45;cursor:default;}
+.hero-gallery-count {font-size:.75rem;min-width:51px;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.hero-gallery-count>span {color:rgb(255 255 255 / 65%);}
+.hero-gallery-pause svg {width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;}
+.hero-gallery-pause .gallery-play-icon {display:none;fill:currentColor;stroke:none;}
+.hero-gallery.is-paused .gallery-pause-icon {display:none;}
+.hero-gallery.is-paused .gallery-play-icon {display:block;}
+.hero-gallery.is-instant .hero-photo,html[data-input="keyboard"] .hero-photo {transition:none;}
+.waypoint-home .hero-footnote {padding:24px 0;display:flex;align-items:center;gap:24px;border:0;border-top:1px solid var(--line);font-size:.75rem;}
+.hero-footnote a {margin-left:auto;}
+.hero-coordinate {font-variant-numeric:tabular-nums;letter-spacing:.05em;}
+.waypoint-home .about-section,.waypoint-home .trails-section,.waypoint-home .projects-section {padding-block:120px 40px;position:relative;}
+.waypoint-home .section-topline {margin-bottom:64px;}
+.waypoint-home .section-aside {font-size:.875rem;}
+.waypoint-home h2 {font-size:clamp(2.1rem,4.1vw,4.5rem);font-weight:450;line-height:1.28;letter-spacing:-.055em;}
+.waypoint-home .about-layout {grid-template-columns:1fr 1fr;gap:8vw;}
+.about-description p {font-size:clamp(1.125rem,1.45vw,1.35rem);line-height:1.95;}
+.about-description p+p {margin-top:24px;color:var(--muted);}
+.text-link {display:inline-flex;gap:30px;margin-top:30px;padding-bottom:8px;border-bottom:1px solid var(--line-strong);font-size:1rem;}
+.waypoint-home .about-grid {grid-template-columns:1fr 1fr;gap:0;margin-top:70px;border-top:1px solid var(--line);}
+.waypoint-home .about-item {padding:42px 5vw 30px 0;border:0;border-radius:0;background:transparent;overflow:hidden;}
+.waypoint-home .about-item+.about-item {padding-left:5vw;border-left:1px solid var(--line);}
+.waypoint-home .about-item .item-number {position:static;font-size:.75rem;letter-spacing:.12em;}
+.waypoint-home .about-item h3 {font-size:1.8rem;font-weight:500;margin:26px 0 16px;}
+.waypoint-home .about-item p {font-size:1.1rem;line-height:1.9;max-width:26em;}
+.about-arrow {position:absolute;right:20px;top:38px;font-size:1.5rem;}
+.waypoint-home .item-tag {margin-top:26px;font-size:.75rem;}
+.waypoint-home .section-heading-row {align-items:flex-end;gap:6vw;margin-bottom:64px;}
+.section-description {max-width:28em;color:var(--muted);font-size:1.125rem;line-height:1.9;}
+.trail-reading-heading {display:flex;justify-content:space-between;gap:16px;align-items:center;padding:22px 0;border-top:1px solid var(--line);}
+.waypoint-home .article-card {padding-block:32px;border-color:var(--line);grid-template-columns:minmax(120px,1fr) minmax(0,4fr) auto;position:relative;}
+.waypoint-home .article-card h3 {font-size:clamp(1.35rem,2vw,1.9rem);font-weight:500;line-height:1.6;}
+.waypoint-home .article-card-excerpt {line-height:1.9;font-size:1rem;max-width:48em;}
+.waypoint-home .article-date {font-size:.875rem;}
+.waypoint-home .races-section {padding-block:75px 0;}
+.race-subheading {display:flex;justify-content:space-between;gap:32px;align-items:baseline;border-top:1px solid var(--line);padding-block:36px 26px;}
+.race-subheading h3 {font-size:1.5rem;font-weight:450;}
+.race-subheading p {font-size:1rem;color:var(--muted);}
+.waypoint-home .race-overview {display:none;}
+.waypoint-home .race-spotlight {background:var(--surface-raised);}
+.waypoint-home .race-feature-result {font-size:2rem;color:var(--muted);}
+.waypoint-home .race-highlight-result {font-size:1.5rem;}
+.waypoint-home .race-showcase-footer p {font-size:.875rem;}
+.waypoint-home .project-card {border-radius:24px;background:var(--project-bg);box-shadow:inset 0 1px 0 rgb(255 255 255 / 7%),0 30px 80px rgb(0 0 0 / 12%);}
+.waypoint-home .project-copy {padding:clamp(28px,4vw,64px);}
+.waypoint-home .project-copy h3 {font-weight:450;}
+.waypoint-home .project-description {line-height:1.95;}
+.waypoint-home .project-visual {background:linear-gradient(125deg,var(--surface-raised),var(--project-bg) 42%,var(--surface));transform-style:preserve-3d;}
+.legacy-anchor {position:absolute;top:0;}
+.material-surface {position:relative;isolation:isolate;overflow:clip;}
+.material-light {position:absolute;inset:-50%;pointer-events:none;z-index:0;opacity:0;background:radial-gradient(ellipse at 50% 45%,rgb(255 255 255 / 16%),transparent 52%);will-change:transform;}
+[data-theme="light"] .material-light {background:radial-gradient(ellipse at 50% 45%,rgb(255 255 255 / 85%),transparent 55%);}
+.project-visual.material-surface .material-light {background:linear-gradient(120deg,transparent 35%,rgb(255 255 255 / 12%) 48%,transparent 58%);}
+.material-surface>:not(.material-light) {z-index:1;}
+
+.material-surface::after {content:'';position:absolute;inset:0;pointer-events:none;z-index:2;border-radius:inherit;opacity:.035;filter:grayscale(1);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.7'/%3E%3C/svg%3E");}
+.waypoint-home .site-footer {margin-top:110px;border-top:1px solid var(--line);}
+.waypoint-home .footer-main {padding-block:70px;}
+.waypoint-home .footer-statement {font-weight:450;}
+.waypoint-home .footer-statement>.type-line {color:inherit;}
+.waypoint-home .footer-statement .type-ink>span:not(.scroll-unit) {color:var(--muted);}
+.waypoint-home .reader-dialog {border-radius:22px;}
+.waypoint-home .reader-content h2 {font-size:clamp(1.9rem,3.2vw,3rem);line-height:1.5;}
+.waypoint-home .reader-body>p {font-size:clamp(1.125rem,1.45vw,1.375rem);}
+.waypoint-home .reader-dialog::backdrop {background:rgb(0 0 0 / 66%);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+.waypoint-home :is(button,.button) {user-select:none;-webkit-user-select:none;}
+@media(hover:hover) and (pointer:fine) {
+  .hero-gallery-controls button:hover {background:rgb(255 255 255 / 20%);}
+  .hero-link:hover>span:last-child,.about-item:hover .about-arrow {transform:translate(3px,-3px);}
+  .hero-link>span:last-child,.about-arrow {transition:transform 180ms var(--ease-out);}
+  .waypoint-home .article-card:hover {background:var(--surface);}
+}
+@media(max-width:1100px) {
+  .waypoint-home .about-layout {gap:40px;}
+  .waypoint-home .section-heading-row {align-items:flex-start;}
+  .hero-bottom {flex-direction:column;align-items:flex-start;gap:26px;}
+}
+@media(max-width:700px) {
+  .waypoint-home .header-inner {height:112px;min-height:112px;align-items:flex-start;padding-top:14px;}
+  .waypoint-home .site-nav {position:absolute;top:auto;bottom:7px;left:0;right:0;transform:none;display:flex;justify-content:center;margin:0;width:auto;}
+  .waypoint-home .site-nav a {padding:8px 22px;min-height:40px;font-size:.875rem;}
+  .waypoint-home .nav-indicator {display:none;}
+  .waypoint-home .site-nav a[aria-current] {background:var(--surface-raised);}
+  .waypoint-home .header-controls {gap:6px;}
+  .waypoint-home .theme-toggle,.waypoint-home .language-toggle {width:40px;height:40px;min-height:40px;}
+  .waypoint-home .editorial-hero {min-height:calc(100svh - 112px);}
+  .waypoint-home .hero-copy {min-height:0;padding-top:48px;padding-bottom:30px;grid-template-columns:1fr;gap:36px;}
+  .hero-gallery {height:clamp(370px,114vw,560px);border-radius:14px;}
+  .hero-gallery-bar {padding:24px 12px 12px;gap:8px;}
+  .hero-gallery-label {font-size:.625rem;letter-spacing:.06em;}
+  .waypoint-home h1 {font-size:clamp(3.5rem,16vw,5.4rem);line-height:1.17;}
+  html[lang="en"] .waypoint-home h1 {font-size:clamp(2.8rem,10.5vw,4.5rem);line-height:1.17;}
+  .waypoint-home .hero-eyebrow {font-size:.6875rem;margin-bottom:30px;}
+  .hero-bottom {margin-top:35px;gap:28px;}
+  .waypoint-home .hero-statement,.waypoint-home .hero-intro {font-size:1rem;}
+  .waypoint-home .hero-actions {gap:26px;}
+  .hero-link {font-size:.875rem;gap:20px;}
+  .hero-coordinate {display:none;}
+  .waypoint-home .hero-footnote {font-size:.6875rem;gap:10px;padding-block:22px;}
+  .waypoint-home .about-section,.waypoint-home .trails-section,.waypoint-home .projects-section {padding-top:78px;}
+  .waypoint-home .section-topline {margin-bottom:36px;gap:16px;}
+  .waypoint-home .section-aside {font-size:.75rem;text-align:right;max-width:13em;}
+  .waypoint-home .about-layout {grid-template-columns:1fr;gap:30px;}
+  .waypoint-home h2 {font-size:2.1rem;line-height:1.4;}
+  .about-description p {font-size:1.125rem;line-height:1.9;}
+  .waypoint-home .about-grid {margin-top:42px;grid-template-columns:1fr;}
+  .waypoint-home .about-item {padding:30px 35px 30px 0;}
+  .waypoint-home .about-item+.about-item {padding-left:0;border-left:0;border-top:1px solid var(--line);}
+  .waypoint-home .about-item h3 {font-size:1.5rem;margin:20px 0 12px;}
+  .waypoint-home .about-item p {font-size:1rem;}
+  .waypoint-home .section-heading-row {flex-direction:column;gap:24px;margin-bottom:38px;}
+  .section-description {font-size:1rem;line-height:1.9;}
+  .trail-reading-heading {align-items:flex-start;}
+  .waypoint-home .article-card {grid-template-columns:1fr;gap:12px;padding-block:28px;}
+  .waypoint-home .article-card h3 {font-size:1.35rem;}
+  .waypoint-home .article-card .journal-card-cta {justify-self:end;}
+  .race-subheading {display:block;padding-block:28px 24px;}
+  .race-subheading p {margin-top:12px;font-size:.875rem;}
+  .waypoint-home .races-section {padding-top:40px;}
+  .waypoint-home .project-card {border-radius:18px;}
+  .waypoint-home .project-visual {min-height:390px;}
+  .waypoint-home .reader-toolbar {padding:16px;}
+  .waypoint-home .reader-controls {gap:8px;}
+  .waypoint-home .reader-content {padding:32px 22px 44px;}
+  .waypoint-home .reader-content h2 {font-size:1.8rem;}
+}
+@media(prefers-reduced-motion:reduce) {.type-ink,.scroll-unit,.scroll-surface,.material-surface,.material-light {transform:none!important;}.scroll-unit,.scroll-word,.scroll-surface {opacity:1!important;}.material-light {display:none;}}
+@media(prefers-reduced-motion:reduce) {.hero-photo {transition:none;}}
+html[data-input="keyboard"] .type-ink {transform:none!important;}
+html[data-input="keyboard"] :is(.scroll-unit,.scroll-surface) {transform:none!important;}
+html[data-input="keyboard"] :is(.scroll-unit,.scroll-word,.scroll-surface) {opacity:1!important;}
+html[data-input="keyboard"]:has(.waypoint-home) {scroll-behavior:auto;}

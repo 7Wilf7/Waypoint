@@ -1,0 +1,46 @@
+.waypoint-home {isolation:isolate;}
+.ambient-backdrop {position:fixed;inset:0;overflow:hidden;z-index:-1;pointer-events:none;contain:strict;}
+.ambient-depth {position:absolute;inset:-8%;transform-origin:50% 55%;transform:translate3d(var(--ambient-x,0px),var(--ambient-y,0px),0) scale(var(--ambient-scale,1)) rotate(var(--ambient-turn,-6deg));}
+.ambient-glow {position:absolute;inset:0;}
+.ambient-glow-one {background:radial-gradient(ellipse at 72% 28%,rgb(255 255 255 / 12%),transparent 51%),radial-gradient(ellipse at 8% 86%,rgb(255 255 255 / 6%),transparent 44%);}
+.ambient-glow-two {inset:8% -8%;background:radial-gradient(ellipse at 40% 78%,rgb(255 255 255 / 6%),transparent 44%);transform:translate3d(0,var(--ambient-lift,0px),0) scale(1.18);}
+.ambient-contours {position:absolute;inset:0;width:100%;height:100%;color:#eee;opacity:.19;transform:rotate(var(--ambient-counter-turn,0deg));}
+.ambient-stroke {stroke-width:2;stroke-dasharray:1;stroke-dashoffset:var(--ambient-draw,.78);}
+.ambient-stroke:nth-child(2) {stroke-width:.9;stroke-dashoffset:calc(var(--ambient-draw,.78) + .025);}
+.ambient-stroke:nth-child(3) {stroke-width:1.3;stroke-dashoffset:calc(var(--ambient-draw,.78) + .06);}
+.ambient-stroke:nth-child(4) {stroke-width:.7;stroke-dashoffset:calc(var(--ambient-draw,.78) + .09);}
+.ambient-grain {position:absolute;inset:0;opacity:.027;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='white' filter='url(%23noise)' d='M0 0h144v144H0z'/%3E%3C/svg%3E");}
+[data-theme="light"] .ambient-glow-one {background:radial-gradient(ellipse at 80% 15%,rgb(40 40 40 / 9%),transparent 48%),radial-gradient(ellipse at 4% 85%,rgb(60 60 60 / 6%),transparent 42%);}
+[data-theme="light"] .ambient-glow-two {background:radial-gradient(ellipse at 35% 72%,rgb(60 60 60 / 6%),transparent 47%);}
+[data-theme="light"] .ambient-contours {color:#333;opacity:.15;}
+.sound-toggle {position:relative;display:grid;place-items:center;width:46px;height:46px;padding:0;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--text);cursor:pointer;flex:none;}
+.sound-toggle[hidden] {display:none;}
+.sound-bars {display:flex;align-items:center;gap:2px;height:19px;}
+.sound-bars i {display:block;width:2px;height:6px;background:currentColor;border-radius:2px;transform-origin:center;}
+.sound-bars i:nth-child(2) {height:15px;}
+.sound-bars i:nth-child(3) {height:10px;}
+.sound-bars i:nth-child(4) {height:6px;}
+.sound-off {position:absolute;inset:13px;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.2;}
+.sound-toggle[data-sound="playing"] .sound-off {display:none;}
+.sound-toggle[data-sound="playing"] .sound-bars i {animation:sound-level 1s ease-in-out infinite alternate;}
+.sound-toggle[data-sound="playing"] .sound-bars i:nth-child(2) {animation-delay:-.7s;}
+.sound-toggle[data-sound="playing"] .sound-bars i:nth-child(3) {animation-delay:-.35s;}
+.sound-toggle[data-sound="playing"] .sound-bars i:nth-child(4) {animation-delay:-.5s;}
+.sound-toggle:focus-visible {outline:2px solid var(--text);outline-offset:4px;}
+.footer-music {margin:0;padding:0 0 30px;font-size:.6875rem;line-height:1.8;color:var(--muted);}
+.footer-music a {text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px;}
+/* Only clickable headings gain a pointer cue. Section titles remain reading landmarks. */
+.waypoint-home :is(.about-item,.article-card,.race-card) h3 {position:relative;width:fit-content;max-width:100%;}
+.waypoint-home :is(.about-item,.article-card,.race-card) h3::after {content:'';position:absolute;left:0;right:0;bottom:-5px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform 240ms var(--ease-out);}
+.preview-tab strong::after {content:'↗';display:inline-block;margin-left:.5em;font-size:.75em;opacity:0;transform:translate(-5px,4px);transition:opacity 180ms ease,transform 240ms var(--ease-out);}
+.waypoint-home :is(.about-item,.article-card,.race-card):focus-visible h3::after {transform:scaleX(1);}
+.preview-tab:focus-visible strong::after {opacity:1;transform:none;}
+@media(hover:hover) and (pointer:fine) {
+  .sound-toggle:hover {background:var(--surface-raised);}
+  .waypoint-home :is(.about-item,.article-card,.race-card):hover h3::after {transform:scaleX(1);}
+  .preview-tab:hover strong::after {opacity:1;transform:none;}
+}
+@keyframes sound-level {from {transform:scaleY(.5);} to {transform:scaleY(1.2);}}
+@media(max-width:700px) {.sound-toggle {width:40px;height:40px;}.sound-off {inset:10px;}.ambient-contours {opacity:.12;}.footer-music {padding-bottom:22px;}}
+html[data-input="keyboard"] .sound-bars i,html.reading .sound-bars i {animation:none!important;}
+@media(prefers-reduced-motion:reduce) {.sound-bars i {animation:none!important;}.ambient-depth,.ambient-contours,.ambient-glow-two {transform:none!important;}.ambient-stroke {stroke-dashoffset:0;}.preview-tab strong::after,.waypoint-home :is(.about-item,.article-card,.race-card) h3::after {transition:none;}}

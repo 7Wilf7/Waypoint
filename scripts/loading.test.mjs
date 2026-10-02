@@ -6,36 +6,38 @@ import {requestJSON} from '../dist/loading.js';
 
 const html=await readFile(new URL('../dist/index.html',import.meta.url),'utf8');
 const bootstrap=html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
-function startup({seen=false,reduced=false,hash='',english=false,storageFails=false}={}) {
+function startup({seen=false,reduced=false,hash='',english=false,theme=null,storageFails=false}={}) {
   const classes=new Set(),listeners=new Map(),timers=new Map();let nextTimer=0;
-  const root={dataset:{},classList:{add:(...items)=>items.forEach(item=>classes.add(item)),remove:(...items)=>items.forEach(item=>classes.delete(item))}};
+  const root={dataset:{theme:'dark',language:'zh'},lang:'zh-CN',classList:{add:(...items)=>items.forEach(item=>classes.add(item)),remove:(...items)=>items.forEach(item=>classes.delete(item))}};
   const events={addEventListener:(type,fn)=>listeners.set(type,fn),removeEventListener:(type,fn)=>{if(listeners.get(type)===fn)listeners.delete(type);}};
-  const storage={getItem:key=>{if(storageFails)throw Error('Denied');return key==='waypoint-welcome'&&seen?'seen':key==='waypoint-language'&&english?'en':null;},setItem:()=>{}};
+  const storage={getItem:key=>{if(storageFails)throw Error('Denied');return key==='waypoint-theme'?theme:key==='waypoint-welcome'&&seen?'seen':key==='waypoint-language'&&english?'en':null;},setItem:()=>{}};
   runInNewContext(bootstrap,{document:{documentElement:root,...events},localStorage:storage,sessionStorage:storage,matchMedia:()=>({matches:reduced,...events}),location:{hash},setTimeout:fn=>{const id=++nextTimer;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id)});
   return {root,classes,listeners,timers};
 }
 
-test('the first homepage is gated synchronously before the main module can run',()=>{
-  const first=startup();assert.equal(first.classes.has('intro-pending'),true);
-  assert.equal(first.timers.size,1);
-  assert.match(html,/intro-pending:not\(\.intro-leaving\) body>:not\(\.welcome-screen\)\{visibility:hidden\}/);
-  assert.match(html,/<span data-welcome="zh">你好<\/span>/);
-  assert.match(html,/<span data-welcome="en">Hello<\/span>/);
-  assert.equal(startup({english:true}).root.dataset.language,'en');
+test('the homepage is visible immediately with no blocking greeting deadline',()=>{
+  const first=startup();assert.equal(first.classes.has('intro-pending'),false);
+  assert.equal(first.classes.has('intro-complete'),true);
+  assert.equal(first.timers.size,0);
+  assert.equal(first.listeners.size,0);
+  assert.doesNotMatch(html,/intro-pending[^}]*visibility:hidden/);
 });
-test('repeat visits, reduced motion, and direct content links bypass the greeting',()=>{
-  for(const options of [{seen:true},{reduced:true},{hash:'#entry/article-example'},{hash:'#races'}]) {
+test('language and both theme preferences are applied before the main module runs',()=>{
+  const english=startup({english:true,theme:'light'});
+  assert.equal(english.root.dataset.language,'en');assert.equal(english.root.lang,'en');assert.equal(english.root.dataset.theme,'light');
+  const chinese=startup({theme:'dark'});
+  assert.equal(chinese.root.dataset.language,'zh');assert.equal(chinese.root.lang,'zh-CN');assert.equal(chinese.root.dataset.theme,'dark');
+  assert.equal(startup({theme:'invalid'}).root.dataset.theme,'dark');
+});
+test('repeat visits, reduced motion, and direct content links always retain visible content',()=>{
+  for(const options of [{seen:true},{reduced:true},{hash:'#home'},{hash:'#entry/article-example'},{hash:'#races'}]) {
     const state=startup(options);assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.classes.has('intro-complete'),true);assert.equal(state.timers.size,0);
   }
 });
-test('storage denial cannot trap a visitor, and missing modules have a fail-open deadline',()=>{
-  const state=startup({storageFails:true});assert.equal(state.classes.has('intro-pending'),true);
-  [...state.timers.values()][0]();assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.classes.has('intro-complete'),true);
-  assert.equal(state.listeners.has('keydown'),false);
-});
-test('keyboard skip releases the gate and module ownership cancels the bootstrap deadline',()=>{
-  const skip=startup();skip.listeners.get('keydown')({type:'keydown'});assert.equal(skip.classes.has('intro-pending'),false);assert.equal(skip.root.dataset.input,'keyboard');assert.equal(skip.timers.size,0);
-  const ready=startup();ready.listeners.get('waypoint-welcome-ready')();assert.equal(ready.timers.size,0);assert.equal(ready.classes.has('intro-pending'),true);
+test('storage denial keeps the homepage visible with its default language and theme',()=>{
+  const state=startup({storageFails:true});assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.classes.has('intro-complete'),true);
+  assert.equal(state.root.dataset.language,'zh');assert.equal(state.root.lang,'zh-CN');assert.equal(state.root.dataset.theme,'dark');
+  assert.equal(state.listeners.size,0);assert.equal(state.timers.size,0);
 });
 test('request deadlines include a response body that never finishes',async t=>{
   const original=globalThis.fetch;t.after(()=>{globalThis.fetch=original;});
