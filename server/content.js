@@ -1,4 +1,5 @@
 import {raceCategories} from '../dist/race-utils.js';
+import {validateArticleLayout} from '../dist/article-layout.js';
 export const ID = /^[a-z0-9-]{1,64}$/i;
 export const MAX_FILE = 8 * 1024 * 1024;
 const text = (value, limit = 60000) => typeof value === 'string' ? value.trim().slice(0, limit) : '';
@@ -15,6 +16,10 @@ export function validateEntry(input) {
   }
   if (entry.kind === 'article') {
     if (entry.published && (!entry.bodyZh || !entry.bodyEn)) throw new Error('article_body_required');
+    entry.publishedTime = text(input.publishedTime,20);
+    if(entry.publishedTime&&!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(entry.publishedTime))throw new Error('invalid_published_time');
+    const layout=validateArticleLayout(input.articleLayout,entry);
+    if(layout)entry.articleLayout=layout;
     entry.wechatUrl = text(input.wechatUrl,2000);
     if (entry.wechatUrl) {
       let url;

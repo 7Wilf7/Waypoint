@@ -85,10 +85,16 @@ function renderNote(key, keyboard = false, preservePosition = false) {
   document.querySelector('#reader-category').textContent = note.category;
   document.querySelector('#reader-lead').textContent = note.lead;
   readerBody.replaceChildren();
-  for (const text of note.paragraphs) {
-    const paragraph = document.createElement('p');
-    paragraph.textContent = text;
-    readerBody.append(paragraph);
+  for (const block of note.blocks || note.paragraphs.map(text=>({type:'paragraph',text}))) {
+    if(block.type==='image') {
+      const figure=document.createElement('figure');figure.className='reader-inline-photo';
+      const image=document.createElement('img');image.src='./media/'+block.mediaId;image.alt=note.title+' · '+words().galleryPhoto;image.loading='lazy';
+      figure.append(image);readerBody.append(figure);
+    }else {
+      const paragraph = document.createElement(block.type==='heading'?'h3':'p');
+      paragraph.textContent = block.text;
+      readerBody.append(paragraph);
+    }
   }
   if (note.products) {
     const products = document.createElement('div');

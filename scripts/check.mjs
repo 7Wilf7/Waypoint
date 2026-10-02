@@ -7,7 +7,7 @@ import { copy } from '../dist/i18n.js';
 import {previewProducts,previewScreens,previewViewport} from '../dist/preview-screens.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
-for (const filename of ['app.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'race-utils.js', 'race-archive.js', 'manage.js']) {
+for (const filename of ['app.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'race-utils.js', 'race-archive.js', 'manage.js']) {
   const result = spawnSync(process.execPath, ['--check', resolve(root, filename)], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr);
 }
@@ -68,7 +68,10 @@ const backend = spawnSync(process.execPath,['--test',resolve(root,'../scripts/ap
 if(backend.status!==0)throw new Error(backend.stdout+backend.stderr);
 const raceTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/races.test.mjs')],{encoding:'utf8'});
 if(raceTests.status!==0)throw new Error(raceTests.stdout+raceTests.stderr);
+const articleTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/articles.test.mjs')],{encoding:'utf8'});
+if(articleTests.status!==0)throw new Error(articleTests.stdout+articleTests.stderr);
 console.log('JavaScript syntax, assets, navigation, complete language dictionaries, and both reading editions passed.');
 console.log('Interactive bilingual preview routes and interrupted product/language selections passed.');
 console.log('Owner authorization, password changes and session revocation, publication visibility, file validation, draft media privacy, and input validation passed.');
 console.log('Race categories, divisions, original dates, representative selection, result formatting, and archive ordering passed.');
+console.log('Bilingual article paragraphs, inline photos, original publication times, and safe layout fallback after editing passed.');

@@ -1,5 +1,6 @@
 import {copy} from './i18n.js';
 import {raceCategories,raceCategoryKeys,subtypeLabel,formatResult,sortRaces,representativeRace,raceCounts} from './race-utils.js';
+import {articleReading,articleParagraphs} from './article-layout.js';
 const root=document.documentElement;
 const words=()=>copy[root.dataset.language==='en'?'en':'zh'];
 let entries=[];
@@ -11,7 +12,8 @@ export function getEntry(id) {
   const en=root.dataset.language==='en';
   const body=en?entry.bodyEn:entry.bodyZh;
   const metrics=entry.kind==='race'?[subtypeLabel(entry,en?'en':'zh'),entry.distance!=null?entry.distance+' km':null,entry.ascent!=null?'+'+entry.ascent+' m':null,formatResult(entry.result)||words().raceResultMissing].filter(Boolean).join(' / '):words().channelLabel;
-  return {title:en?entry.titleEn:entry.titleZh,category:entry.kind==='race'?words()[raceCategoryKeys[entry.category]]||words().raceRecord:words().channelLabel,lead:formatDate(entry.date)+(metrics?' · '+metrics:''),paragraphs:body?body.split(/\n\s*\n/).filter(Boolean):[],photos:entry.photos,certificates:entry.certificates,link:entry.wechatUrl?{href:entry.wechatUrl,label:words().wechatRead}:null,kind:entry.kind};
+  const reading=entry.kind==='article'?articleReading(entry,en?'en':'zh'):{paragraphs:articleParagraphs(body),photos:entry.photos};
+  return {title:en?entry.titleEn:entry.titleZh,category:entry.kind==='race'?words()[raceCategoryKeys[entry.category]]||words().raceRecord:words().channelLabel,lead:formatDate(entry.date)+(entry.kind==='article'&&entry.publishedTime?' '+entry.publishedTime:'')+(metrics?' · '+metrics:''),...reading,certificates:entry.certificates,link:entry.wechatUrl?{href:entry.wechatUrl,label:words().wechatRead}:null,kind:entry.kind};
 }
 function formatDate(date){return new Intl.DateTimeFormat(root.dataset.language==='en'?'en-GB':'zh-CN',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date(date+'T00:00:00Z'));}
 function renderRaces(container) {

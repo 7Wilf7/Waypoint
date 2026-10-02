@@ -37,11 +37,12 @@ test('authenticated writes reject cross-origin requests',async()=>{
   assert.equal((await write(race,{'sec-fetch-site':'cross-site'})).status,403);
 });
 test('article publication retains its original date through publish and withdrawal',async()=>{
-  const article={id:'original-article',kind:'article',published:true,titleZh:'原文日期测试',titleEn:'Original date test',date:'2024-09-07',bodyZh:'测试正文',bodyEn:'Test body',photos:[],certificates:[],wechatUrl:'https://mp.weixin.qq.com/s/test-article'};
+  const article={id:'original-article',kind:'article',published:true,titleZh:'原文日期测试',titleEn:'Original date test',date:'2024-09-07',publishedTime:'15:00',bodyZh:'测试正文',bodyEn:'Test body',articleLayout:[{type:'heading',index:0}],photos:[],certificates:[],wechatUrl:'https://mp.weixin.qq.com/s/test-article'};
   assert.equal((await write(article)).status,200);
   assert.equal((await(await call('/api/entries')).json()).entries.find(entry=>entry.id===article.id).date,'2024-09-07');
   assert.equal((await write({...article,published:false})).status,200);
-  assert.equal((await store.entries()).find(entry=>entry.id===article.id).date,'2024-09-07');
+  const saved=(await store.entries()).find(entry=>entry.id===article.id);
+  assert.equal(saved.date,'2024-09-07');assert.equal(saved.publishedTime,'15:00');assert.deepEqual(saved.articleLayout,article.articleLayout);
 });
 test('drafts persist across store instances, publish, then disappear when returned to draft',async()=>{
   assert.equal((await write(race)).status,200);assert.equal((await(await call('/api/entries')).json()).entries.length,0);
@@ -61,6 +62,11 @@ test('uploads reject unsafe content; published references control photo and PDF 
   const visible=await call('/media/test-photo');assert.equal(visible.status,200);assert.equal(visible.headers.get('content-type'),'image/png');assert.match(visible.headers.get('cache-control'),/no-store/);
   assert.equal((await call('/media/test-certificate',{method:'HEAD'})).headers.get('content-type'),'application/pdf');
   assert.equal((await write({...entry,published:false})).status,200);assert.equal((await call('/media/test-photo')).status,404);
+  const article={id:'inline-photo-article',kind:'article',published:false,titleZh:'正文图片',titleEn:'Inline photo',date:'2026-01-19',publishedTime:'22:00',bodyZh:'照片前\n\n照片后',bodyEn:'Before photo\n\nAfter photo',photos:['test-photo'],certificates:[],articleLayout:[{type:'paragraph',index:0},{type:'image',mediaId:'test-photo'},{type:'paragraph',index:1}]};
+  assert.equal((await write(article)).status,200);assert.equal((await call('/media/test-photo')).status,404);
+  assert.equal((await write({...article,published:true})).status,200);assert.equal((await call('/media/test-photo')).status,200);
+  assert.deepEqual((await(await call('/api/entries')).json()).entries.find(item=>item.id===article.id).articleLayout,article.articleLayout);
+  assert.equal((await write({...article,published:false})).status,200);assert.equal((await call('/media/test-photo')).status,404);
 });
 test('large direct uploads are finalized and streamed; oversize and anonymous tokens are rejected',async()=>{
   const bytes=Buffer.alloc(6*1024*1024);bytes.write('%PDF-1.7');await store.saveFile('large-certificate',bytes);

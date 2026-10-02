@@ -1,8 +1,9 @@
 import {copy} from './i18n.js';
 import {upload as uploadBlob} from './upload-client.js';
+import {reconcileArticleLayout} from './article-layout.js';
 const root=document.documentElement,form=document.querySelector('.entry-editor'),status=document.querySelector('#manage-status');
 const words=()=>copy[root.dataset.language==='en'?'en':'zh'];
-let records=[],photos=[],certificates=[],busy=false,uploadMode='local';
+let records=[],photos=[],certificates=[],articleLayout,busy=false,uploadMode='local';
 const field=name=>form.elements.namedItem(name);
 function translate(){
   const w=words();root.lang=root.dataset.language==='en'?'en':'zh-CN';document.title='Waypoint · '+w.manage;
@@ -13,7 +14,7 @@ function translate(){
 }
 document.querySelector('.language-toggle').addEventListener('click',()=>{root.dataset.language=root.dataset.language==='en'?'zh':'en';try{localStorage.setItem('waypoint-language',root.dataset.language);}catch{}translate();});
 document.querySelector('.manage-theme').addEventListener('click',()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('waypoint-theme',root.dataset.theme);}catch{}translate();});
-const messages={invalid_password:'invalidPassword',password_length:'passwordLength',password_mismatch:'passwordMismatch',password_unchanged:'passwordUnchanged',auth_changed:'signInAgain',owner_required:'signInAgain',english_required:'englishRequired',article_body_required:'englishRequired',title_date_required:'titleDateRequired',file_too_large:'fileTooLarge',file_type:'fileType',invalid_metrics:'invalidMetrics',invalid_result:'invalidMetrics',invalid_wechat_url:'invalidWechat'};
+const messages={invalid_password:'invalidPassword',password_length:'passwordLength',password_mismatch:'passwordMismatch',password_unchanged:'passwordUnchanged',auth_changed:'signInAgain',owner_required:'signInAgain',english_required:'englishRequired',article_body_required:'englishRequired',title_date_required:'titleDateRequired',file_too_large:'fileTooLarge',file_type:'fileType',invalid_metrics:'invalidMetrics',invalid_result:'invalidMetrics',invalid_wechat_url:'invalidWechat',invalid_published_time:'invalidPublishedTime'};
 async function api(path,options){const response=await fetch('./api/'+path,options);let data;try{data=await response.json();}catch{throw new Error('unavailable');}if(!response.ok)throw new Error(data.error||'unavailable');return data;}
 function renderList(){
   const list=document.querySelector('.managed-entries');list.replaceChildren();
@@ -23,6 +24,7 @@ function renderList(){
 function openEntry(entry){
   form.reset();for(const [name,value]of Object.entries(entry)){const input=field(name);if(input&&input.tagName)input.value=value??'';}
   photos=[...(entry.photos||[])];certificates=[...(entry.certificates||[])];form.hidden=false;
+  articleLayout=entry.articleLayout;
   document.querySelectorAll('.race-field').forEach(e=>e.hidden=entry.kind!=='race');document.querySelectorAll('.article-field').forEach(e=>e.hidden=entry.kind!=='article');
   status.textContent='';renderMedia();renderList();field('titleZh').focus();
 }
@@ -50,8 +52,10 @@ async function upload(event,values,photo){
 document.querySelector('#photo-upload').addEventListener('change',event=>upload(event,photos,true));document.querySelector('#certificate-upload').addEventListener('change',event=>upload(event,certificates,false));
 form.addEventListener('submit',async event=>{
   event.preventDefault();if(busy)return;
-  const entry=Object.fromEntries(new FormData(form));entry.published=event.submitter?.value==='publish';entry.photos=[...photos];entry.certificates=[...certificates];setBusy(true);status.textContent=words().saving;
-  try{const result=await api('manage/entries/'+entry.id,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(entry)});records=records.filter(record=>record.id!==result.entry.id);records.unshift(result.entry);renderList();status.textContent=entry.published?words().savedPublished:words().savedDraft;}
+  const entry=Object.fromEntries(new FormData(form));entry.published=event.submitter?.value==='publish';entry.photos=[...photos];entry.certificates=[...certificates];
+  if(entry.kind==='article')entry.articleLayout=reconcileArticleLayout(articleLayout,entry);
+  setBusy(true);status.textContent=words().saving;
+  try{const result=await api('manage/entries/'+entry.id,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(entry)});records=records.filter(record=>record.id!==result.entry.id);records.unshift(result.entry);articleLayout=result.entry.articleLayout;renderList();status.textContent=entry.published?words().savedPublished:words().savedDraft;}
   catch(error){status.textContent=words()[messages[error.message]||'saveFailed'];}
   finally{setBusy(false);}
 });
