@@ -58,6 +58,9 @@ test('uploads reject unsafe content; published references control photo and PDF 
   assert.equal((await call('/media/test-photo')).status,404);
   assert.equal((await call('/media/test-photo',{headers:{cookie}})).status,200);
   const entry={...race,published:true,photos:['test-photo'],certificates:['test-certificate']};
+  assert.equal((await write(entry)).status,400);
+  // An existing PDF on this same race remains readable after the image-only update.
+  await store.saveEntry({...race,certificates:['test-certificate']});
   assert.equal((await write(entry)).status,200);
   const visible=await call('/media/test-photo');assert.equal(visible.status,200);assert.equal(visible.headers.get('content-type'),'image/png');assert.match(visible.headers.get('cache-control'),/no-store/);
   assert.equal((await call('/media/test-certificate',{method:'HEAD'})).headers.get('content-type'),'application/pdf');
@@ -66,7 +69,25 @@ test('uploads reject unsafe content; published references control photo and PDF 
   assert.equal((await write(article)).status,200);assert.equal((await call('/media/test-photo')).status,404);
   assert.equal((await write({...article,published:true})).status,200);assert.equal((await call('/media/test-photo')).status,200);
   assert.deepEqual((await(await call('/api/entries')).json()).entries.find(item=>item.id===article.id).articleLayout,article.articleLayout);
+  const textOnly={...article,published:true,photos:[],articleLayout:article.articleLayout.filter(block=>block.type!=='image')};
+  assert.equal((await write(textOnly)).status,200);assert.equal((await call('/media/test-photo')).status,404);
+  assert.equal((await call('/media/test-photo',{headers:{cookie}})).status,200);
+  const retained=(await store.entries()).find(item=>item.id===article.id);
+  assert.equal(retained.bodyZh,article.bodyZh);assert.equal(retained.bodyEn,article.bodyEn);assert.equal(retained.publishedTime,'22:00');
   assert.equal((await write({...article,published:false})).status,200);assert.equal((await call('/media/test-photo')).status,404);
+});
+test('race photo roles survive save/reopen and a secondary photo is never promoted on main removal',async()=>{
+  for(const id of ['slot-main','slot-secondary','slot-certificate']) {
+    const upload=await call('/api/manage/media/'+id,{method:'PUT',headers:{...headers,cookie},body:new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0])});assert.equal(upload.status,200);
+  }
+  const entry={...race,id:'photo-slots-race',photos:['slot-main','slot-secondary'],primaryPhoto:'slot-main',secondaryPhoto:'slot-secondary',certificates:['slot-certificate']};
+  assert.equal((await write(entry)).status,200);
+  const reopened=(await store.entries()).find(item=>item.id===entry.id);
+  assert.equal(reopened.primaryPhoto,'slot-main');assert.equal(reopened.secondaryPhoto,'slot-secondary');assert.equal(reopened.bodyZh,race.bodyZh);assert.equal(reopened.bodyEn,race.bodyEn);
+  assert.equal((await write({...entry,primaryPhoto:'',photos:['slot-secondary']})).status,200);
+  const removed=(await store.entries()).find(item=>item.id===entry.id);
+  assert.equal(removed.primaryPhoto,'');assert.equal(removed.secondaryPhoto,'slot-secondary');
+  assert.equal((await write({...entry,certificates:['test-certificate']})).status,400);
 });
 test('large direct uploads are finalized and streamed; oversize and anonymous tokens are rejected',async()=>{
   const bytes=Buffer.alloc(6*1024*1024);bytes.write('%PDF-1.7');await store.saveFile('large-certificate',bytes);

@@ -1,5 +1,6 @@
 import {raceCategories} from '../dist/race-utils.js';
 import {validateArticleLayout} from '../dist/article-layout.js';
+import {racePhotoRoles} from '../dist/race-photos.js';
 export const ID = /^[a-z0-9-]{1,64}$/i;
 export const MAX_FILE = 8 * 1024 * 1024;
 const text = (value, limit = 60000) => typeof value === 'string' ? value.trim().slice(0, limit) : '';
@@ -16,6 +17,9 @@ export function validateEntry(input) {
   }
   if (entry.kind === 'article') {
     if (entry.published && (!entry.bodyZh || !entry.bodyEn)) throw new Error('article_body_required');
+    entry.summaryZh=text(input.summaryZh,600);
+    entry.summaryEn=text(input.summaryEn,600);
+    if(entry.published&&Boolean(entry.summaryZh)!==Boolean(entry.summaryEn))throw new Error('summary_translation_required');
     entry.publishedTime = text(input.publishedTime,20);
     if(entry.publishedTime&&!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(entry.publishedTime))throw new Error('invalid_published_time');
     const layout=validateArticleLayout(input.articleLayout,entry);
@@ -27,6 +31,14 @@ export function validateEntry(input) {
       if (url.protocol !== 'https:' || url.hostname !== 'mp.weixin.qq.com' || url.username || url.password) throw new Error('invalid_wechat_url');
     }
   } else {
+    if(entry.photos.length>2||entry.certificates.length>1)throw new Error('race_photo_limit');
+    if(Object.hasOwn(input,'primaryPhoto')||Object.hasOwn(input,'secondaryPhoto')) {
+      for(const field of ['primaryPhoto','secondaryPhoto'])if(typeof input[field]!=='string'||(input[field]&&!ID.test(input[field])))throw new Error('invalid_photo_roles');
+      const {primary,secondary}=racePhotoRoles(input),roles=[primary,secondary].filter(Boolean);
+      if(new Set(roles).size!==roles.length||roles.length!==entry.photos.length||roles.some(id=>!entry.photos.includes(id)))throw new Error('invalid_photo_roles');
+      entry.primaryPhoto=primary;entry.secondaryPhoto=secondary;
+      entry.photos=roles;
+    }
     entry.category = raceCategories.includes(input.category) ? input.category : 'Trail';
     entry.subtype = text(input.subtype,80);
     for (const field of ['distance','ascent']) {

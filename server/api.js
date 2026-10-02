@@ -62,6 +62,10 @@ export async function handle(request,store,env=process.env) {
     for(const id of [...entry.photos,...entry.certificates]) {
       const meta=await store.media(id);
       if(!meta||(entry.photos.includes(id)&&!meta.mime.startsWith('image/')))return json({error:'invalid_media'},400);
+      if(entry.kind==='race'&&entry.certificates.includes(id)&&!meta.mime.startsWith('image/')) {
+        const previous=(await store.entries()).find(saved=>saved.id===entry.id&&saved.kind==='race');
+        if(!previous?.certificates.includes(id))return json({error:'certificate_image_required'},400);
+      }
     }
     await store.saveEntry(entry);return json({entry});
   }

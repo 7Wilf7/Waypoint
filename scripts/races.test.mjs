@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {validateEntry} from '../server/content.js';
 import {raceCategories,raceCounts,formatResult,resultSeconds,representativeRace,sortRaces,subtypeLabel} from '../dist/race-utils.js';
+import {racePhotoRoles} from '../dist/race-photos.js';
 
 const race=(id,category,result,date='2024-05-04',subtype='')=>({id,kind:'race',category,result,date,subtype});
 const input={id:'category-test',kind:'race',published:true,titleZh:'分类测试',titleEn:'Category test',date:'2023-04-08',bodyZh:'',bodyEn:'',photos:[],certificates:[]};
@@ -31,4 +32,14 @@ test('archive ordering and counts include each race and exclude articles',()=>{
   const records=[race('old','Trail','4:00:00','2023-01-01'),{id:'article',kind:'article',date:'2026-01-01'},race('recent','Marathon','4:00:31','2025-11-16')];
   const sorted=sortRaces(records);assert.deepEqual(sorted.map(item=>item.id),['recent','old']);
   assert.equal(raceCounts(sorted).Trail,1);assert.equal(raceCounts(sorted).Marathon,1);assert.equal(raceCounts(sorted).Spartan,0);
+});
+test('fixed main and secondary roles stay independent, with legacy attachment-order compatibility',()=>{
+  assert.deepEqual(racePhotoRoles({...input,photos:['photo-main','photo-secondary']}),{primary:'photo-main',secondary:'photo-secondary'});
+  const entry=validateEntry({...input,primaryPhoto:'',secondaryPhoto:'photo-secondary',photos:['photo-secondary']});
+  assert.deepEqual(racePhotoRoles(entry),{primary:'',secondary:'photo-secondary'});
+  const complete=validateEntry({...input,primaryPhoto:'photo-main',secondaryPhoto:'photo-secondary',photos:['photo-secondary','photo-main'],certificates:['certificate']});
+  assert.deepEqual(complete.photos,['photo-main','photo-secondary']);
+  for(const changes of [{primaryPhoto:'missing',secondaryPhoto:'',photos:[]},{primaryPhoto:'photo-main',secondaryPhoto:'photo-main',photos:['photo-main']},{primaryPhoto:'',secondaryPhoto:'',photos:['unassigned']},{primaryPhoto:'photo-main',secondaryPhoto:'',photos:['photo-main','extra']}])assert.throws(()=>validateEntry({...input,...changes}),/invalid_photo_roles/);
+  assert.throws(()=>validateEntry({...input,photos:['one','two','three']}),/race_photo_limit/);
+  assert.throws(()=>validateEntry({...input,certificates:['one','two']}),/race_photo_limit/);
 });

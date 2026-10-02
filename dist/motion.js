@@ -1,3 +1,6 @@
+import {getEntry} from './journal.js';
+import {copy} from './i18n.js';
+
 export function initWelcome() {
   const root = document.documentElement;
   const screen = document.querySelector('.welcome-screen');
@@ -48,7 +51,7 @@ export function initMotion() {
   const root = document.documentElement;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
-  const wide = matchMedia('(min-width: 1100px)');
+  const wide = matchMedia('(min-width: 1101px)');
   const easeOut = 'cubic-bezier(0.23, 1, 0.32, 1)';
   const easeInOut = 'cubic-bezier(0.77, 0, 0.175, 1)';
   const running = new Set();
@@ -175,24 +178,41 @@ export function initMotion() {
   wide.addEventListener('change', () => { if (!wide.matches) preview.classList.remove('is-visible'); });
 
   // A visual preview behind the pointer. It never intercepts a click.
-  const previewImage = preview.querySelector('img');
+  const previewArt = preview.querySelector('.preview-art');
   const previewCategory = preview.querySelector('.preview-category');
+  const previewTitle = preview.querySelector('.preview-title');
+  const previewSummary = preview.querySelector('.preview-summary');
+  const previewMeta = preview.querySelector('.preview-meta');
   const previewAssets = { trail: './assets/mountain.jpg', memory: './assets/aevum.png', waypoint: './favicon.svg' };
-  document.querySelectorAll('.note-row').forEach(row => {
-    row.addEventListener('pointerenter', () => {
-      if (!finePointer.matches || !wide.matches || reduce.matches || root.dataset.input === 'keyboard' || root.classList.contains('reading')) return;
-      const key = row.getAttribute('href').slice(6);
-      previewImage.src = previewAssets[key];
-      preview.dataset.note = key;
-      previewCategory.textContent = row.querySelector('.note-category').textContent;
-      preview.style.left = '0';
-      preview.style.top = '0';
-      preview.classList.add('is-visible');
-    });
-    row.addEventListener('pointerleave', () => preview.classList.remove('is-visible'));
-    row.addEventListener('click', () => preview.classList.remove('is-visible'));
-  });
-  window.addEventListener('scroll', () => preview.classList.remove('is-visible'), { passive: true });
+  let previewTarget=null;
+  const hidePreview=()=>{previewTarget=null;preview.classList.remove('is-visible');};
+  document.addEventListener('pointermove',event=>{
+    const row=event.target.closest('.note-row,.article-card,.race-card');
+    if(event.pointerType!=='mouse'||!row||!finePointer.matches||!wide.matches||reduce.matches||root.dataset.input==='keyboard'||root.classList.contains('reading')){hidePreview();return;}
+    if(row===previewTarget&&preview.classList.contains('is-visible'))return;
+    const key=row.getAttribute('href').split('/')[1],entry=row.matches('.note-row')?null:getEntry(key);
+    if(!entry&&!row.matches('.note-row')){hidePreview();return;}
+    const w=copy[root.dataset.language==='en'?'en':'zh'];
+    const image=entry?(entry.kind==='race'&&entry.primaryPhoto?'./media/'+entry.primaryPhoto:''):previewAssets[key];
+    previewArt.hidden=!image;
+    const previewImage=document.createElement('img');previewImage.alt='';
+    previewImage.onload=()=>{if(preview.dataset.note===key&&previewArt.firstElementChild===previewImage)previewImage.classList.add('is-ready');};
+    if(image){previewImage.src=image;if(previewImage.complete&&previewImage.naturalWidth)previewImage.classList.add('is-ready');}
+    previewArt.replaceChildren(previewImage);
+    preview.dataset.note=key;preview.dataset.kind=entry?.kind||'note';preview.dataset.presentation=image?'image':'text';
+    previewCategory.textContent=entry?entry.kind==='article'?w.articleOverview:w.racePreview:row.querySelector('.note-category').textContent;
+    previewTitle.textContent=entry?.title||'';
+    previewSummary.textContent=entry?.kind==='article'?entry.summary:entry&&!image?w.racePhotoMissing:'';
+    previewMeta.textContent=entry?.kind==='article'?entry.readingMeta:entry?.lead||'';
+    for(const element of [previewTitle,previewSummary,previewMeta])element.hidden=!element.textContent;
+    preview.style.left='0';preview.style.top='0';previewTarget=row;preview.classList.add('is-visible');
+  },{passive:true});
+  document.addEventListener('click',hidePreview);
+  document.addEventListener('pointerleave',hidePreview);
+  window.addEventListener('scroll',hidePreview,{passive:true});
+  window.addEventListener('blur',hidePreview);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)hidePreview();});
+  new MutationObserver(hidePreview).observe(root,{attributes:true,attributeFilter:['data-language','data-theme']});
 
   document.querySelectorAll('.spotlight-surface').forEach(surface => {
     surface.addEventListener('pointermove', event => {
@@ -236,7 +256,7 @@ function initPointerFeedback() {
   }
   function schedule(){if(!frame&&allowed())frame=requestAnimationFrame(tick);}
   function clearMagnet(){if(magnet)magnet.style.removeProperty('transform');magnet=null;bounds=null;position[0]=position[1]=destination[0]=destination[1]=velocity[0]=velocity[1]=0;}
-  function reset(){cancelAnimationFrame(frame);frame=0;previous=0;active=null;previewShowing=false;bubble.classList.remove('is-visible');clearMagnet();velocity.fill(0);}
+  function reset(){cancelAnimationFrame(frame);frame=0;previous=0;active=null;previewShowing=false;bubble.classList.remove('is-visible');preview.classList.remove('is-visible');clearMagnet();velocity.fill(0);}
   function cursorLabel(element) {
     const en=root.dataset.language==='en';
     if(element.matches('.note-row,.journal-card,.race-card'))return en?'Read':'阅读';
@@ -256,7 +276,8 @@ function initPointerFeedback() {
     if(showPreview) {
       const width=preview.offsetWidth;
       const height=preview.offsetHeight;
-      destination[2]=clamp(event.clientX-width/2,24,innerWidth-width-24);
+      const left=preview.dataset.presentation==='text'?(event.clientX+width+98<innerWidth?event.clientX+74:event.clientX-width-74):event.clientX-width/2;
+      destination[2]=clamp(left,24,innerWidth-width-24);
       destination[3]=clamp(event.clientY-height/2,document.querySelector('.site-header').getBoundingClientRect().bottom+18,innerHeight-height-24);
       if(!previewShowing){position[2]=destination[2];position[3]=destination[3];velocity[2]=velocity[3]=0;}
     }

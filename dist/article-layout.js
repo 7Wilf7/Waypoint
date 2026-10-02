@@ -22,7 +22,7 @@ export function validateArticleLayout(layout,entry) {
 }
 
 // A body edit may change paragraph boundaries. Fall back to the complete text
-// and photo gallery rather than applying stale positions or losing content.
+// rather than applying stale positions or losing content.
 export function reconcileArticleLayout(layout,entry) {
   if(!Array.isArray(layout))return undefined;
   try{return validateArticleLayout(layout.filter(block=>block.type!=='image'||entry.photos.includes(block.mediaId)),entry);}
@@ -32,7 +32,6 @@ export function reconcileArticleLayout(layout,entry) {
 export function articleReading(entry,language) {
   const paragraphs=articleParagraphs(language==='en'?entry.bodyEn:entry.bodyZh);
   const layout=reconcileArticleLayout(entry.articleLayout,entry);
-  if(!layout||layout.some(block=>block.type!=='image'&&block.index>=paragraphs.length))return {paragraphs,photos:entry.photos};
-  const inline=new Set(layout.filter(block=>block.type==='image').map(block=>block.mediaId));
-  return {paragraphs,blocks:layout.map(block=>block.type==='image'?block:{type:block.type,text:paragraphs[block.index]}),photos:entry.photos.filter(id=>!inline.has(id))};
+  if(!layout||layout.some(block=>block.type!=='image'&&block.index>=paragraphs.length))return {paragraphs,photos:[]};
+  return {paragraphs,blocks:layout.filter(block=>block.type!=='image').map(block=>({type:block.type,text:paragraphs[block.index]})),photos:[]};
 }

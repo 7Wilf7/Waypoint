@@ -85,6 +85,13 @@ function renderNote(key, keyboard = false, preservePosition = false) {
   document.querySelector('#reader-category').textContent = note.category;
   document.querySelector('#reader-lead').textContent = note.lead;
   readerBody.replaceChildren();
+  if(note.kind==='article') {
+    const overview=document.createElement('aside');overview.className='reader-overview';
+    const label=document.createElement('span');label.className='eyebrow';label.textContent=words().articleOverview;
+    const summary=document.createElement('p');summary.textContent=note.summary;
+    const stats=document.createElement('span');stats.className='article-reading-meta';stats.textContent=note.readingMeta;
+    overview.append(label,summary,stats);readerBody.append(overview);
+  }
   for (const block of note.blocks || note.paragraphs.map(text=>({type:'paragraph',text}))) {
     if(block.type==='image') {
       const figure=document.createElement('figure');figure.className='reader-inline-photo';

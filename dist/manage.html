@@ -1,34 +1,109 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="dark" data-language="zh"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/><meta name="robots" content="noindex"/><title>Waypoint · 内容管理</title><link rel="icon" href="./favicon.svg"/><link rel="stylesheet" href="./styles.css"/><script>try{document.documentElement.dataset.theme=localStorage.getItem('waypoint-theme')==='light'?'light':'dark';document.documentElement.dataset.language=localStorage.getItem('waypoint-language')==='en'?'en':'zh';}catch{}</script><script type="module" src="./manage.js"></script></head><body>
-  <header class="site-header"><div class="header-inner"><a class="brand" href="./">Waypoint.</a><a class="manage-home" href="./" data-i18n="back">回到起点</a><div class="header-controls"><button class="language-toggle" type="button">EN</button><button class="manage-theme" type="button" data-i18n="toLight">切换为浅色模式</button></div></div></header>
-  <main class="section-shell manage-main"><p class="eyebrow" data-i18n="manage">内容管理</p><h1 data-i18n="manageTitle">整理下一段经历。</h1><p class="manage-intro" data-i18n="manageIntro">比赛和文章可以先存为草稿，整理好再发布。</p>
-    <p id="manage-status" role="status" aria-live="polite"></p>
-    <form class="owner-signin" hidden><p data-i18n="ownerOnly">使用管理密码登录后整理内容。</p><label><span data-i18n="password">管理密码</span><input name="password" type="password" autocomplete="current-password" required maxlength="256"/></label><button class="button button-primary" type="submit" data-i18n="signIn">登录</button></form>
-    <button class="button button-quiet manage-logout" type="button" hidden data-i18n="signOut">退出登录</button>
-    <section class="manage-account" hidden>
-      <details class="password-settings"><summary data-i18n="changePassword">修改密码</summary>
-        <form class="password-editor">
-          <label><span data-i18n="currentPassword">当前密码</span><input name="currentPassword" type="password" autocomplete="current-password" required maxlength="256"/></label>
-          <label><span data-i18n="newPassword">新密码</span><input name="newPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="128"/></label>
-          <label><span data-i18n="confirmPassword">确认新密码</span><input name="confirmPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="128"/></label>
-          <p class="editor-help" data-i18n="passwordHelp">新密码至少 10 个字符。修改后，其他设备需要重新登录。</p>
-          <p id="password-status" role="status" aria-live="polite"></p>
-          <button class="button button-primary" type="submit" data-i18n="savePassword">保存新密码</button>
-        </form>
-      </details>
-    </section>
-    <div class="manage-workspace" hidden><aside class="manage-sidebar"><div class="manage-new"><button class="button button-primary" id="new-race" type="button" data-i18n="newRace">新增比赛</button><button class="button button-quiet" id="new-article" type="button" data-i18n="newArticle">新增文章</button></div><h2 data-i18n="entries">我的内容</h2><div class="managed-entries"></div></aside>
-      <form class="entry-editor" hidden><input name="id" type="hidden"/><input name="kind" type="hidden"/>
-        <div class="editor-grid"><label><span data-i18n="titleZh">中文标题</span><input name="titleZh" maxlength="160" required/></label><label><span data-i18n="titleEn">英文标题</span><input name="titleEn" maxlength="160"/></label><label><span data-i18n="date">日期</span><input name="date" type="date" required/></label><label class="race-field"><span data-i18n="raceCategory">比赛类型</span><select name="category"><option value="10K" data-i18n="raceTenK">10K</option><option value="Half Marathon" data-i18n="raceHalf">半马</option><option value="Marathon" data-i18n="raceFull">全马</option><option value="Trail" data-i18n="trail">越野赛</option><option value="Spartan" data-i18n="raceSpartan">斯巴达</option><option value="Hyrox" data-i18n="raceHyrox">HYROX</option><option value="Road" data-i18n="road">公路跑</option><option value="Other" data-i18n="other">其他</option></select></label></div>
-        <label class="race-field"><span data-i18n="raceSubtype">组别 / 级别</span><input name="subtype" maxlength="80" placeholder="Sprint / Super / Beast / Ultra / Pro"/></label>
-        <div class="race-field editor-grid editor-metrics"><label><span data-i18n="raceDistance">距离</span><input name="distance" type="number" min="0" max="10000" step="any" placeholder="km"/></label><label><span data-i18n="raceAscent">爬升</span><input name="ascent" type="number" min="0" max="100000" placeholder="m"/></label><label><span data-i18n="raceResult">完赛时间</span><input name="result" placeholder="08:32:10" pattern="[0-9]{1,3}:[0-5][0-9](:[0-5][0-9])?"/></label></div>
-        <label class="article-field"><span data-i18n="wechatUrl">公众号文章链接</span><input name="wechatUrl" type="url" placeholder="https://mp.weixin.qq.com/…"/></label>
-        <label class="article-field"><span data-i18n="publishedTime">发布时间（可选，广州时间）</span><input name="publishedTime" type="time"/></label>
-        <label><span data-i18n="bodyZh">中文正文</span><textarea name="bodyZh" rows="7" maxlength="60000"></textarea></label><label><span data-i18n="bodyEn">英文正文</span><textarea name="bodyEn" rows="7" maxlength="60000"></textarea></label><p class="editor-help" data-i18n="bodyHelp">每段之间留一行空行。</p>
-        <fieldset class="media-field"><legend data-i18n="photos">照片</legend><input id="photo-upload" type="file" accept="image/jpeg,image/png,image/webp" multiple aria-label="照片" data-i18n-aria="photos"/><div class="managed-photos"></div></fieldset><fieldset class="media-field race-field"><legend data-i18n="certificates">证书</legend><input id="certificate-upload" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple aria-label="证书" data-i18n-aria="certificates"/><div class="managed-certificates"></div></fieldset>
-        <p class="editor-help" data-i18n="uploadHelp">照片支持 JPG、PNG、WebP；证书也支持 PDF。每个文件最多 8 MB。</p><p class="editor-help" data-i18n="englishHelp">发布需要中英文标题；文章正文也需双语，比赛介绍可以留空。</p>
-        <div class="editor-actions"><button class="button button-quiet" type="submit" name="intent" value="draft" data-i18n="saveDraft">保存草稿</button><button class="button button-primary" type="submit" name="intent" value="publish" data-i18n="publish">发布到网站</button></div>
+<html lang="zh-CN" data-theme="dark" data-language="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#101113" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Waypoint · 内容管理</title>
+    <link rel="icon" href="./favicon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./manage.css" />
+    <script>try{document.documentElement.dataset.theme=localStorage.getItem('waypoint-theme')==='light'?'light':'dark';document.documentElement.dataset.language=localStorage.getItem('waypoint-language')==='en'?'en':'zh';}catch{}</script>
+    <script type="module" src="./manage.js"></script>
+  </head>
+  <body class="manage-page">
+    <a class="skip-link" href="#main" data-i18n="skip">跳到主要内容</a>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="./" aria-label="Waypoint，返回首页" data-i18n-aria="homeLabel">
+          <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3v22M3 14h22"/><path d="m14 5 8 9-8 9-8-9Z"/></svg>
+          <span>Waypoint<span class="brand-period">.</span></span>
+        </a>
+        <div class="header-controls">
+          <button class="language-toggle" type="button" aria-label="Switch to English">EN</button>
+          <button class="theme-toggle manage-theme" type="button" aria-label="切换为浅色模式">
+            <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41"/></svg>
+            <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.1 15.4A8.6 8.6 0 0 1 8.6 3.9 8.6 8.6 0 1 0 20.1 15.4Z"/></svg>
+          </button>
+          <a class="button button-quiet manage-home" href="./"><span data-i18n="manageBack">回到起点</span><span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </header>
+    <main id="main" class="section-shell manage-main">
+      <div class="manage-heading">
+        <div><p class="eyebrow" data-i18n="manage">内容管理</p><h1 data-i18n="manageTitle">整理下一段经历。</h1><p class="manage-intro" data-i18n="manageIntro">整理比赛的成绩与照片，也照看已经写下的文章。</p></div>
+        <button class="button button-quiet manage-logout" type="button" hidden data-i18n="signOut">退出登录</button>
+      </div>
+      <p id="manage-status" role="status" aria-live="polite"></p>
+      <form class="owner-signin" hidden>
+        <p data-i18n="ownerOnly">使用管理密码登录后整理内容。</p>
+        <label><span data-i18n="password">管理密码</span><input name="password" type="password" autocomplete="current-password" required maxlength="256" /></label>
+        <button class="button button-primary" type="submit" data-i18n="signIn">登录</button>
       </form>
-    </div>
-  </main>
-</body></html>
+      <section class="manage-account" hidden>
+        <details class="password-settings"><summary data-i18n="changePassword">修改密码</summary>
+          <form class="password-editor">
+            <label><span data-i18n="currentPassword">当前密码</span><input name="currentPassword" type="password" autocomplete="current-password" required maxlength="256" /></label>
+            <label><span data-i18n="newPassword">新密码</span><input name="newPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="128" /></label>
+            <label><span data-i18n="confirmPassword">确认新密码</span><input name="confirmPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="128" /></label>
+            <p class="editor-help" data-i18n="passwordHelp">新密码至少 10 个字符。修改后，其他设备需要重新登录。</p>
+            <p id="password-status" role="status" aria-live="polite"></p>
+            <button class="button button-primary" type="submit" data-i18n="savePassword">保存新密码</button>
+          </form>
+        </details>
+      </section>
+      <div class="manage-workspace" hidden>
+        <aside class="manage-sidebar">
+          <div class="manage-kind-switch" role="group" aria-label="选择内容类型" data-i18n-aria="manageKindLabel">
+            <button type="button" data-kind="race" aria-pressed="true"><span data-i18n="manageRaces">比赛</span><span class="manage-kind-count" data-kind-count="race">0</span></button>
+            <button type="button" data-kind="article" aria-pressed="false"><span data-i18n="manageArticles">文章</span><span class="manage-kind-count" data-kind-count="article">0</span></button>
+          </div>
+          <div class="manage-race-tools">
+            <label class="manage-category-label" for="manage-category-filter" data-i18n="raceFilterLabel">按赛事类型筛选</label>
+            <select id="manage-category-filter">
+              <option value="all" data-i18n="raceAll">全部</option><option value="10K" data-i18n="raceTenK">10K</option><option value="Half Marathon" data-i18n="raceHalf">半马</option><option value="Marathon" data-i18n="raceFull">全马</option><option value="Trail" data-i18n="trail">越野赛</option><option value="Spartan" data-i18n="raceSpartan">斯巴达</option><option value="Hyrox" data-i18n="raceHyrox">HYROX</option><option value="Road" data-i18n="road">公路跑</option><option value="Other" data-i18n="other">其他</option>
+            </select>
+            <div class="manage-new"><button class="button button-primary" id="new-race" type="button"><span data-i18n="newRace">新增比赛</span><span aria-hidden="true">+</span></button></div>
+          </div>
+          <p class="managed-list-summary" aria-live="polite"></p>
+          <div class="managed-entries"></div>
+        </aside>
+        <div class="manage-editing">
+          <div class="editor-empty"><span class="editor-empty-mark" aria-hidden="true">+</span><h2 data-i18n="manageEmptyTitle">选择一条记录。</h2><p data-i18n="manageEmptyIntro">选择已有比赛或文章，或新增一场比赛。</p></div>
+          <form class="entry-editor" hidden>
+            <input name="id" type="hidden" /><input name="kind" type="hidden" />
+            <div class="editor-heading"><div><p class="eyebrow editor-kind"></p><h2 class="editor-title"></h2></div><span class="editor-publication"></span></div>
+            <fieldset class="editor-section"><legend data-i18n="editorBasics">基本信息</legend>
+              <div class="editor-grid"><label><span data-i18n="titleZh">中文标题</span><input name="titleZh" maxlength="160" required /></label><label><span data-i18n="titleEn">英文标题</span><input name="titleEn" maxlength="160" /></label><label><span data-i18n="date">日期</span><input name="date" type="date" required /></label><label class="race-field"><span data-i18n="raceCategory">比赛类型</span><select name="category"><option value="10K" data-i18n="raceTenK">10K</option><option value="Half Marathon" data-i18n="raceHalf">半马</option><option value="Marathon" data-i18n="raceFull">全马</option><option value="Trail" data-i18n="trail">越野赛</option><option value="Spartan" data-i18n="raceSpartan">斯巴达</option><option value="Hyrox" data-i18n="raceHyrox">HYROX</option><option value="Road" data-i18n="road">公路跑</option><option value="Other" data-i18n="other">其他</option></select></label><label class="article-field"><span data-i18n="publishedTime">发布时间（可选，广州时间）</span><input name="publishedTime" type="time" /></label></div>
+              <label class="article-field"><span data-i18n="wechatUrl">公众号文章链接</span><input name="wechatUrl" type="url" placeholder="https://mp.weixin.qq.com/…" /></label>
+            </fieldset>
+            <fieldset class="editor-section race-field"><legend data-i18n="editorRaceMetrics">比赛成绩</legend>
+              <label><span data-i18n="raceSubtype">组别 / 级别</span><input name="subtype" maxlength="80" placeholder="Sprint / Super / Beast / Ultra / Pro" /></label>
+              <div class="editor-grid editor-metrics"><label><span data-i18n="raceDistance">距离</span><span class="editor-unit-input"><input name="distance" type="number" min="0" max="10000" step="any" /><span aria-hidden="true">km</span></span></label><label><span data-i18n="raceAscent">爬升</span><span class="editor-unit-input"><input name="ascent" type="number" min="0" max="100000" /><span aria-hidden="true">m</span></span></label><label><span data-i18n="raceResult">完赛时间</span><input name="result" placeholder="08:32:10" pattern="[0-9]{1,3}:[0-5][0-9](:[0-5][0-9])?" /></label></div>
+            </fieldset>
+            <fieldset class="editor-section race-field"><legend data-i18n="editorRacePhotos">比赛照片</legend>
+              <p class="editor-help" data-i18n="racePhotoHelp">三个位置都可以稍后补齐，不影响保存或发布。主图用于首页悬停预览。</p>
+              <div class="race-photo-slots">
+                <section class="race-photo-slot" data-slot="primary"><h3 data-i18n="racePrimaryPhoto">主比赛照片</h3><p class="photo-slot-note" data-i18n="racePrimaryHelp">首页悬停时展示</p><div class="photo-slot-preview"></div><p class="photo-slot-status"></p><div class="photo-slot-actions"><label class="button button-quiet photo-upload-button"><span class="photo-upload-label"></span><input id="primary-photo-upload" type="file" accept="image/jpeg,image/png,image/webp" aria-label="主比赛照片" data-i18n-aria="racePrimaryPhoto" /></label><button class="photo-slot-remove" type="button" hidden data-i18n="removePhoto">移除</button></div></section>
+                <section class="race-photo-slot" data-slot="secondary"><h3 data-i18n="raceSecondaryPhoto">次比赛照片</h3><p class="photo-slot-note" data-i18n="raceSecondaryHelp">比赛详情中的第二张照片</p><div class="photo-slot-preview"></div><p class="photo-slot-status"></p><div class="photo-slot-actions"><label class="button button-quiet photo-upload-button"><span class="photo-upload-label"></span><input id="secondary-photo-upload" type="file" accept="image/jpeg,image/png,image/webp" aria-label="次比赛照片" data-i18n-aria="raceSecondaryPhoto" /></label><button class="photo-slot-remove" type="button" hidden data-i18n="removePhoto">移除</button></div></section>
+                <section class="race-photo-slot" data-slot="certificate"><h3 data-i18n="raceCertificatePhoto">证书照片</h3><p class="photo-slot-note" data-i18n="raceCertificateHelp">保存完赛证书</p><div class="photo-slot-preview"></div><p class="photo-slot-status"></p><div class="photo-slot-actions"><label class="button button-quiet photo-upload-button"><span class="photo-upload-label"></span><input id="certificate-upload" type="file" accept="image/jpeg,image/png,image/webp" aria-label="证书照片" data-i18n-aria="raceCertificatePhoto" /></label><button class="photo-slot-remove" type="button" hidden data-i18n="removePhoto">移除</button></div></section>
+              </div>
+              <p class="editor-help" data-i18n="raceUploadHelp">仅支持 JPG、PNG、WebP 图片，每张最多 8 MB。</p>
+            </fieldset>
+            <fieldset class="editor-section article-field"><legend data-i18n="editorArticleSummary">文章概览</legend>
+              <p class="editor-help" data-i18n="summaryHelp">用几句话概括文章，最长 600 个字符。发布概览时请填写中英文。</p>
+              <div class="editor-grid"><label><span data-i18n="summaryZh">中文概览</span><textarea name="summaryZh" rows="4" maxlength="600"></textarea></label><label><span data-i18n="summaryEn">英文概览</span><textarea name="summaryEn" rows="4" maxlength="600"></textarea></label></div>
+            </fieldset>
+            <fieldset class="editor-section article-field"><legend data-i18n="editorArticleBody">完整正文</legend>
+              <label><span data-i18n="bodyZh">中文正文</span><textarea name="bodyZh" rows="12" maxlength="60000"></textarea></label><label><span data-i18n="bodyEn">英文正文</span><textarea name="bodyEn" rows="12" maxlength="60000"></textarea></label><p class="editor-help" data-i18n="bodyHelp">每段之间留一行空行。</p>
+            </fieldset>
+            <p class="editor-help editor-publish-help"></p>
+            <div class="editor-actions"><button class="button button-quiet" type="submit" name="intent" value="draft" data-i18n="saveDraft">保存草稿</button><button class="button button-primary" type="submit" name="intent" value="publish" data-i18n="publish">发布到网站</button></div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
