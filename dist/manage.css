@@ -9,6 +9,21 @@
 .manage-intro {max-width:640px;font-size:1.0625rem;line-height:1.8;}
 .manage-logout {margin-top:0;flex-shrink:0;}
 #manage-status {margin-top:20px;min-height:1.75em;font-size:.9375rem;}
+.manage-loading {margin-block:24px;max-width:640px;}
+.manage-retry {margin-block:4px 24px;border:1px solid var(--line);}
+.manage-progress {display:block;width:100%;max-width:440px;height:3px;margin-block:8px 16px;border:0;border-radius:100px;overflow:hidden;background:var(--line);color:var(--accent);accent-color:var(--accent);}
+.manage-progress::-webkit-progress-bar {background:var(--line);border-radius:100px;}
+.manage-progress::-webkit-progress-value {background:var(--accent);border-radius:100px;}
+.manage-progress::-moz-progress-bar {background:var(--accent);border-radius:100px;}
+.manage-progress:indeterminate {background:linear-gradient(90deg,var(--line) 0 30%,var(--accent) 45% 55%,var(--line) 70% 100%);background-size:250% 100%;animation:manage-progress 1.4s ease-in-out infinite;}
+.manage-progress:indeterminate::-webkit-progress-bar {background:transparent;}
+.manage-progress:indeterminate::-moz-progress-bar {background:transparent;}
+.manage-page button:disabled,.manage-page input:disabled,.manage-page select:disabled,.manage-page textarea:disabled {cursor:wait;}
+.manage-page button:disabled {opacity:.55;}
+.editor-feedback {scroll-margin-top:120px;}
+#editor-status {font-size:.875rem;line-height:1.75;min-height:1.75em;}
+.photo-upload-progress {margin-block:10px 0;}
+@keyframes manage-progress {from {background-position:100% 0;}to {background-position:0 0;}}
 .owner-signin {padding:28px;border:1px solid var(--line);border-radius:16px;background:var(--surface);margin-top:24px;}
 .owner-signin > p {font-size:1rem;color:var(--muted);}
 .manage-account {margin-block:12px 36px;}
@@ -149,4 +164,5 @@
 }
 @media (prefers-reduced-motion:reduce) {
   .manage-kind-switch button,.managed-entry {transition:none;}
+  .manage-progress:indeterminate {animation:none;background-size:100% 100%;}
 }

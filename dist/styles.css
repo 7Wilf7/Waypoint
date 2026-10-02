@@ -1,7 +1,7 @@
 @layer reset, theme, base, layout, components, responsive, experience;
 
 @layer experience {
-  .welcome-screen { position:fixed; inset:0; z-index:90; display:grid; place-items:center; background:#181a1d; color:#f2f3f6; pointer-events:none; }
+  .welcome-screen { position:fixed; inset:0; z-index:90; display:none; place-items:center; background:#181a1d; color:#f2f3f6; pointer-events:none; }
   .welcome-screen[hidden] { display:none; }
   .welcome-screen::after { content:''; position:absolute; bottom:-12svh; width:140%; height:24svh; border-radius:0 0 50% 50%; background:#181a1d; }
   .welcome-brand { position:absolute; top:clamp(24px,4vw,60px); left:clamp(24px,4vw,60px); font-size:1.1rem; }
@@ -11,7 +11,9 @@
   .welcome-line { position:absolute; bottom:5svh; left:25%; width:50%; height:1px; background:rgb(255 255 255 / 15%); overflow:hidden; }
   .welcome-line::after { content:''; position:absolute; inset:0; background:#f2f3f6; transform-origin:left; animation:welcome-line 1600ms linear both; }
   @keyframes welcome-line { from {transform:scaleX(0.02)} to {transform:scaleX(1)} }
-  html.intro-pending :is(.hero-visual,.hero-eyebrow,h1,.hero-statement,.hero-intro,.hero-actions,.hero-location) { animation-play-state:paused; }
+  .welcome-skip {position:absolute;top:clamp(24px,4vw,60px);right:clamp(24px,4vw,60px);background:transparent;border:1px solid rgb(255 255 255 / 25%);border-radius:100px;padding:10px 20px;min-height:44px;color:inherit;font:inherit;cursor:pointer;pointer-events:auto;}
+  .welcome-skip:focus-visible {outline:2px solid currentColor;outline-offset:4px;}
+  html.intro-pending:not(.intro-leaving) :is(.hero-visual,.hero-eyebrow,h1,.hero-statement,.hero-intro,.hero-actions,.hero-location) { animation-play-state:paused; }
   @media (prefers-reduced-motion:reduce) { .welcome-screen { display:none; } }
   .button { position:relative; isolation:isolate; overflow:hidden; border-radius:100px; }
   .button::before { content:''; position:absolute; inset:-55% -15%; z-index:-1; background:#d4dcf0; border-radius:45%; transform:translateY(105%); transition:transform 280ms var(--ease-out); }
@@ -34,6 +36,34 @@
   .races-section {padding-block:110px;border-top:1px solid var(--line);}
   .race-entries {display:block;margin-top:44px;}
   .journal-empty {grid-column:1/-1;color:var(--muted);padding:24px 0;border-top:1px solid var(--line);font-size:1rem;}
+  .loading-state {grid-column:1/-1;width:100%;padding:24px 0;min-width:0;}
+  .loading-copy {font-size:1rem;line-height:1.6;color:var(--text);}
+  .loading-detail {font-size:.875rem;line-height:1.7;color:var(--muted);margin-top:12px;max-width:50ch;}
+  .loading-progress {position:relative;overflow:hidden;height:3px;border-radius:100px;background:var(--line);margin-top:16px;width:100%;}
+  .loading-progress::before {content:'';display:block;height:100%;width:40%;background:var(--text);transform:translateX(-110%);animation:loading-travel 1250ms linear infinite;}
+  @keyframes loading-travel {to{transform:translateX(350%);}}
+  .loading-rows {margin-top:28px;}
+  .loading-row {display:grid;grid-template-columns:90px 1fr;gap:16px 28px;align-content:center;min-height:110px;border-top:1px solid var(--line);}
+  .loading-row span {display:block;border-radius:4px;background:var(--surface-raised);height:12px;}
+  .loading-date {width:65px;grid-row:1/3;align-self:center;}
+  .loading-row .loading-title {width:min(75%,520px);height:20px;}
+  .loading-meta {width:min(45%,280px);}
+  .article-entries .loading-row {min-height:170px;}
+  .race-entries .loading-row {min-height:150px;}
+  .preview-message .loading-state {padding:0;}
+  .preview-message .loading-copy {color:inherit;}
+  .preview-message .loading-detail {color:inherit;opacity:.7;}
+  .preview-message .loading-progress {background:rgb(255 255 255 / 15%);}
+  .preview-message .loading-progress::before {background:#c6c8ce;}
+  .race-archive-results > .loading-state > .loading-progress {position:fixed;top:0;left:0;width:100%;margin:0;border-radius:0;z-index:91;}
+  .load-error {padding:24px 0;}
+  .load-error p {color:var(--muted);line-height:1.8;margin-bottom:20px;}
+  .media-frame {display:grid;place-items:center;aspect-ratio:4/3;width:100%;overflow:hidden;background:var(--surface);border-radius:10px;}
+  .media-frame .loading-state,.media-frame .load-error {padding:24px;width:min(100%,420px);}
+  .media-frame img.media-image {display:block;width:100%;height:100%;object-fit:contain;}
+  .race-filter:disabled {cursor:wait;}
+  @media (max-width:600px){.loading-row {grid-template-columns:60px 1fr;gap:14px 16px;}.loading-date {width:48px;}.loading-title {width:88%;}.loading-meta {width:65%;}}
+  @media (prefers-reduced-motion:reduce){.loading-progress::before {animation:none;transform:translateX(70%);}}
   .journal-card {border-top:1px solid var(--line);display:block;transition:color 180ms ease;}
   .journal-cover {width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;margin-bottom:20px;}
   .journal-card-content {padding:24px 0;}

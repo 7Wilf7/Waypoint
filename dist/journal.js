@@ -3,12 +3,15 @@ import {raceCategories,raceCategoryKeys,subtypeLabel,formatResult,sortRaces,repr
 import {articleReading,articleParagraphs} from './article-layout.js';
 import {articleStats,sortArticles} from './article-utils.js';
 import {racePhotoRoles} from './race-photos.js';
+import {requestJSON,renderLoading,clearLoading} from './loading.js';
 const root=document.documentElement;
 const words=()=>copy[root.dataset.language==='en'?'en':'zh'];
 let entries=[];
 let failed=false;
+let loading=true,request=null,errorKey='unavailable';
 let articlesExpanded=false;
 const el=(tag,className,text)=>{const element=document.createElement(tag);if(className)element.className=className;if(text)element.textContent=text;return element;};
+export function journalState(){return loading?'loading':failed?'error':'ready';}
 export function getEntry(id) {
   const entry=entries.find(item=>item.id===id);
   if(!entry)return null;
@@ -24,6 +27,8 @@ export function getEntry(id) {
 }
 function formatDate(date){return new Intl.DateTimeFormat(root.dataset.language==='en'?'en-GB':'zh-CN',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date(date+'T00:00:00Z'));}
 function renderRaces(container) {
+  if(loading){renderLoading(container,'racesLoading');return;}
+  clearLoading(container);
   container.replaceChildren();
   const races=sortRaces(entries);
   if(failed||!races.length){renderEmpty('race',container);return;}
@@ -51,10 +56,12 @@ function renderRaces(container) {
 }
 function renderEmpty(kind,container) {
   container.replaceChildren();
-  container.append(el('p','journal-empty',failed?words().unavailable:kind==='race'?words().raceEmpty:words().channelEmpty));
-  if(failed){const retry=el('button','button button-quiet',words().retry);retry.addEventListener('click',initJournal);container.append(retry);}
+  container.append(el('p','journal-empty',failed?words()[errorKey]:kind==='race'?words().raceEmpty:words().channelEmpty));
+  if(failed){const retry=el('button','button button-quiet',words().retry);retry.addEventListener('click',event=>initJournal(event.detail===0?container:null));container.append(retry);}
 }
 function renderArticles(container) {
+  if(loading){renderLoading(container,'articlesLoading');return;}
+  clearLoading(container);
   container.replaceChildren();
   const articles=sortArticles(entries);
   if(failed||!articles.length){renderEmpty('article',container);return;}
@@ -77,8 +84,17 @@ function renderArticles(container) {
   }
 }
 export function renderJournal(){renderRaces(document.querySelector('.race-entries'));renderArticles(document.querySelector('.article-entries'));}
-export async function initJournal() {
-  try {const response=await fetch('./api/entries');if(!response.ok)throw new Error('unavailable');entries=(await response.json()).entries;failed=false;}catch{failed=true;}
-  renderJournal();document.dispatchEvent(new Event('journal-ready'));
-  try {const response=await fetch('./api/session');if(response.ok)document.querySelector('.manage-link').hidden=!(await response.json()).owner;}catch{/* The reader remains available without a management link. */}
+export function initJournal(focusContainer=null) {
+  if(request)return request;
+  loading=true;failed=false;renderJournal();document.dispatchEvent(new Event('journal-loading'));
+  request=(async()=>{
+    try {const data=await requestJSON('./api/entries');if(!Array.isArray(data.entries))throw new Error('unavailable');entries=data.entries;}
+    catch(error){failed=true;errorKey=error.message==='request_timeout'?'loadTimedOut':'unavailable';}
+    finally {
+      loading=false;request=null;renderJournal();document.dispatchEvent(new Event('journal-ready'));
+      if(focusContainer)focusContainer.querySelector('a,button')?.focus({preventScroll:true});
+    }
+  })();
+  requestJSON('./api/session').then(session=>{document.querySelector('.manage-link').hidden=!session.owner;}).catch(()=>{/* The reader remains available without a management link. */});
+  return request;
 }

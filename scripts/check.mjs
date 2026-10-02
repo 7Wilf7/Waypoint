@@ -7,7 +7,7 @@ import { copy } from '../dist/i18n.js';
 import {previewProducts,previewScreens,previewViewport} from '../dist/preview-screens.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
-for (const filename of ['app.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'article-utils.js', 'race-utils.js', 'race-photos.js', 'race-archive.js', 'manage.js']) {
+for (const filename of ['app.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'article-utils.js', 'race-utils.js', 'race-photos.js', 'race-archive.js', 'manage.js', 'loading.js']) {
   const result = spawnSync(process.execPath, ['--check', resolve(root, filename)], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr);
 }
@@ -70,8 +70,11 @@ const raceTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/ra
 if(raceTests.status!==0)throw new Error(raceTests.stdout+raceTests.stderr);
 const articleTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/articles.test.mjs')],{encoding:'utf8'});
 if(articleTests.status!==0)throw new Error(articleTests.stdout+articleTests.stderr);
+const loadingTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/loading.test.mjs')],{encoding:'utf8'});
+if(loadingTests.status!==0)throw new Error(loadingTests.stdout+loadingTests.stderr);
 console.log('JavaScript syntax, assets, navigation, complete language dictionaries, and both reading editions passed.');
 console.log('Interactive bilingual preview routes and interrupted product/language selections passed.');
 console.log('Owner authorization, password changes and session revocation, publication visibility, file validation, draft media privacy, and input validation passed.');
 console.log('Race categories, divisions, original dates, representative selection, result formatting, and archive ordering passed.');
 console.log('Complete text-only articles, bilingual summaries, reading estimates, original times, stable article ordering, and fixed race photo roles passed.');
+console.log('First-paint welcome gating, repeat/reduced/deep-link bypass, startup recovery, bounded response bodies, and no automatic write replay passed.');

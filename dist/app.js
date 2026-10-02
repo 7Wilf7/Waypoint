@@ -1,8 +1,9 @@
 import { notesByLanguage } from './content.js';
 import { copy } from './i18n.js';
 import { initMotion, initWelcome } from './motion.js';
-import { initJournal, getEntry, renderJournal } from './journal.js';
+import { initJournal, getEntry, renderJournal, journalState } from './journal.js';
 import { initAppPreview, updateAppPreview } from './app-preview.js';
+import {renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
 
 const root = document.documentElement;
 const themeButton = document.querySelector('.theme-toggle');
@@ -47,7 +48,7 @@ function applyLanguage(next, announce = false) {
     button.title = text.languageLabel;
   });
   syncThemeUI();
-  if (readingKey && dialog.open) renderNote(readingKey, dialog.dataset.input === 'keyboard', true);
+  if (readingKey && dialog.open&&!renderNote(readingKey, dialog.dataset.input === 'keyboard', true))renderPendingNote(readingKey);
   if (announce) announcement.textContent = text.languageChanged;
   else announcement.textContent = '';
   document.querySelector('.note-preview').classList.remove('is-visible');
@@ -84,7 +85,7 @@ function renderNote(key, keyboard = false, preservePosition = false) {
   readerTitle.textContent = note.title;
   document.querySelector('#reader-category').textContent = note.category;
   document.querySelector('#reader-lead').textContent = note.lead;
-  readerBody.replaceChildren();
+  clearLoading(readerBody);clearMedia(readerBody);readerBody.replaceChildren();
   if(note.kind==='article') {
     const overview=document.createElement('aside');overview.className='reader-overview';
     const label=document.createElement('span');label.className='eyebrow';label.textContent=words().articleOverview;
@@ -95,7 +96,7 @@ function renderNote(key, keyboard = false, preservePosition = false) {
   for (const block of note.blocks || note.paragraphs.map(text=>({type:'paragraph',text}))) {
     if(block.type==='image') {
       const figure=document.createElement('figure');figure.className='reader-inline-photo';
-      const image=document.createElement('img');image.src='./media/'+block.mediaId;image.alt=note.title+' · '+words().galleryPhoto;image.loading='lazy';
+      const image=createMediaImage('./media/'+block.mediaId,note.title+' · '+words().galleryPhoto);
       figure.append(image);readerBody.append(figure);
     }else {
       const paragraph = document.createElement(block.type==='heading'?'h3':'p');
@@ -133,7 +134,7 @@ function renderNote(key, keyboard = false, preservePosition = false) {
   }
   if (note.photos?.length) {
     const gallery=document.createElement('div');gallery.className='reader-gallery';
-    for (const [index,id] of note.photos.entries()) {const image=document.createElement('img');image.src='./media/'+id;image.alt=note.title+' · '+words().galleryPhoto+' '+(index+1);image.loading='lazy';gallery.append(image);}
+    for (const [index,id] of note.photos.entries())gallery.append(createMediaImage('./media/'+id,note.title+' · '+words().galleryPhoto+' '+(index+1)));
     readerBody.append(gallery);
   }
   if (note.certificates?.length) {
@@ -154,11 +155,33 @@ function renderNote(key, keyboard = false, preservePosition = false) {
   return true;
 }
 
+function renderPendingNote(key) {
+  readingKey=key;readerTitle.textContent=words().recordLoading;document.title=words().recordLoading+' — Waypoint';
+  document.querySelector('#reader-category').textContent='Waypoint';document.querySelector('#reader-lead').textContent='';
+  clearMedia(readerBody);
+  if(journalState()==='loading')renderLoading(readerBody,'recordLoading',{rows:0});
+  else {
+    clearLoading(readerBody);readerBody.replaceChildren();
+    const error=document.createElement('div');error.className='load-error';error.setAttribute('role','status');
+    const text=document.createElement('p');text.textContent=journalState()==='error'?words().unavailable:words().recordNotFound;
+    error.append(text);
+    if(journalState()==='error') {
+      const retry=document.createElement('button');retry.type='button';retry.className='button button-quiet';retry.textContent=words().retry;
+      retry.addEventListener('click',()=>initJournal().then(()=>dialog.open&&dialog.querySelector('.reader-close').focus({preventScroll:true})));error.append(retry);
+    }
+    readerBody.append(error);
+  }
+  if(!dialog.open){root.classList.add('reading');dialog.showModal();}
+}
+
 function applyRoute() {
   const match = location.hash.match(/^#(read|entry)\/([a-z0-9-]+)$/i);
   if (match && (notes()[match[2]] || getEntry(match[2]))) {
     if (!dialog.open && !history.state?.reading) returnHash = match[2] === 'aevum' ? '#projects' : getEntry(match[2])?.kind === 'race' ? '#races' : '#writing';
     renderNote(match[2]);
+  } else if(match&&match[1]==='entry') {
+    if(!dialog.open)returnHash=match[2].startsWith('race-')?'#races':'#writing';
+    renderPendingNote(match[2]);
   } else if (dialog.open) {
     routing = true;
     dialog.close();
@@ -179,6 +202,7 @@ document.addEventListener('click', event => {
 document.querySelector('.reader-close').addEventListener('click', () => dialog.close());
 dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
 dialog.addEventListener('close', () => {
+  clearLoading(readerBody);clearMedia(readerBody);
   root.classList.remove('reading');
   document.title = words().pageTitle;
   readingKey = null;
@@ -187,6 +211,7 @@ dialog.addEventListener('close', () => {
 window.addEventListener('popstate', applyRoute);
 window.addEventListener('hashchange', applyRoute);
 document.addEventListener('journal-ready',applyRoute);
+document.addEventListener('journal-loading',applyRoute);
 applyRoute();
 
 const navLinks = [...document.querySelectorAll('.site-nav a')];

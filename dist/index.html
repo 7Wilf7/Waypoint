@@ -8,7 +8,17 @@
     <meta name="description" content="我是 Wilf 吴凡，住在广州，喜欢越野跑，也用 AI 做自己的工具。Waypoint 放着我走过的路、写下的东西和正在做的项目。" />
     <title>Waypoint — Wilf 吴凡的个人空间</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .welcome-screen{display:none}
+      html.intro-pending{overflow:hidden}
+      html.intro-pending:not(.intro-leaving) body>:not(.welcome-screen){visibility:hidden}
+      html.intro-pending .welcome-screen{display:grid;position:fixed;inset:0;z-index:90;place-items:center;background:#181a1d;color:#f2f3f6}
+      .welcome-word{font:400 clamp(2rem,5vw,4.5rem)/1.3 system-ui,sans-serif}
+      html[data-language="en"] [data-welcome="zh"],html[data-language="zh"] [data-welcome="en"]{display:none}
+      .startup-error{display:none}
+      html.app-failed .startup-error{display:block}
+      html.app-failed :is(.race-entries,.article-entries,.preview-message){display:none}
+    </style>
     <link rel="modulepreload" href="./i18n.js" />
     <link rel="modulepreload" href="./content.js" />
     <link rel="modulepreload" href="./motion.js" />
@@ -21,11 +31,28 @@
         document.documentElement.lang = language === 'en' ? 'en' : 'zh-CN';
         document.documentElement.dataset.theme = saved === 'light' || saved === 'dark' ? saved : 'dark';
       } catch { document.documentElement.dataset.theme = 'dark'; }
+      // Decide before first paint, independently of the main module download.
+      (() => {
+        const root=document.documentElement,reduce=matchMedia('(prefers-reduced-motion: reduce)');
+        let seen=false;try{seen=sessionStorage.getItem('waypoint-welcome')==='seen';}catch{}
+        if(seen||reduce.matches||(location.hash&&location.hash!=='#home')){root.classList.add('intro-complete');return;}
+        root.classList.add('intro-pending');
+        try{sessionStorage.setItem('waypoint-welcome','seen');}catch{}
+        const release=()=>{root.classList.remove('intro-pending','intro-leaving');root.classList.add('intro-complete');cleanup();};
+        const skip=event=>{if(event.type==='keydown'||event.target.closest('.welcome-skip')){root.dataset.input=event.type==='keydown'?'keyboard':'pointer';release();}};
+        const onReduce=()=>{if(reduce.matches)release();};
+        const timer=setTimeout(release,4000);
+        const cleanup=()=>{clearTimeout(timer);document.removeEventListener('keydown',skip);document.removeEventListener('click',skip);reduce.removeEventListener('change',onReduce);};
+        document.addEventListener('keydown',skip);document.addEventListener('click',skip);reduce.addEventListener('change',onReduce);
+        document.addEventListener('waypoint-welcome-ready',cleanup,{once:true});
+      })();
     </script>
-    <script type="module" src="./app.js"></script>
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./app.js" onerror="document.documentElement.classList.add('app-failed')"></script>
   </head>
   <body>
-    <div class="welcome-screen" aria-hidden="true" hidden><span class="welcome-brand">Waypoint.</span><p class="welcome-word"></p><span class="welcome-line"></span><span class="welcome-signature">WILF WU / GUANGZHOU</span></div>
+    <noscript><style>:is(.race-entries,.article-entries,.preview-message,.preview-options){display:none!important}</style><p class="section-shell load-error">请启用 JavaScript，以浏览比赛、文章和交互预览。 / Enable JavaScript to browse race records, articles, and interactive previews.</p></noscript>
+    <div class="welcome-screen"><span class="welcome-brand">Waypoint.</span><p class="welcome-word"><span data-welcome="zh">你好</span><span data-welcome="en">Hello</span></p><span class="welcome-line" aria-hidden="true"></span><span class="welcome-signature">WILF WU / GUANGZHOU</span><button class="welcome-skip" type="button"><span data-welcome="zh">跳过</span><span data-welcome="en">Skip</span></button></div>
     <a class="skip-link" href="#main" data-i18n="skip">跳到主要内容</a>
     <header class="site-header">
       <div class="header-inner">
@@ -47,6 +74,7 @@
     </header>
 
     <main id="main">
+      <div class="startup-error section-shell load-error" role="status"><p><span data-welcome="zh">页面暂时未能完整载入，请重新加载。</span><span data-welcome="en">The page could not finish loading. Please reload.</span></p><button class="button button-quiet" type="button" onclick="location.reload()"><span data-welcome="zh">重新加载</span><span data-welcome="en">Reload</span></button></div>
       <section class="hero section-shell" id="home" aria-labelledby="hero-heading">
         <div class="hero-copy">
           <p class="eyebrow hero-eyebrow"><span class="small-cross" aria-hidden="true">+</span><span data-i18n="heroEyebrow">A PERSONAL SPACE, BY WILF</span></p>
@@ -80,7 +108,7 @@
         </div>
       </section>
 
-      <section class="section-shell races-section" id="races" aria-labelledby="races-heading"><div class="section-topline"><span class="eyebrow" data-i18n="raceLabel">02 / RACE JOURNAL</span><span class="section-aside" data-i18n="raceAside">城市、山野与赛场。</span></div><div class="section-heading-row"><h2 id="races-heading" data-i18n="raceTitle">走过的比赛。</h2></div><div class="race-entries" aria-live="polite"></div></section>
+      <section class="section-shell races-section" id="races" aria-labelledby="races-heading"><div class="section-topline"><span class="eyebrow" data-i18n="raceLabel">02 / RACE JOURNAL</span><span class="section-aside" data-i18n="raceAside">城市、山野与赛场。</span></div><div class="section-heading-row"><h2 id="races-heading" data-i18n="raceTitle">走过的比赛。</h2></div><div class="race-entries" aria-live="polite" aria-busy="true"><div class="loading-state" role="status"><p class="loading-copy" data-i18n="racesLoading">正在载入比赛记录…</p><div class="loading-progress" role="progressbar" aria-label="正在载入比赛记录…"></div><p class="loading-detail" data-i18n="loadingHint">内容准备好后会立即显示。</p><div class="loading-rows" aria-hidden="true"><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div></div></div></div></section>
 
       <section class="section-shell projects-section" id="projects" aria-labelledby="projects-heading">
         <div class="section-topline"><span class="eyebrow" data-i18n="projectLabel">03 / SELECTED PROJECT</span><span class="section-aside" data-i18n="projectAside">从自己的需要出发。</span></div>
@@ -98,7 +126,7 @@
         </article>
         <div class="app-preview">
           <div class="preview-heading"><h3 data-i18n="previewTitle">打开 Aevum，看看里面。</h3><p data-i18n="previewIntro">四个入口，放着日常里不同的事情。</p></div>
-          <div class="preview-stage"><div class="preview-device"><div class="preview-screen"><div class="preview-display" aria-busy="false"><div class="preview-page"><img class="preview-image" src="./assets/previews/aevum-overview-zh.png" alt="Aevum App 界面预览" width="412" height="906" /></div><div class="preview-message" role="status" hidden></div></div></div><p class="preview-caption" aria-live="polite"></p></div><div class="preview-options" role="group" aria-label="App 预览" data-i18n-aria="previewImage">
+          <div class="preview-stage"><div class="preview-device"><div class="preview-screen"><div class="preview-display" aria-busy="true"><div class="preview-page" hidden></div><div class="preview-message" role="status"><div class="loading-state" role="status"><p class="loading-copy" data-i18n="previewLoading">正在载入界面…</p><div class="loading-progress" role="progressbar" aria-label="正在载入界面…"></div><p class="loading-detail" data-i18n="loadingHint">内容准备好后会立即显示。</p></div></div><noscript><img class="preview-image" src="./assets/previews/aevum-overview-zh.png" alt="Aevum App 界面静态预览" width="412" height="906" /></noscript></div></div><p class="preview-caption" aria-live="polite"></p></div><div class="preview-options" role="group" aria-label="App 预览" data-i18n-aria="previewImage">
             <button class="preview-tab is-active" data-app="aevum" aria-pressed="true"><span class="preview-tab-number">01</span><img src="./assets/aevum.png" alt=""/><span><strong>Aevum</strong><span data-i18n="previewAevum">总览与 AI 对话</span></span></button>
             <button class="preview-tab" data-app="ultreia" aria-pressed="false"><span class="preview-tab-number">02</span><img src="./assets/ultreia.png" alt=""/><span><strong>Ultreia</strong><span data-i18n="previewUltreia">训练记录与比赛</span></span></button>
             <button class="preview-tab" data-app="viatica" aria-pressed="false"><span class="preview-tab-number">03</span><img src="./assets/viatica.png" alt=""/><span><strong>Viatica</strong><span data-i18n="previewViatica">收支与资产</span></span></button>
@@ -112,7 +140,7 @@
         <div class="section-topline"><span class="eyebrow" data-i18n="writingLabel">04 / FIELD NOTES</span><span class="section-aside" data-i18n="writingAside">记下一点，留住一点。</span></div>
         <div class="section-heading-row"><h2 id="writing-heading" data-i18n="writingTitle">路上，和脑海里。</h2><span class="section-count" data-i18n="writingCount">SELECTED NOTES / 03</span></div>
         <div class="channel-heading"><div><p class="eyebrow" data-i18n="channelLabel">公众号 · 凡有所念</p><h3 data-i18n="channelName">凡有所念</h3><p data-i18n="channelIntro">赛记与随笔，也写在公众号里。</p></div></div>
-        <div class="article-entries" aria-live="polite"></div>
+        <div class="article-entries" aria-live="polite" aria-busy="true"><div class="loading-state" role="status"><p class="loading-copy" data-i18n="articlesLoading">正在载入文章…</p><div class="loading-progress" role="progressbar" aria-label="正在载入文章…"></div><p class="loading-detail" data-i18n="loadingHint">内容准备好后会立即显示。</p><div class="loading-rows" aria-hidden="true"><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div></div></div></div>
         <p class="notes-label eyebrow" data-i18n="notesLabel">片段与笔记</p>
         <div class="notes-list">
           <a class="note-row" href="#read/trail"><span class="note-index">01</span><div class="note-text"><span class="note-category" data-i18n="noteTrailCategory">山野 · 赛记片段</span><h3 data-i18n="noteTrailTitle">从床上铺满装备，到夜色里出发</h3><p data-i18n="noteTrailIntro">关于赛前准备、按时补给，和前半程的那些感受。</p></div><span class="note-end"><span data-i18n="readExcerpt">阅读片段</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></span></a>

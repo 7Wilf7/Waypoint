@@ -11,7 +11,11 @@ async function readJson(request,limit=180000) {
 }
 export async function handle(request,store,env=process.env) {
   const url=new URL(request.url),path=url.pathname;
-  if(path==='/api/entries'&&request.method==='GET')return json({entries:(await store.entries()).filter(entry=>entry.published)});
+  if(path==='/api/entries'&&request.method==='GET') {
+    const kind=url.searchParams.get('kind');
+    if(kind&&!['race','article'].includes(kind))return json({error:'invalid_kind'},400);
+    return json({entries:(await store.entries()).filter(entry=>entry.published&&(!kind||entry.kind===kind))});
+  }
   const authRecord=path==='/api/login'||hasOwnerCookie(request)?await store.auth():null;
   const credentials=credentialSettings(env,authRecord),owner=isOwner(request,credentials);
   if(path==='/api/session'&&request.method==='GET')return json({owner,uploads:store.mode});

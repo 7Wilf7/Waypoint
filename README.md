@@ -113,3 +113,11 @@ Open `/manage`, sign in, and expand **Change password**. Enter the current passw
 The local `.local/admin-access.txt` file contains the initial password. After changing it on the website, use your own new password and save it in your password manager. Local development credentials are independent from the production Blob record.
 
 Contextual hover circles are limited to project entry, notes, articles, and race cards. The native hand cursor remains visible; navigation, language/theme switches, preview tabs, and ordinary buttons keep their own feedback.
+
+## Loading and transitions
+
+The first-visit greeting gates the page before its first paint. It is skippable, runs once per session, and is bypassed for reduced motion and direct content links. A four-second fallback releases the page if the main module fails to start; no-JavaScript visitors keep the static page and project image.
+
+Race and journal lists, direct article links, app previews, media, and owner management show feedback while requests are pending. Indeterminate progress bars describe waiting without inventing a completion percentage. Slow reads explain the delay after five seconds; reads, including response bodies, time out after twenty seconds and offer a manual retry. Owner writes have a sixty-second deadline and are never automatically replayed; an uncertain outcome asks the owner to reload and confirm the result. Direct Blob uploads use actual byte progress.
+
+The race archive requests only published races through `/api/entries?kind=race`, preserving the public visibility rules while avoiding article bodies in that response. The loading checks cover the first-paint gate, request deadlines, failure and retry states, keyboard focus recovery, both languages and themes, and browser widths of 360, 768, and 1440 pixels. Physical-phone testing remains unverified.

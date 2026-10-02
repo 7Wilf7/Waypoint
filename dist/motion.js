@@ -5,14 +5,9 @@ export function initWelcome() {
   const root = document.documentElement;
   const screen = document.querySelector('.welcome-screen');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
-  let seen = false;
-  try { seen = sessionStorage.getItem('waypoint-welcome') === 'seen'; } catch { /* Optional visit preference. */ }
-  if (seen || reduce.matches || (location.hash && location.hash !== '#home')) return Promise.resolve();
-  try { sessionStorage.setItem('waypoint-welcome', 'seen'); } catch { /* Optional visit preference. */ }
-  root.classList.add('intro-pending');
-  screen.hidden = false;
+  if (!root.classList.contains('intro-pending')) return Promise.resolve();
   const word = screen.querySelector('.welcome-word');
-  const greetings = ['你好', 'Hello', 'Bonjour', 'Hola', 'こんにちは'];
+  const greetings = root.dataset.language==='en'?['Hello','你好','Bonjour','Hola','こんにちは']:['你好','Hello','Bonjour','Hola','こんにちは'];
   let index = 0;
   let timer;
   let exit;
@@ -23,9 +18,9 @@ export function initWelcome() {
       finished = true;
       clearTimeout(timer);
       exit?.cancel();
-      screen.hidden = true;
-      root.classList.remove('intro-pending');
+      root.classList.remove('intro-pending','intro-leaving');
       document.removeEventListener('keydown', skip);
+      screen.querySelector('.welcome-skip').removeEventListener('click',skip);
       reduce.removeEventListener('change', onReduce);
       resolve();
     }
@@ -37,12 +32,16 @@ export function initWelcome() {
         index++;
         timer = setTimeout(next, index === 1 ? 300 : index > greetings.length ? 430 : 155);
       } else {
+        root.classList.add('intro-leaving');
         exit = screen.animate([{transform:'translateY(0)'},{transform:'translateY(-125%)'}], {duration:800,easing:'cubic-bezier(0.77, 0, 0.175, 1)',fill:'forwards'});
         exit.finished.then(finish, finish);
       }
     }
     document.addEventListener('keydown', skip, {once:true});
+    screen.querySelector('.welcome-skip').addEventListener('click',skip);
     reduce.addEventListener('change', onReduce);
+    document.dispatchEvent(new Event('waypoint-welcome-ready'));
+    if(reduce.matches){finish();return;}
     next();
   });
 }

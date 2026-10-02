@@ -36,7 +36,10 @@
         <div><p class="eyebrow" data-i18n="manage">内容管理</p><h1 data-i18n="manageTitle">整理下一段经历。</h1><p class="manage-intro" data-i18n="manageIntro">整理比赛的成绩与照片，也照看已经写下的文章。</p></div>
         <button class="button button-quiet manage-logout" type="button" hidden data-i18n="signOut">退出登录</button>
       </div>
-      <p id="manage-status" role="status" aria-live="polite"></p>
+      <p id="manage-status" role="status" aria-live="polite" aria-atomic="true"></p>
+      <progress id="manage-progress" class="manage-progress" hidden></progress>
+      <div id="manage-loading" class="manage-loading" aria-busy="true"><p data-i18n="manageLoading">正在载入管理页面…</p><progress class="manage-progress" aria-label="正在载入管理页面…" data-i18n-aria="manageLoading"></progress></div>
+      <button id="manage-retry" class="button button-quiet manage-retry" type="button" hidden data-i18n="retry">重试</button>
       <form class="owner-signin" hidden>
         <p data-i18n="ownerOnly">使用管理密码登录后整理内容。</p>
         <label><span data-i18n="password">管理密码</span><input name="password" type="password" autocomplete="current-password" required maxlength="256" /></label>
@@ -49,7 +52,8 @@
             <label><span data-i18n="newPassword">新密码</span><input name="newPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="128" /></label>
             <label><span data-i18n="confirmPassword">确认新密码</span><input name="confirmPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="128" /></label>
             <p class="editor-help" data-i18n="passwordHelp">新密码至少 10 个字符。修改后，其他设备需要重新登录。</p>
-            <p id="password-status" role="status" aria-live="polite"></p>
+            <p id="password-status" role="status" aria-live="polite" aria-atomic="true"></p>
+            <progress id="password-progress" class="manage-progress" hidden></progress>
             <button class="button button-primary" type="submit" data-i18n="savePassword">保存新密码</button>
           </form>
         </details>
@@ -100,6 +104,7 @@
               <label><span data-i18n="bodyZh">中文正文</span><textarea name="bodyZh" rows="12" maxlength="60000"></textarea></label><label><span data-i18n="bodyEn">英文正文</span><textarea name="bodyEn" rows="12" maxlength="60000"></textarea></label><p class="editor-help" data-i18n="bodyHelp">每段之间留一行空行。</p>
             </fieldset>
             <p class="editor-help editor-publish-help"></p>
+            <div class="editor-feedback"><p id="editor-status" role="status" aria-live="polite" aria-atomic="true"></p><progress id="editor-progress" class="manage-progress" hidden></progress></div>
             <div class="editor-actions"><button class="button button-quiet" type="submit" name="intent" value="draft" data-i18n="saveDraft">保存草稿</button><button class="button button-primary" type="submit" name="intent" value="publish" data-i18n="publish">发布到网站</button></div>
           </form>
         </div>

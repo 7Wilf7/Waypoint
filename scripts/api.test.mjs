@@ -36,6 +36,20 @@ test('authenticated writes reject cross-origin requests',async()=>{
   assert.equal((await write(race,{origin:'https://another.test'})).status,403);
   assert.equal((await write(race,{'sec-fetch-site':'cross-site'})).status,403);
 });
+test('public race-only reads omit articles and every draft without changing race content',async()=>{
+  const published={...race,id:'race-only-published',published:true};
+  const draft={...race,id:'race-only-draft',published:false};
+  const article={id:'race-query-article',kind:'article',published:true,titleZh:'文章',titleEn:'Article',date:'2026-09-13',bodyZh:'完整正文',bodyEn:'Full text',photos:[],certificates:[]};
+  const scopedStore={entries:async()=>[published,draft,article]};
+  const read=path=>handle(request(path),scopedStore,env);
+  const response=await read('/api/entries?kind=race'),entries=(await response.json()).entries;
+  assert.equal(response.status,200);assert.match(response.headers.get('cache-control'),/no-store/);
+  assert.ok(entries.every(entry=>entry.kind==='race'&&entry.published));assert.ok(entries.some(entry=>entry.id===published.id));
+  assert.equal(entries.some(entry=>[draft.id,article.id].includes(entry.id)),false);
+  assert.deepEqual(entries.find(entry=>entry.id===published.id),published);
+  assert.ok((await(await read('/api/entries')).json()).entries.some(entry=>entry.id===article.id));
+  assert.equal((await read('/api/entries?kind=private')).status,400);
+});
 test('article publication retains its original date through publish and withdrawal',async()=>{
   const article={id:'original-article',kind:'article',published:true,titleZh:'原文日期测试',titleEn:'Original date test',date:'2024-09-07',publishedTime:'15:00',bodyZh:'测试正文',bodyEn:'Test body',articleLayout:[{type:'heading',index:0}],photos:[],certificates:[],wechatUrl:'https://mp.weixin.qq.com/s/test-article'};
   assert.equal((await write(article)).status,200);
