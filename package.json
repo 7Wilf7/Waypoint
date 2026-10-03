@@ -13,7 +13,8 @@
     "esbuild": "^0.28.2"
   },
   "dependencies": {
-    "@vercel/blob": "^2.8.0"
+    "@vercel/blob": "^2.8.0",
+    "sharp": "^0.35.5"
   },
   "engines": {
     "node": "24.x"

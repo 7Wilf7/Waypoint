@@ -2,6 +2,7 @@ import {handleUpload} from '@vercel/blob/client';
 import {BlobPreconditionFailedError} from '@vercel/blob';
 import {ID,MAX_FILE,validateEntry,fileType} from './content.js';
 import {isOwner,checkPassword,sessionCookie,sameOrigin,hasOwnerCookie,credentialSettings,changedCredentials} from './auth.js';
+import {IMAGE_PRESETS,ensureImageVariants,imageVariant} from './image-variants.js';
 
 const json=(value,status=200,headers={})=>Response.json(value,{status,headers:{'cache-control':'no-store','x-content-type-options':'nosniff',...headers}});
 async function readJson(request,limit=180000) {
@@ -89,18 +90,38 @@ export async function handle(request,store,env=process.env) {
     }
     if(!bytes.length||bytes.length>MAX_FILE)return json({error:'file_too_large'},413);
     const mime=fileType(bytes);if(!mime)return json({error:'file_type'},400);
-    if(request.method==='PUT')await store.saveFile(id,bytes);
-    await store.saveMedia({id,mime,filename:filename.trim().slice(0,160),size:bytes.length});return json({id});
+    if(request.method==='PUT') {
+      try{await store.saveFile(id,bytes);}catch(error){if(error.message==='media_exists')return json({error:'media_exists'},409);throw error;}
+    }
+    const meta={id,mime,filename:filename.trim().slice(0,160),size:bytes.length};
+    const info=await ensureImageVariants(store,meta,bytes);
+    await store.saveMedia({...meta,...(info.width?{width:info.width,height:info.height}:{})});return json({id});
   }
   const media=path.match(/^\/media\/([a-z0-9-]{1,64})$/i);
   if(media&&['GET','HEAD'].includes(request.method)) {
-    const id=media[1];
-    if(!owner&&!(await store.entries()).some(entry=>entry.published&&(entry.photos.includes(id)||entry.certificates.includes(id))))return new Response('Not found',{status:404});
-    const meta=await store.media(id);if(!meta)return new Response('Not found',{status:404});
-    const file=request.method==='GET'?await store.file(id):null;
-    if(request.method==='GET'&&!file)return new Response('Not found',{status:404});
+    const id=media[1],preset=url.searchParams.get('size'),head=request.method==='HEAD';
+    const references=entry=>entry?.published&&(entry.photos.includes(id)||entry.certificates.includes(id));
+    const publishers=owner?[]:(await store.entries()).filter(references);
+    const candidates=publishers.map(entry=>entry.id).filter(candidate=>ID.test(candidate||''));
+    const authorized=async()=>{
+      if(owner)return true;
+      // Request-local candidates avoid a second full catalog read, without caching permission.
+      if(candidates.length&&store.entry&&(await Promise.all(candidates.map(candidate=>store.entry(candidate)))).some(references))return true;
+      // A different entry may have published the shared photo while the candidates withdrew it.
+      return (await store.entries()).some(references);
+    };
+    const notFound=()=>new Response('Not found',{status:404,headers:{'cache-control':'private, no-store'}});
+    if(!owner&&!publishers.length)return notFound();
+    if(preset!==null&&!IMAGE_PRESETS.includes(preset))return json({error:'invalid_image_size'},400);
+    let meta=await store.media(id);if(!meta)return notFound();
+    let file;
+    if(preset!==null)({meta,file}=await imageVariant(store,meta,preset,head));
+    else file=head?null:await store.file(id);
+    if(request.method==='GET'&&!file)return notFound();
+    // Encoding or a private-store read can race with publication withdrawal.
+    if(!await authorized()){await file?.body?.cancel();return notFound();}
     // Stream large photos; do not buffer the response inside a Vercel Function.
-    return new Response(file?.body||null,{headers:{'content-type':meta.mime,'content-length':String(meta.size),'cache-control':'private, no-store','x-content-type-options':'nosniff',...(meta.mime==='application/pdf'?{'content-disposition':'inline; filename="certificate.pdf"'}:{})}});
+    return new Response(file?.body||null,{headers:{'content-type':meta.mime,'content-length':String(meta.size),'cache-control':'private, no-store','x-content-type-options':'nosniff',...(meta.width?{'x-image-width':String(meta.width),'x-image-height':String(meta.height)}:{}),...(meta.mime==='application/pdf'?{'content-disposition':'inline; filename="certificate.pdf"'}:{})}});
   }
   return json({error:'not_found'},404);
 }

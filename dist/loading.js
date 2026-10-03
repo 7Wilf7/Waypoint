@@ -1,4 +1,5 @@
 import {copy} from './i18n.js';
+import {loadMediaImage} from './media-images.js';
 
 const timers=new WeakMap();
 const words=()=>copy[document.documentElement.dataset.language==='en'?'en':'zh'];
@@ -60,30 +61,36 @@ export function clearMedia(container) {
   container.querySelectorAll('.media-frame').forEach(frame=>mediaCleanup.get(frame)?.());
 }
 
-// Keep a stable frame while private photos load, and never leave a broken image.
-export function createMediaImage(src,alt) {
+// Decode before showing the photo, then let its natural proportions set the frame.
+export function createMediaImage(src,alt,{size='read',originalLink=true}={}) {
   const frame=document.createElement('div');frame.className='media-frame';
   let revision=0,timer,disposed=false;
   const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();load();}},{rootMargin:'240px'});
   function load(keyboard=false) {
     if(disposed)return;
-    const ticket=++revision;clearTimeout(timer);renderLoading(frame,'imageLoading',{rows:0});
-    const image=new Image();image.className='media-image';image.alt=alt;
+    const ticket=++revision;clearTimeout(timer);frame.classList.remove('is-ready');renderLoading(frame,'imageLoading',{rows:0});
     const failed=()=>{
       if(disposed||revision!==ticket)return;
       revision++;clearTimeout(timer);clearLoading(frame);
       const error=document.createElement('div');error.className='load-error';error.setAttribute('role','status');
       const text=document.createElement('p');text.textContent=words().imageFailed;
       const retry=document.createElement('button');retry.className='button button-quiet';retry.type='button';retry.textContent=words().retry;
-      retry.addEventListener('click',event=>load(event.detail===0));error.append(text,retry);frame.replaceChildren(error);
+      retry.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();load(event.detail===0);});error.append(text,retry);frame.replaceChildren(error);
       if(keyboard)retry.focus({preventScroll:true});
     };
-    image.onload=()=>{
+    timer=setTimeout(failed,20000);
+    loadMediaImage(src,{size}).then(image=>{
       if(disposed||revision!==ticket)return;
-      clearTimeout(timer);clearLoading(frame);frame.replaceChildren(image);
+      clearTimeout(timer);clearLoading(frame);image.className='media-image';image.alt=alt;
+      frame.style.setProperty('--media-width',image.naturalWidth+'px');frame.classList.add('is-ready');
+      if(originalLink) {
+        const link=document.createElement('a');link.className='media-photo-link';link.href=src;link.target='_blank';link.rel='noopener';
+        link.setAttribute('aria-label',words().viewOriginal+' · '+alt);
+        const label=document.createElement('span');label.className='media-original-label';label.textContent=words().viewOriginal+' ↗';
+        link.append(image,label);frame.replaceChildren(link);
+      }else frame.replaceChildren(image);
       if(keyboard){frame.tabIndex=-1;frame.focus({preventScroll:true});}
-    };
-    image.onerror=failed;timer=setTimeout(failed,20000);image.src=src;
+    },failed);
   }
   renderLoading(frame,'imageLoading',{rows:0});
   clearLoading(frame);

@@ -7,6 +7,7 @@ import {handle} from '../server/api.js';
 import {LocalStore} from '../server/local-store.js';
 import {hashPassword,isOwner} from '../server/auth.js';
 import {BlobPreconditionFailedError} from '@vercel/blob';
+import sharp from 'sharp';
 
 let directory,store,cookie;
 const env={WAYPOINT_PASSWORD_HASH:hashPassword('test-owner-password'),WAYPOINT_SESSION_SECRET:'test-session-secret-'.repeat(3)};
@@ -112,6 +113,23 @@ test('large direct uploads are finalized and streamed; oversize and anonymous to
   const token=await handle(request('/api/manage/upload',{method:'POST',headers,body:JSON.stringify({type:'blob.generate-client-token',payload:{pathname:'media/test-photo',clientPayload:'{}'}})}),blobStore,env);assert.equal(token.status,403);
   const oversized=Buffer.alloc(8*1024*1024+1);oversized.write('%PDF-1.7');
   assert.equal((await call('/api/manage/media/oversize',{method:'PUT',headers:{...headers,cookie},body:oversized})).status,413);
+});
+test('new images finalize both presets, preserve original bytes and reject same-id overwrite',async()=>{
+  const bytes=await sharp({create:{width:3200,height:2130,channels:3,background:'#375981'}}).jpeg({quality:95}).toBuffer();
+  const id='new-optimized-photo',upload=body=>call('/api/manage/media/'+id,{method:'PUT',headers:{...headers,cookie},body});
+  assert.equal((await upload(bytes)).status,200);
+  const meta=await store.media(id);assert.equal(meta.width,3200);assert.equal(meta.height,2130);
+  const info=await store.imageInfo(id,'v1');assert.equal(info.presets.preview.width,640);assert.equal(info.presets.read.width,1920);
+  assert.equal((await upload(bytes)).status,409);
+  const raw=await call('/media/'+id,{headers:{cookie}});assert.deepEqual(Buffer.from(await raw.arrayBuffer()),bytes);
+  const head=await call('/media/'+id+'?size=preview',{method:'HEAD',headers:{cookie}});
+  assert.equal(head.status,200);assert.equal(head.headers.get('content-length'),String(info.presets.preview.size));assert.equal(await head.text(),'');
+  const fake=new Request('https://waypoint.test/media/'+id+'?size=preview',{headers:{'oai-authenticated-user-id':'owner'}});
+  assert.equal((await handle(fake,store,env)).status,404);
+  const raceEntry={...race,id:'optimized-upload-race',photos:[id],published:true};await store.saveEntry(raceEntry);
+  for(const size of ['preview','read']){const response=await call('/media/'+id+'?size='+size);assert.equal(response.status,200);assert.match(response.headers.get('cache-control'),/private, no-store/);}
+  await store.saveEntry({...raceEntry,published:false});
+  for(const size of ['preview','read'])assert.equal((await call('/media/'+id+'?size='+size)).status,404);
 });
 test('invalid dates, missing English, unsafe article links, unknown files and PDF-as-photo are rejected',async()=>{
   for(const changes of [{date:'2026-02-30'},{published:true,titleEn:''},{photos:['missing-photo']},{photos:['test-certificate']},{kind:'article',published:true,wechatUrl:'javascript:alert(1)'},{kind:'article',published:true,wechatUrl:'https://mp.weixin.qq.com.evil.test/article'}])assert.equal((await write({...race,...changes})).status,400);

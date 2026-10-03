@@ -82,11 +82,25 @@ const slotKeys={primary:'racePrimaryPhoto',secondary:'raceSecondaryPhoto',certif
 function renderMedia(){
   const w=words();
   for(const slot of document.querySelectorAll('.race-photo-slot')){
-    const role=slot.dataset.slot,id=role==='certificate'?certificate:photoRoles[role],preview=slot.querySelector('.photo-slot-preview');preview.replaceChildren();slot.classList.toggle('has-photo',!!id);
-    if(id){
-      const link=document.createElement('a');link.href='./media/'+id;link.target='_blank';link.rel='noopener';link.setAttribute('aria-label',w.viewMedia+' · '+w[slotKeys[role]]);
-      const image=document.createElement('img');image.src=link.href;image.alt=w[slotKeys[role]];image.loading='lazy';image.addEventListener('error',()=>{image.remove();link.classList.add('photo-file-link');link.textContent=words().viewMedia;});link.append(image);preview.append(link);
-    }else{const mark=document.createElement('span');mark.className='photo-slot-placeholder';mark.setAttribute('aria-hidden','true');mark.textContent='+';preview.append(mark);}
+    const role=slot.dataset.slot,id=(role==='certificate'?certificate:photoRoles[role])||'',preview=slot.querySelector('.photo-slot-preview');slot.classList.toggle('has-photo',!!id);
+    if(preview.dataset.mediaId!==id) {
+      preview.replaceChildren();preview.classList.remove('is-ready');preview.dataset.mediaId=id;
+      if(id) {
+        const link=document.createElement('a');link.href='./media/'+id;link.target='_blank';link.rel='noopener';
+        const status=document.createElement('span');status.className='photo-slot-loading';status.setAttribute('role','status');
+        const image=document.createElement('img');image.hidden=true;image.loading='eager';image.decoding='async';
+        const failed=()=>{if(!preview.contains(image))return;image.remove();link.classList.add('photo-file-link');link.replaceChildren();link.textContent=words().viewMedia;};
+        image.onload=async()=>{
+          try{if(image.decode)await image.decode();}catch{failed();return;}
+          if(!preview.contains(image))return;
+          image.width=image.naturalWidth;image.height=image.naturalHeight;image.hidden=false;status.remove();preview.classList.add('is-ready');
+        };
+        image.onerror=failed;image.src=link.href+'?size=preview';link.append(status,image);preview.append(link);
+      }else{const mark=document.createElement('span');mark.className='photo-slot-placeholder';mark.setAttribute('aria-hidden','true');mark.textContent='+';preview.append(mark);}
+    }
+    const link=preview.querySelector('a');if(link)link.setAttribute('aria-label',w.viewOriginal+' · '+w[slotKeys[role]]);
+    const image=preview.querySelector('img');if(image)image.alt=w[slotKeys[role]];
+    const loadingCopy=preview.querySelector('.photo-slot-loading');if(loadingCopy)loadingCopy.textContent=w.imageLoading;
     const uploading=operation?.role===role;
     slot.querySelector('.photo-slot-status').textContent=uploading?(operation.percent==null?w.uploading:format(w.uploadProgress,{percent:operation.percent})):photoFeedback.has(role)?w[photoFeedback.get(role)]:id?w.photoReady:w.photoToCome;
     slot.querySelector('.photo-upload-label').textContent=uploading?w.uploading:id?w.replacePhoto:w.addPhoto;
@@ -183,7 +197,7 @@ signin.addEventListener('submit',async event=>{
 });
 logout.addEventListener('click',async()=>{
   if(busy)return;beginOperation('signingOut',{button:logout});
-  try{await api('logout',{method:'POST'});records=[];recordsReady=false;activeEntry=null;form.hidden=true;workspace.hidden=true;account.hidden=true;logout.hidden=true;signin.hidden=false;signin.reset();passwordForm.reset();photoFeedback.clear();message(status);message(editorStatus);message(passwordStatus);renderList();}
+  try{await api('logout',{method:'POST'});records=[];recordsReady=false;activeEntry=null;photoRoles={primary:'',secondary:''};certificate='';form.hidden=true;workspace.hidden=true;account.hidden=true;logout.hidden=true;signin.hidden=false;signin.reset();passwordForm.reset();photoFeedback.clear();message(status);message(editorStatus);message(passwordStatus);renderList();renderMedia();}
   catch(error){message(status,errorMessage(error));}
   finally{endOperation();if(!signin.hidden)signin.elements.password.focus();}
 });

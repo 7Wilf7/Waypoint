@@ -3,7 +3,7 @@ import {raceCategories,raceCategoryKeys,subtypeLabel,formatResult,sortRaces,repr
 import {articleReading,articleParagraphs} from './article-layout.js';
 import {articleStats,sortArticles} from './article-utils.js';
 import {racePhotoRoles} from './race-photos.js';
-import {requestJSON,renderLoading,clearLoading} from './loading.js';
+import {requestJSON,renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
 const root=document.documentElement;
 const words=()=>copy[root.dataset.language==='en'?'en':'zh'];
 let entries=[];
@@ -27,6 +27,7 @@ export function getEntry(id) {
 }
 function formatDate(date){return new Intl.DateTimeFormat(root.dataset.language==='en'?'en-GB':'zh-CN',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date(date+'T00:00:00Z'));}
 function renderRaces(container) {
+  clearMedia(container);
   if(loading){renderLoading(container,'racesLoading');return;}
   clearLoading(container);
   container.replaceChildren();
@@ -40,7 +41,7 @@ function renderRaces(container) {
   const selected=representativeRace(races,counts.Trail?'Trail':races[0].category).entry;
   const feature=el('a','race-card race-spotlight');feature.href='#entry/'+selected.id;
   const primary=racePhotoRoles(selected).primary;
-  if(primary){const image=el('img','race-spotlight-photo');image.src='./media/'+primary;image.alt=getEntry(selected.id).title;image.loading='lazy';feature.append(image);}
+  if(primary){const image=createMediaImage('./media/'+primary,getEntry(selected.id).title,{originalLink:false});image.classList.add('race-spotlight-photo');feature.append(image);}
   const top=el('div','race-spotlight-top');top.append(el('span','race-format-tag',w[raceCategoryKeys[selected.category]]),el('span','eyebrow',w.raceLatestRecord));
   const content=el('div','race-spotlight-content');content.append(el('p','race-feature-date',formatDate(selected.date)),el('h3','',getEntry(selected.id).title),el('span','race-feature-result',formatResult(selected.result)||w.raceResultMissing));
   const metrics=el('div','race-feature-metrics');for(const [value,label]of [[selected.distance!=null?selected.distance+' km':null,w.raceDistance],[selected.ascent!=null?'+'+selected.ascent+' m':null,w.raceAscent]])if(value){const item=el('div','');item.append(el('strong','',value),el('span','',label));metrics.append(item);}
