@@ -1,7 +1,7 @@
 // Transfer the mouse's momentum to existing decorative details only. The
 // individual transform properties leave every authored transform intact.
 let activeController = null;
-const selector = '.live-dot,.hero-coordinate,.hero-gallery-label,.project-visual .orbit,.project-visual .visual-coordinate,.ambient-stroke';
+const selector = '.live-dot,.hero-coordinate,.hero-gallery-label,.project-visual .orbit,.project-visual .visual-coordinate';
 const protectedSelector = 'a,button,input,textarea,select,[role="button"],[role="tab"],dialog,.reader-dialog,.preview-device,.preview-display';
 const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
 
@@ -52,19 +52,7 @@ export function initElasticDetails() {
     state.rect = rect;
     if (!intersection) state.visible = rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight;
     state.points = [];
-    if (state.curve) {
-      // The parent matrix belongs to ambient-motion. Reuse it without writing
-      // to the SVG or its parent, and sample only the currently drawn part.
-      const matrix = element.parentNode.getScreenCTM?.();
-      if (!matrix) return;
-      const drawn = clamp(1 - parseFloat(getComputedStyle(element).strokeDashoffset || '0'), 0, 1);
-      for (const point of state.localPoints) {
-        if (point.fraction > drawn) continue;
-        const x = matrix.a * point.x + matrix.c * point.y + matrix.e;
-        const y = matrix.b * point.x + matrix.d * point.y + matrix.f;
-        if (x >= -state.radius && x <= innerWidth + state.radius && y >= -state.radius && y <= innerHeight + state.radius) state.points.push({ x, y });
-      }
-    } else if (state.ring) {
+    if (state.ring) {
       const cx = (rect.left + rect.right) / 2 - state.position[0], cy = (rect.top + rect.bottom) / 2 - state.position[1];
       for (let index = 0; index < 32; index++) {
         const angle = index / 32 * Math.PI * 2;
@@ -78,7 +66,7 @@ export function initElasticDetails() {
     const travel = Math.hypot(dx, dy);
     if (travel < .5) return;
     let nearest, distance = Infinity, cursor;
-    if (state.ring || state.curve) {
+    if (state.ring) {
       for (const point of state.points) {
         const candidate = nearestOnSegment(point.x, point.y, move.from, move.to);
         const separation = Math.hypot(point.x - candidate.x, point.y - candidate.y);
@@ -162,29 +150,19 @@ export function initElasticDetails() {
     }
     for (const element of document.querySelectorAll(selector)) {
       if (states.has(element) || element.closest(protectedSelector)) continue;
-      const curve = element.matches('.ambient-stroke'), ring = element.matches('.orbit');
+      const ring = element.matches('.orbit');
       const originalTranslate = property(element, 'translate'), originalRotate = property(element, 'rotate');
       const computed = getComputedStyle(element);
-      // Existing backdrop paths currently have no local transform. Skip a
-      // future authored one rather than making assumptions about its matrix.
-      if (curve && (element.hasAttribute('transform') || computed.transform !== 'none')) continue;
       const translated = computed.translate === 'none' ? ['0px', '0px'] : computed.translate.split(/\s+/);
       const angle = computed.rotate === 'none' ? '0deg' : computed.rotate;
       const rect = element.getBoundingClientRect();
-      const state = { element, curve, ring, originalTranslate, originalRotate, originalClass: element.classList.contains('elastic-detail'),
+      const state = { element, ring, originalTranslate, originalRotate, originalClass: element.classList.contains('elastic-detail'),
         originalMovingClass: element.classList.contains('is-elastic-moving'), baseX: translated[0], baseY: translated[1] || '0px', baseZ: translated[2],
-        baseAngle: angle, turn: curve || ring || /\s/.test(angle) ? 0 : element.matches('.live-dot') ? 0 : 3.5,
-        limit: ring ? 26 : curve ? 12 : element.matches('.live-dot') ? 12 : 16,
-        radius: ring ? 72 : curve ? 85 : 65, gain: ring ? 4.2 : curve ? 1.7 : 3,
+        baseAngle: angle, turn: ring || /\s/.test(angle) ? 0 : element.matches('.live-dot') ? 0 : 3.5,
+        limit: ring ? 26 : element.matches('.live-dot') ? 12 : 16,
+        radius: ring ? 72 : 65, gain: ring ? 4.2 : 3,
         position: [0, 0, 0], velocity: [0, 0, 0], points: [], ownsStyles: false,
         visible: rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight };
-      if (curve) {
-        const length = element.getTotalLength();
-        state.localPoints = Array.from({ length: 33 }, (_, index) => {
-          const point = element.getPointAtLength(length * index / 32);
-          return { x: point.x, y: point.y, fraction: index / 32 };
-        });
-      }
       element.classList.add('elastic-detail'); states.set(element, state);
       intersection?.observe(element); resizing?.observe(element); measure(state);
     }

@@ -34,9 +34,7 @@ export function initAmbientMotion() {
     backdrop.style.setProperty('--ambient-y', (y - progress * 65).toFixed(2) + 'px');
     backdrop.style.setProperty('--ambient-scale', (1 + progress * .28).toFixed(4));
     backdrop.style.setProperty('--ambient-turn', (-6 + progress * 21).toFixed(3) + 'deg');
-    backdrop.style.setProperty('--ambient-counter-turn', (-progress * 34).toFixed(3) + 'deg');
     backdrop.style.setProperty('--ambient-lift', (-progress * 110).toFixed(2) + 'px');
-    backdrop.style.setProperty('--ambient-draw', staticView ? '0' : (.78 - progress * .78).toFixed(4));
     backdrop.dataset.backgroundProgress = progress.toFixed(4);
     if (!staticView && (Math.abs(targetX - x) > .04 || Math.abs(targetY - y) > .04)) schedule();
     else previous = 0;
@@ -62,7 +60,7 @@ export function initAmbientMotion() {
   controller = {refresh: measure, destroy() {
     if (destroyed) return;
     destroyed = true; stop(); observer.disconnect(); resize.disconnect(); listeners.forEach(remove => remove());
-    for (const name of ['x','y','scale','turn','counter-turn','lift','draw']) backdrop.style.removeProperty('--ambient-' + name);
+    for (const name of ['x','y','scale','turn','lift']) backdrop.style.removeProperty('--ambient-' + name);
     delete backdrop.dataset.backgroundProgress; controller = null;
   }};
   measure(); return controller;

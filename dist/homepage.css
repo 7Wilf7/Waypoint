@@ -17,13 +17,12 @@
 html[lang="en"] .waypoint-home h1 {font-size:clamp(2.8rem,5.4vw,5.7rem);line-height:1.12;letter-spacing:-.055em;}
 .type-line {display:block;overflow:clip;padding-block:.07em;margin-block:-.07em;}
 .type-ink {display:block;transform-origin:0 100%;}
+.editorial-hero h1>.type-line {transform-origin:0 50%;}
 .scroll-unit {display:inline-block;transform-origin:50% 100%;}
 .scroll-word {display:inline-block;}
 .scroll-heading,.scroll-passage,.scroll-surface {transition:none;}
 .scroll-surface[data-scroll-progress]:not([data-scroll-progress="0.000"],[data-scroll-progress="1.000"]) {will-change:transform;}
 .scroll-heading .muted-heading {color:var(--muted);}
-.scroll-surface:has(>.scroll-rule) {position:relative;}
-.scroll-rule {position:absolute;left:0;right:0;bottom:-14px;height:1px;background:var(--line-strong);transform-origin:left;pointer-events:none;}
 .hero-bottom {display:flex;flex-direction:column;align-items:flex-start;gap:30px;margin-top:36px;}
 .waypoint-home .hero-statement {margin:0;font-size:1.125rem;line-height:1.7;animation:none;}
 .waypoint-home .hero-intro {font-size:1.125rem;line-height:1.8;margin:8px 0 0;color:var(--muted);animation:none;}
@@ -76,8 +75,9 @@ html[lang="en"] .waypoint-home h1 {font-size:clamp(2.8rem,5.4vw,5.7rem);line-hei
 .waypoint-home .item-tag {margin-top:26px;font-size:.75rem;}
 .waypoint-home .section-heading-row {align-items:flex-end;gap:6vw;margin-bottom:64px;}
 .section-description {max-width:28em;color:var(--muted);font-size:1.125rem;line-height:1.9;}
-.trail-reading-heading {display:flex;justify-content:space-between;gap:16px;align-items:center;padding:22px 0;border-top:1px solid var(--line);}
+.trail-reading-heading {display:flex;justify-content:space-between;gap:16px;align-items:center;padding:22px 0;}
 .waypoint-home .article-card {padding-block:32px;border-color:var(--line);grid-template-columns:minmax(120px,1fr) minmax(0,4fr) auto;position:relative;}
+.waypoint-home .article-card:first-child {border-top:0;}
 .waypoint-home .article-card h3 {font-size:clamp(1.35rem,2vw,1.9rem);font-weight:500;line-height:1.6;}
 .waypoint-home .article-card-excerpt {line-height:1.9;font-size:1rem;max-width:48em;}
 .waypoint-home .article-date {font-size:.875rem;}

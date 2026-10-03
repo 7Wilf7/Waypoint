@@ -10,10 +10,10 @@ export function initScrollMotion() {
   const easeOut = getComputedStyle(root).getPropertyValue('--ease-out').trim() || 'cubic-bezier(.23, 1, .32, 1)';
   const records = new Map();
   const listeners = [];
-  const headings = 'section h2,.footer-statement';
+  const headings = 'section h2,section h3,.footer-statement';
   const passages = '.about-description>p,.section-description,.project-description,.preview-heading>p';
   const surfaces = '.section-topline,.about-item,.article-card,.race-spotlight,.race-highlight,.project-card,.preview-heading,.preview-options,.trail-reading-heading,.race-subheading';
-  let frame = 0, destroyed = false, pageActive = true, layoutDirty = true, refreshDirty = false;
+  let frame = 0, destroyed = false, pageActive = true, refreshDirty = false;
   const clamp = value => Math.max(0, Math.min(1, value));
   const blocked = () => reduce.matches || root.dataset.input === 'keyboard' || root.classList.contains('reading') || typeof main.animate !== 'function';
 
@@ -83,25 +83,20 @@ export function initScrollMotion() {
     const existing = records.get(element);
     // Language changes retain the section node but replace its authored children.
     if (existing && (kind === 'surface' || existing.units.every(unit => element.contains(unit)))) return;
-    const progress = existing?.progress || 0;
-    if (existing) finish(existing);
+    const played = existing?.played || false;
+    const phase = existing?.phase || 'waiting';
+    if (existing) cancel(existing);
     const originalAriaLabel = existing ? existing.originalAriaLabel : element.getAttribute('aria-label');
     const units = kind === 'heading' ? prepareHeading(element) : kind === 'passage' ? splitText(element, false) : [];
     const variant = element.id === 'trails-heading' ? 'spread' : element.id === 'projects-heading' ? 'turn' : element.matches('.footer-statement') ? 'rise' : 'lift';
-    const state = { element, kind, units, variant, progress, applied: -1, animations: new Set(),
-      top: 0, height: 0, originalTransform: existing?.originalTransform ?? element.style.transform,
+    const state = { element, kind, units, variant, played, phase: phase === 'running' ? 'complete' : phase,
+      applied: -1, generation: 0, animations: new Set(), originalTransform: existing?.originalTransform ?? element.style.transform,
       originalOpacity: existing?.originalOpacity ?? element.style.opacity, originalAriaLabel };
-    if (kind === 'surface' && element.matches('.section-topline,.trail-reading-heading,.race-subheading')) {
-      const rule = document.createElement('span');
-      rule.className = 'scroll-rule'; rule.setAttribute('aria-hidden', 'true');
-      element.append(rule); state.rule = rule;
-    }
     element.classList.add('scroll-' + kind);
     if (kind === 'heading') element.dataset.scrollVariant = variant;
     records.set(element, state); observer?.observe(element);
-    apply(state, progress);
-    element.dataset.revealState = progress >= 1 ? 'complete' : 'waiting';
-    layoutDirty = true;
+    apply(state, state.phase === 'waiting' ? 0 : 1);
+    element.dataset.revealState = state.phase;
   }
   function refresh() {
     refreshDirty = false;
@@ -141,16 +136,31 @@ export function initScrollMotion() {
       state.element.style.transform = remaining < .001 ? state.originalTransform :
         'translate3d(0,' + (remaining * 44).toFixed(2) + 'px,0)';
       state.element.style.opacity = progress >= 1 ? state.originalOpacity : String(.22 + .78 * progress);
-      if (state.rule) state.rule.style.transform = 'scaleX(' + progress.toFixed(3) + ')';
     }
+  }
+  function cancel(state) {
+    state.generation++;
+    for (const animation of state.animations) animation.cancel();
+    state.animations.clear();
   }
   function finish(state) {
     // The resting style is readable before playback. Cancellation cannot strand hidden text.
-    state.progress = 1; apply(state, 1);
-    for (const animation of state.animations) animation.cancel();
-    state.animations.clear();
-    state.element.dataset.revealState = 'complete';
-    observer?.unobserve(state.element);
+    cancel(state); apply(state, 1);
+    state.played = true; state.phase = 'complete';
+    state.element.dataset.revealState = state.phase;
+  }
+  function arm(state) {
+    cancel(state); apply(state, 0);
+    state.played = false; state.phase = 'waiting';
+    state.element.dataset.revealState = state.phase;
+  }
+  function showStatic(state) {
+    if (state.phase === 'running') finish(state);
+    else {
+      apply(state, 1);
+      state.phase = state.played ? 'complete' : 'static';
+      state.element.dataset.revealState = state.phase;
+    }
   }
   function play(state) {
     const entrances = state.kind === 'heading' ? state.units.map(unit => ({
@@ -161,12 +171,12 @@ export function initScrollMotion() {
     })) : [{target: state.element,
       from: {transform: 'translate3d(0,44px,0)', opacity: .22},
       to: {transform: state.originalTransform || 'none', opacity: state.originalOpacity || '1'}}];
-    if (state.rule) entrances.push({target: state.rule, from: {transform: 'scaleX(0)'}, to: {transform: 'scaleX(1)'}});
-    state.progress = 1; apply(state, 1);
-    state.element.dataset.revealState = 'running';
-    observer?.unobserve(state.element);
-    const duration = state.kind === 'heading' ? 650 : 400;
-    const groups = state.kind === 'heading' ? 7 : state.kind === 'passage' ? 3 : 0;
+    state.played = true; state.phase = 'running'; apply(state, 1);
+    state.element.dataset.revealState = state.phase;
+    const generation = ++state.generation;
+    const smallHeading = state.element.matches('h3');
+    const duration = state.kind === 'heading' ? smallHeading ? 500 : 650 : 400;
+    const groups = state.kind === 'heading' ? smallHeading ? 3 : 7 : state.kind === 'passage' ? 3 : 0;
     const finished = [];
     try {
       entrances.forEach(({target, from, to}, index) => {
@@ -178,11 +188,11 @@ export function initScrollMotion() {
       });
     } catch { finish(state); return; }
     Promise.all(finished).then(() => {
-      if (!destroyed && records.get(state.element) === state) state.element.dataset.revealState = 'complete';
+      if (!destroyed && records.get(state.element) === state && state.generation === generation) {
+        state.phase = 'complete'; state.element.dataset.revealState = state.phase;
+        schedule();
+      }
     });
-  }
-  function showAll() {
-    for (const state of records.values()) finish(state);
   }
   function finishRunning() {
     for (const state of records.values()) if (state.animations.size) finish(state);
@@ -191,52 +201,57 @@ export function initScrollMotion() {
     frame = 0;
     if (destroyed || document.hidden) return;
     if (refreshDirty) refresh();
-    if (blocked()) { showAll(); return; }
+    // Accessibility and reading temporarily make everything readable. They do
+    // not consume entrances for sections the visitor has not reached yet.
+    if (blocked()) { for (const state of records.values()) showStatic(state); return; }
     if (!pageActive) return;
-    if (layoutDirty) {
-      // Read geometry together, before any style writes; completed content no longer needs sampling.
-      for (const state of records.values()) {
-        if (state.progress >= 1 || !state.element.isConnected) continue;
-        const rect = state.element.getBoundingClientRect();
-        state.top = rect.top + scrollY;
-        if (state.kind === 'surface' && state.applied >= 0) state.top -= (1 - state.applied) * 44;
-        state.height = rect.height;
+    // Completed headings remain observed so a full exit below the viewport can
+    // arm another entrance. Read all geometry before writing any resting styles.
+    const geometry = [...records.values()].filter(state => state.element.isConnected).map(state => {
+      const rect = state.element.getBoundingClientRect();
+      const shift = state.kind === 'surface' && state.phase === 'waiting' ? 44 : 0;
+      return { state, top: rect.top - shift, height: rect.height };
+    });
+    const atEnd = Math.ceil(scrollY + innerHeight) >= document.documentElement.scrollHeight - 2;
+    for (const { state, top, height } of geometry) {
+      if (state.phase === 'running') continue;
+      if (state.phase === 'complete') {
+        if (state.kind === 'heading' && top > innerHeight + 64) arm(state);
+        continue;
       }
-      layoutDirty = false;
-    }
-    for (const state of records.values()) {
-      if (state.progress >= 1) { if (state.applied !== 1) apply(state, 1); continue; }
-      const top = state.top - scrollY;
-      const start = innerHeight * .92;
-      if (top <= start) {
-        if (top + state.height <= 0) finish(state);
-        else play(state);
+      if (state.phase === 'static') {
+        if (top >= innerHeight) arm(state);
+        else finish(state); // Keep currently visible text readable when pointer input resumes.
+        continue;
       }
+      const readableTop = innerHeight - Math.min(height * .8, innerHeight * .4) - 24;
+      const start = state.kind === 'heading'
+        ? state.element.matches('h3') ? readableTop : Math.min(innerHeight * .78, readableTop)
+        : innerHeight * .88;
+      if (top + height <= 0) finish(state);
+      else if (top <= start || (atEnd && top < innerHeight)) play(state);
     }
     // WAAPI finishes independently. Scroll sampling still has no idle RAF loop.
   }
   const observer = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(schedule, { rootMargin: '80px 0px' });
-  const contentObserver = new MutationObserver(() => { refreshDirty = true; layoutDirty = true; schedule(); });
+  const contentObserver = new MutationObserver(() => { refreshDirty = true; schedule(); });
   contentObserver.observe(main, { childList: true, subtree: true });
-  const resizeObserver = new ResizeObserver(() => { layoutDirty = true; schedule(); });
+  const resizeObserver = new ResizeObserver(schedule);
   resizeObserver.observe(main);
-  const rootObserver = new MutationObserver(() => { layoutDirty = true; schedule(); });
+  const rootObserver = new MutationObserver(schedule);
   rootObserver.observe(root, { attributes: true, attributeFilter: ['class', 'data-input', 'data-language'] });
   listen(window, 'scroll', schedule, { passive: true });
-  listen(window, 'resize', () => { layoutDirty = true; schedule(); }, { passive: true });
-  listen(document, 'keydown', event => {
-    if (!event.ctrlKey && !event.metaKey && !event.altKey && !['Shift','Control','Alt','Meta'].includes(event.key)) showAll();
-  });
+  listen(window, 'resize', schedule, { passive: true });
   listen(document, 'visibilitychange', () => {
     if (document.hidden) { stop(); finishRunning(); }
-    else { layoutDirty = true; schedule(); }
+    else schedule();
   });
   listen(window, 'blur', () => { pageActive = false; stop(); finishRunning(); });
-  listen(window, 'focus', () => { pageActive = true; layoutDirty = true; schedule(); });
+  listen(window, 'focus', () => { pageActive = true; schedule(); });
   listen(document, 'waypoint-reader', schedule);
-  listen(document, 'journal-ready', () => { refreshDirty = true; layoutDirty = true; schedule(); });
+  listen(document, 'journal-ready', () => { refreshDirty = true; schedule(); });
   listen(reduce, 'change', schedule);
-  document.fonts?.ready.then(() => { layoutDirty = true; schedule(); });
+  document.fonts?.ready.then(schedule);
 
   function destroy() {
     if (destroyed) return;
@@ -264,7 +279,6 @@ export function initScrollMotion() {
       state.element.classList.remove('scroll-' + state.kind); delete state.element.dataset.scrollProgress;
       delete state.element.dataset.revealState;
       if (state.kind === 'heading') delete state.element.dataset.scrollVariant;
-      state.rule?.remove();
       if (state.kind === 'heading' && state.element.matches('h1,h2,h3,h4,h5,h6')) {
         if (state.originalAriaLabel === null) state.element.removeAttribute('aria-label');
         else state.element.setAttribute('aria-label', state.originalAriaLabel);

@@ -3,6 +3,7 @@ import {copy} from './i18n.js';
 import {initSurfaceMotion} from './surface-motion.js';
 import {initScrollMotion} from './scroll-motion.js';
 import {initPointerField} from './pointer-field.js';
+import {initHeroMotion} from './hero-motion.js';
 
 export function initMotion() {
   const root = document.documentElement;
@@ -132,6 +133,7 @@ export function initMotion() {
   initPointerFeedback();
   initSurfaceMotion();
   initScrollMotion();
+  initHeroMotion();
   initPointerField();
 }
 
