@@ -1,4 +1,4 @@
-// Native scroll is the timeline. No timer completes a reveal while scrolling stops.
+// Native scroll triggers an entrance; each entrance finishes even after scrolling stops.
 let controller = null;
 
 export function initScrollMotion() {
@@ -7,14 +7,15 @@ export function initScrollMotion() {
   if (!main) return null;
   const root = document.documentElement;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const easeOut = getComputedStyle(root).getPropertyValue('--ease-out').trim() || 'cubic-bezier(.23, 1, .32, 1)';
   const records = new Map();
   const listeners = [];
   const headings = 'section h2,.footer-statement';
   const passages = '.about-description>p,.section-description,.project-description,.preview-heading>p';
   const surfaces = '.section-topline,.about-item,.article-card,.race-spotlight,.race-highlight,.project-card,.preview-heading,.preview-options,.trail-reading-heading,.race-subheading';
-  let frame = 0, destroyed = false, layoutDirty = true, refreshDirty = false;
+  let frame = 0, destroyed = false, pageActive = true, layoutDirty = true, refreshDirty = false;
   const clamp = value => Math.max(0, Math.min(1, value));
-  const blocked = () => reduce.matches || root.dataset.input === 'keyboard' || root.classList.contains('reading');
+  const blocked = () => reduce.matches || root.dataset.input === 'keyboard' || root.classList.contains('reading') || typeof main.animate !== 'function';
 
   function listen(target, event, handler, options) {
     target.addEventListener(event, handler, options);
@@ -83,10 +84,11 @@ export function initScrollMotion() {
     // Language changes retain the section node but replace its authored children.
     if (existing && (kind === 'surface' || existing.units.every(unit => element.contains(unit)))) return;
     const progress = existing?.progress || 0;
+    if (existing) finish(existing);
     const originalAriaLabel = existing ? existing.originalAriaLabel : element.getAttribute('aria-label');
     const units = kind === 'heading' ? prepareHeading(element) : kind === 'passage' ? splitText(element, false) : [];
     const variant = element.id === 'trails-heading' ? 'spread' : element.id === 'projects-heading' ? 'turn' : element.matches('.footer-statement') ? 'rise' : 'lift';
-    const state = { element, kind, units, variant, progress, applied: -1, visible: true,
+    const state = { element, kind, units, variant, progress, applied: -1, animations: new Set(),
       top: 0, height: 0, originalTransform: existing?.originalTransform ?? element.style.transform,
       originalOpacity: existing?.originalOpacity ?? element.style.opacity, originalAriaLabel };
     if (kind === 'surface' && element.matches('.section-topline,.trail-reading-heading,.race-subheading')) {
@@ -97,11 +99,13 @@ export function initScrollMotion() {
     element.classList.add('scroll-' + kind);
     if (kind === 'heading') element.dataset.scrollVariant = variant;
     records.set(element, state); observer?.observe(element);
+    apply(state, progress);
+    element.dataset.revealState = progress >= 1 ? 'complete' : 'waiting';
     layoutDirty = true;
   }
   function refresh() {
     refreshDirty = false;
-    for (const [element] of records) if (!element.isConnected) { observer?.unobserve(element); records.delete(element); }
+    for (const [element, state] of records) if (!element.isConnected) { finish(state); observer?.unobserve(element); records.delete(element); }
     main.querySelectorAll(headings).forEach(element => register(element, 'heading'));
     main.querySelectorAll(passages).forEach(element => register(element, 'passage'));
     main.querySelectorAll(surfaces).forEach(element => register(element, 'surface'));
@@ -140,14 +144,55 @@ export function initScrollMotion() {
       if (state.rule) state.rule.style.transform = 'scaleX(' + progress.toFixed(3) + ')';
     }
   }
+  function finish(state) {
+    // The resting style is readable before playback. Cancellation cannot strand hidden text.
+    state.progress = 1; apply(state, 1);
+    for (const animation of state.animations) animation.cancel();
+    state.animations.clear();
+    state.element.dataset.revealState = 'complete';
+    observer?.unobserve(state.element);
+  }
+  function play(state) {
+    const entrances = state.kind === 'heading' ? state.units.map(unit => ({
+      target: unit, from: {transform: unit.style.transform || 'none', opacity: 0},
+      to: {transform: 'none', opacity: 1}
+    })) : state.kind === 'passage' ? state.units.map(unit => ({
+      target: unit, from: {opacity: .18}, to: {opacity: 1}
+    })) : [{target: state.element,
+      from: {transform: 'translate3d(0,44px,0)', opacity: .22},
+      to: {transform: state.originalTransform || 'none', opacity: state.originalOpacity || '1'}}];
+    if (state.rule) entrances.push({target: state.rule, from: {transform: 'scaleX(0)'}, to: {transform: 'scaleX(1)'}});
+    state.progress = 1; apply(state, 1);
+    state.element.dataset.revealState = 'running';
+    observer?.unobserve(state.element);
+    const duration = state.kind === 'heading' ? 650 : 400;
+    const groups = state.kind === 'heading' ? 7 : state.kind === 'passage' ? 3 : 0;
+    const finished = [];
+    try {
+      entrances.forEach(({target, from, to}, index) => {
+        // Bound the stagger, including long English headings and Chinese passages.
+        const delay = Math.round(index / Math.max(1, entrances.length - 1) * Math.min(groups, entrances.length - 1)) * 40;
+        const animation = target.animate([from, to], {duration, delay, easing: easeOut, fill: 'backwards'});
+        state.animations.add(animation);
+        finished.push(animation.finished.then(() => state.animations.delete(animation), () => state.animations.delete(animation)));
+      });
+    } catch { finish(state); return; }
+    Promise.all(finished).then(() => {
+      if (!destroyed && records.get(state.element) === state) state.element.dataset.revealState = 'complete';
+    });
+  }
   function showAll() {
-    for (const state of records.values()) { state.progress = 1; apply(state, 1); }
+    for (const state of records.values()) finish(state);
+  }
+  function finishRunning() {
+    for (const state of records.values()) if (state.animations.size) finish(state);
   }
   function update() {
     frame = 0;
     if (destroyed || document.hidden) return;
     if (refreshDirty) refresh();
     if (blocked()) { showAll(); return; }
+    if (!pageActive) return;
     if (layoutDirty) {
       // Read geometry together, before any style writes; completed content no longer needs sampling.
       for (const state of records.values()) {
@@ -159,28 +204,18 @@ export function initScrollMotion() {
       }
       layoutDirty = false;
     }
-    const maximumScroll = Math.max(0, document.documentElement.scrollHeight - innerHeight);
     for (const state of records.values()) {
       if (state.progress >= 1) { if (state.applied !== 1) apply(state, 1); continue; }
       const top = state.top - scrollY;
       const start = innerHeight * .92;
-      const distance = state.kind === 'heading' ? innerHeight * .48 :
-        state.kind === 'passage' ? innerHeight * .5 + Math.min(state.height * .3, 130) : innerHeight * .28;
-      // End-of-page content cannot reach the normal viewport finish line.
-      // Keep the same entry point, but finish within the remaining native scroll.
-      const reachableDistance = Math.max(1, Math.min(distance, maximumScroll - (state.top - start)));
-      state.progress = clamp((start - top) / reachableDistance);
-      if (state.visible || state.progress >= 1) apply(state, state.progress);
+      if (top <= start) {
+        if (top + state.height <= 0) finish(state);
+        else play(state);
+      }
     }
-    // There is deliberately no follow-up RAF: stationary scroll means stationary progress.
+    // WAAPI finishes independently. Scroll sampling still has no idle RAF loop.
   }
-  const observer = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(entries => {
-    for (const entry of entries) {
-      const state = records.get(entry.target);
-      if (state) state.visible = entry.isIntersecting;
-    }
-    schedule();
-  }, { rootMargin: '80px 0px' });
+  const observer = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(schedule, { rootMargin: '80px 0px' });
   const contentObserver = new MutationObserver(() => { refreshDirty = true; layoutDirty = true; schedule(); });
   contentObserver.observe(main, { childList: true, subtree: true });
   const resizeObserver = new ResizeObserver(() => { layoutDirty = true; schedule(); });
@@ -192,7 +227,12 @@ export function initScrollMotion() {
   listen(document, 'keydown', event => {
     if (!event.ctrlKey && !event.metaKey && !event.altKey && !['Shift','Control','Alt','Meta'].includes(event.key)) showAll();
   });
-  listen(document, 'visibilitychange', () => { if (document.hidden) stop(); else { layoutDirty = true; schedule(); } });
+  listen(document, 'visibilitychange', () => {
+    if (document.hidden) { stop(); finishRunning(); }
+    else { layoutDirty = true; schedule(); }
+  });
+  listen(window, 'blur', () => { pageActive = false; stop(); finishRunning(); });
+  listen(window, 'focus', () => { pageActive = true; layoutDirty = true; schedule(); });
   listen(document, 'waypoint-reader', schedule);
   listen(document, 'journal-ready', () => { refreshDirty = true; layoutDirty = true; schedule(); });
   listen(reduce, 'change', schedule);
@@ -204,6 +244,8 @@ export function initScrollMotion() {
     observer?.disconnect(); contentObserver.disconnect(); resizeObserver.disconnect(); rootObserver.disconnect();
     listeners.forEach(remove => remove());
     for (const state of records.values()) {
+      for (const animation of state.animations) animation.cancel();
+      state.animations.clear();
       if (state.kind === 'surface') {
         state.element.style.transform = state.originalTransform; state.element.style.opacity = state.originalOpacity;
       } else {
@@ -220,6 +262,7 @@ export function initScrollMotion() {
         }
       }
       state.element.classList.remove('scroll-' + state.kind); delete state.element.dataset.scrollProgress;
+      delete state.element.dataset.revealState;
       if (state.kind === 'heading') delete state.element.dataset.scrollVariant;
       state.rule?.remove();
       if (state.kind === 'heading' && state.element.matches('h1,h2,h3,h4,h5,h6')) {
