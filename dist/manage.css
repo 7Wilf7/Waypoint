@@ -135,7 +135,6 @@
   .manage-page .header-inner {min-height:78px;padding-block:14px;gap:8px;}
   .manage-page .header-controls {gap:6px;}
   .manage-page .brand {font-size:.9375rem;gap:6px;}
-  .manage-page .brand svg {width:21px;height:21px;}
   .manage-page .language-toggle,.manage-page .manage-theme {width:40px;height:40px;min-height:40px;}
   .manage-page .manage-home {display:inline-flex;margin-left:2px;min-height:40px;padding:8px 12px;gap:8px;font-size:.8125rem;}
   .manage-main {padding-block:36px 64px;}

@@ -1,12 +1,14 @@
 import {copy} from './i18n.js';
 import {initTheme} from './theme.js';
 import {initElasticDetails} from './elastic-details.js';
+import {initTouchMotion} from './touch-motion.js';
 import {raceCategories,raceCategoryKeys,sortRaces,raceCounts,formatResult,subtypeLabel,fastestRace} from './race-utils.js';
 import {requestJSON,renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
 import {mediaURL} from './media-images.js';
 const root=document.documentElement;
 const theme=initTheme();
 initElasticDetails();
+initTouchMotion();
 const list=document.querySelector('.race-archive-results'),filters=document.querySelector('.race-filters'),status=document.querySelector('.race-archive-status');
 const el=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=text;return node;};
 const locale=()=>root.dataset.language==='en'?'en':'zh',words=()=>copy[locale()];

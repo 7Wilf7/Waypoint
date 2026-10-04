@@ -4,6 +4,7 @@ import {initSurfaceMotion} from './surface-motion.js';
 import {initScrollMotion} from './scroll-motion.js';
 import {initPointerField} from './pointer-field.js';
 import {initHeroMotion} from './hero-motion.js';
+import {initTouchMotion} from './touch-motion.js';
 import {loadMediaImage,preloadMediaImage} from './media-images.js';
 
 export function initMotion() {
@@ -113,6 +114,7 @@ export function initMotion() {
   initScrollMotion();
   initHeroMotion();
   initPointerField();
+  initTouchMotion();
 }
 
 function initPointerFeedback() {

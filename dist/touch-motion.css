@@ -1,0 +1,3 @@
+.touch-motion-canvas {position:fixed;left:0;top:0;z-index:12;pointer-events:none!important;user-select:none;contain:strict;}
+.touch-motion-canvas[hidden],html.reading .touch-motion-canvas,html[data-input="keyboard"] .touch-motion-canvas {display:none!important;}
+@media(prefers-reduced-motion:reduce) {.touch-motion-canvas {display:none!important;}}
