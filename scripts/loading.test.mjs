@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {runInNewContext} from 'node:vm';
 import {requestJSON} from '../dist/loading.js';
+import {mediaURL,mediaImageURL} from '../dist/media-images.js';
 
 const html=await readFile(new URL('../dist/index.html',import.meta.url),'utf8');
 const bootstrap=html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
@@ -55,4 +56,18 @@ test('invalid JSON becomes a recoverable error and successful reads return all c
   const original=globalThis.fetch;t.after(()=>{globalThis.fetch=original;});
   globalThis.fetch=async()=>({ok:true,json:async()=>{throw new SyntaxError('Invalid JSON');}});await assert.rejects(requestJSON('/api/entries'),/unavailable/);
   globalThis.fetch=async()=>({ok:true,json:async()=>({entries:[{id:'article',bodyZh:'完整正文'}]})});assert.equal((await requestJSON('/api/entries')).entries[0].bodyZh,'完整正文');
+});
+
+
+test('media URLs retain the entry hint for images and original links without accepting foreign or invalid paths',t=>{
+  const document=globalThis.document,location=globalThis.location;
+  t.after(()=>{if(document===undefined)delete globalThis.document;else globalThis.document=document;if(location===undefined)delete globalThis.location;else globalThis.location=location;});
+  globalThis.document={baseURI:'https://waypoint.test/races'};globalThis.location={origin:'https://waypoint.test'};
+  assert.equal(mediaImageURL('/media/photo?untrusted=1#fragment','preview','race-one'),'https://waypoint.test/media/photo?entry=race-one&size=preview');
+  assert.equal(mediaImageURL('/media/photo','read','article-two'),'https://waypoint.test/media/photo?entry=article-two&size=read');
+  assert.equal(mediaURL('/media/photo','race-one'),'https://waypoint.test/media/photo?entry=race-one');
+  assert.equal(mediaImageURL('/media/photo'),'https://waypoint.test/media/photo?size=read');
+  for(const entry of ['', '../draft', 'one&entry=two', 'a'.repeat(65), 4])assert.throws(()=>mediaImageURL('/media/photo','read',entry),/invalid_entry/);
+  assert.throws(()=>mediaURL('https://other.test/media/photo','race-one'),/invalid_image_source/);
+  assert.throws(()=>mediaURL('/settings/auth.json','race-one'),/invalid_image_source/);
 });

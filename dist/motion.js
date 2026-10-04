@@ -50,7 +50,7 @@ export function initMotion() {
     for(const item of entries)if(item.isIntersecting) {
       warmObserver.unobserve(item.target);
       const entry=getEntry(item.target.getAttribute('href').split('/')[1]);
-      if(entry?.primaryPhoto)preloadMediaImage('./media/'+entry.primaryPhoto,{size:'preview'}).catch(()=>{});
+      if(entry?.primaryPhoto)preloadMediaImage('./media/'+entry.primaryPhoto,{size:'preview',entry:entry.id}).catch(()=>{});
     }
   },{rootMargin:'900px'});
   function registerPreviewTargets() {
@@ -78,12 +78,12 @@ export function initMotion() {
     previewArt.classList.remove('is-ready');previewArt.replaceChildren();
     if(image) {
       const status=document.createElement('p');status.className='preview-image-status';status.dataset.i18n='imageLoading';status.textContent=w.imageLoading;previewArt.append(status);
-      (entry?loadMediaImage(image,{size:'preview'}):staticPreviewImage(image)).then(previewImage=>{
+      (entry?loadMediaImage(image,{size:'preview',entry:entry.id}):staticPreviewImage(image)).then(previewImage=>{
         if(previewRevision!==ticket||previewTarget!==row)return;
         previewImage.alt='';previewImage.classList.add('is-ready');previewArt.classList.add('is-ready');previewArt.replaceChildren(previewImage);
       },()=>{if(previewRevision===ticket&&previewTarget===row){status.dataset.i18n='imageFailed';status.textContent=copy[root.dataset.language==='en'?'en':'zh'].imageFailed;}});
       // Prepare the reading size only after a deliberate hover, not for every race.
-      if(entry)readWarmTimer=setTimeout(()=>{if(previewTarget===row)preloadMediaImage(image,{size:'read'}).catch(()=>{});},220);
+      if(entry)readWarmTimer=setTimeout(()=>{if(previewTarget===row)preloadMediaImage(image,{size:'read',entry:entry.id}).catch(()=>{});},220);
     }
     preview.dataset.note=key;preview.dataset.kind=entry?.kind||'note';preview.dataset.presentation=image?'image':'text';
     previewCategory.textContent=entry?entry.kind==='article'?w.articleOverview:w.racePreview:row.querySelector('.note-category').textContent;

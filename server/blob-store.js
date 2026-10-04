@@ -12,8 +12,8 @@ export class BlobStore {
   async saveAuth(record,previous) {
     await put(this.authPath,JSON.stringify(record),{access:'private',addRandomSuffix:false,allowOverwrite:Boolean(previous),...(previous?{ifMatch:previous.etag}:{}),contentType:'application/json',cacheControlMaxAge:60});
   }
-  async readJson(path) {
-    const result=await get(path,{access:'private',useCache:false});
+  async readJson(path,{useCache=false}={}) {
+    const result=await get(path,{access:'private',useCache});
     return result?new Response(result.stream).json():null;
   }
   async writeJson(path,value) {
@@ -34,7 +34,8 @@ export class BlobStore {
     const result=await get('media/'+id,{access:'private'});
     return result?{body:result.stream,size:result.blob.size}:null;
   }
-  async imageInfo(id,version){return this.readJson('image-variants/'+version+'/'+id+'/info.json');}
+  // Versioned image information is immutable; auth and publication records stay uncached.
+  async imageInfo(id,version){return this.readJson('image-variants/'+version+'/'+id+'/info.json',{useCache:true});}
   async putImmutable(path,value,contentType) {
     try{await put(path,value,{access:'private',addRandomSuffix:false,allowOverwrite:false,contentType});return true;}
     catch(error){

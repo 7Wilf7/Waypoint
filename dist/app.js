@@ -8,6 +8,7 @@ import { initAmbientMotion } from './ambient-motion.js';
 import { initAmbientAudio } from './ambient-audio.js';
 import { initTheme } from './theme.js';
 import {renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
+import {mediaURL} from './media-images.js';
 
 const root = document.documentElement;
 const theme = initTheme();
@@ -84,7 +85,7 @@ function renderNote(key, keyboard = false, preservePosition = false) {
   for (const block of note.blocks || note.paragraphs.map(text=>({type:'paragraph',text}))) {
     if(block.type==='image') {
       const figure=document.createElement('figure');figure.className='reader-inline-photo';
-      const image=createMediaImage('./media/'+block.mediaId,note.title+' · '+words().galleryPhoto);
+      const image=createMediaImage('./media/'+block.mediaId,note.title+' · '+words().galleryPhoto,{entry:note.id});
       figure.append(image);readerBody.append(figure);
     }else {
       const paragraph = document.createElement(block.type==='heading'?'h3':'p');
@@ -122,13 +123,13 @@ function renderNote(key, keyboard = false, preservePosition = false) {
   }
   if (note.photos?.length) {
     const gallery=document.createElement('div');gallery.className='reader-gallery';
-    for (const [index,id] of note.photos.entries())gallery.append(createMediaImage('./media/'+id,note.title+' · '+words().galleryPhoto+' '+(index+1)));
+    for (const [index,id] of note.photos.entries())gallery.append(createMediaImage('./media/'+id,note.title+' · '+words().galleryPhoto+' '+(index+1),{entry:note.id}));
     readerBody.append(gallery);
   }
   if (note.certificates?.length) {
     const section=document.createElement('div');section.className='reader-certificates';
     const title=document.createElement('h3');title.textContent=words().raceCertificates;section.append(title);
-    for (const [index,id] of note.certificates.entries()) {const link=document.createElement('a');link.href='./media/'+id;link.target='_blank';link.rel='noopener';link.className='button button-quiet';link.textContent=words().viewMedia+' '+(index+1);section.append(link);}
+    for (const [index,id] of note.certificates.entries()) {const link=document.createElement('a');link.href=mediaURL('./media/'+id,note.id);link.target='_blank';link.rel='noopener';link.className='button button-quiet';link.textContent=words().viewMedia+' '+(index+1);section.append(link);}
     readerBody.append(section);
   }
   readingKey = key;

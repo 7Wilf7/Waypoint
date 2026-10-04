@@ -101,16 +101,21 @@ export async function handle(request,store,env=process.env) {
   if(media&&['GET','HEAD'].includes(request.method)) {
     const id=media[1],preset=url.searchParams.get('size'),head=request.method==='HEAD';
     const references=entry=>entry?.published&&(entry.photos.includes(id)||entry.certificates.includes(id));
-    const publishers=owner?[]:(await store.entries()).filter(references);
+    const notFound=()=>new Response('Not found',{status:404,headers:{'cache-control':'private, no-store'}});
+    const entryHints=url.searchParams.getAll('entry'),entryId=entryHints[0];
+    if(entryHints.length&&(entryHints.length!==1||!ID.test(entryId)))return notFound();
+    const scoped=entryHints.length===1;
+    // The hint locates an entry; only its fresh publication and references authorize access.
+    const publishers=owner?[]:(scoped?[await store.entry(entryId)]:await store.entries()).filter(references);
     const candidates=publishers.map(entry=>entry.id).filter(candidate=>ID.test(candidate||''));
     const authorized=async()=>{
       if(owner)return true;
+      if(scoped)return references(await store.entry(entryId));
       // Request-local candidates avoid a second full catalog read, without caching permission.
       if(candidates.length&&store.entry&&(await Promise.all(candidates.map(candidate=>store.entry(candidate)))).some(references))return true;
       // A different entry may have published the shared photo while the candidates withdrew it.
       return (await store.entries()).some(references);
     };
-    const notFound=()=>new Response('Not found',{status:404,headers:{'cache-control':'private, no-store'}});
     if(!owner&&!publishers.length)return notFound();
     if(preset!==null&&!IMAGE_PRESETS.includes(preset))return json({error:'invalid_image_size'},400);
     let meta=await store.media(id);if(!meta)return notFound();

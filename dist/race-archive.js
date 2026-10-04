@@ -3,6 +3,7 @@ import {initTheme} from './theme.js';
 import {initElasticDetails} from './elastic-details.js';
 import {raceCategories,raceCategoryKeys,sortRaces,raceCounts,formatResult,subtypeLabel,fastestRace} from './race-utils.js';
 import {requestJSON,renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
+import {mediaURL} from './media-images.js';
 const root=document.documentElement;
 const theme=initTheme();
 initElasticDetails();
@@ -43,8 +44,8 @@ function renderDetails(entry,details){
   details.append(metadata);
   const body=locale()==='en'?entry.bodyEn:entry.bodyZh;
   for(const text of body?.split(/\n\s*\n/).filter(Boolean)||[])details.append(el('p','archive-record-body',text));
-  if(entry.photos.length){const gallery=el('div','reader-gallery');for(const [i,id]of entry.photos.entries())gallery.append(createMediaImage('/media/'+id,raceName(entry)+' · '+w.galleryPhoto+' '+(i+1)));details.append(gallery);}
-  if(entry.certificates.length){const certificates=el('div','reader-certificates');certificates.append(el('h3','',w.raceCertificates));for(const[i,id]of entry.certificates.entries()){const link=el('a','button button-quiet',w.viewMedia+' '+(i+1));link.href='/media/'+id;link.target='_blank';link.rel='noopener';certificates.append(link);}details.append(certificates);}
+  if(entry.photos.length){const gallery=el('div','reader-gallery');for(const [i,id]of entry.photos.entries())gallery.append(createMediaImage('/media/'+id,raceName(entry)+' · '+w.galleryPhoto+' '+(i+1),{entry:entry.id}));details.append(gallery);}
+  if(entry.certificates.length){const certificates=el('div','reader-certificates');certificates.append(el('h3','',w.raceCertificates));for(const[i,id]of entry.certificates.entries()){const link=el('a','button button-quiet',w.viewMedia+' '+(i+1));link.href=mediaURL('/media/'+id,entry.id);link.target='_blank';link.rel='noopener';certificates.append(link);}details.append(certificates);}
   if(!body&&!entry.photos.length&&!entry.certificates.length)details.append(el('p','archive-media-empty',w.raceMediaEmpty));
 }
 function renderResults(){

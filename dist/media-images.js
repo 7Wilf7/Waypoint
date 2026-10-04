@@ -4,12 +4,19 @@ const cache=new Map(),queue=[];
 const limits={requests:2,entries:20,bytes:12*1024*1024,pixels:24000000,age:5*60*1000};
 let active=0;
 
-export function mediaImageURL(source,size='read') {
-  if(!['preview','read'].includes(size))throw new Error('invalid_image_size');
+export function mediaURL(source,entry) {
   const url=new URL(source,document.baseURI);
   if(url.origin!==location.origin||!/^\/media\/[a-z0-9-]{1,64}$/.test(url.pathname))throw new Error('invalid_image_source');
-  url.search='';url.searchParams.set('size',size);url.hash='';
+  url.search='';url.hash='';
+  if(entry!=null) {
+    if(typeof entry!=='string'||!/^[a-z0-9-]{1,64}$/i.test(entry))throw new Error('invalid_entry');
+    url.searchParams.set('entry',entry);
+  }
   return url.href;
+}
+export function mediaImageURL(source,size='read',entry) {
+  if(!['preview','read'].includes(size))throw new Error('invalid_image_size');
+  const url=new URL(mediaURL(source,entry));url.searchParams.set('size',size);return url.href;
 }
 
 async function decode(source) {
@@ -63,8 +70,8 @@ function drain() {
     })();
   }
 }
-function acquire(source,{size='read',priority=true}={}) {
-  const key=mediaImageURL(source,size);trim();
+function acquire(source,{size='read',entry:entryId,priority=true}={}) {
+  const key=mediaImageURL(source,size,entryId);trim();
   let entry=cache.get(key);
   if(!entry) {
     // Do not grow the pending queue when many galleries are opened in succession.

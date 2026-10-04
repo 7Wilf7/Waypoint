@@ -23,7 +23,7 @@ export function getEntry(id) {
   const stats=entry.kind==='article'?articleStats(body,locale):null;
   const readingMeta=stats?words().articleStats.replace('{count}',new Intl.NumberFormat(locale).format(stats.count)).replace('{minutes}',stats.minutes):'';
   const summary=entry.kind==='article'?(en?entry.summaryEn:entry.summaryZh)||reading.paragraphs[0]||'':'';
-  return {title:en?entry.titleEn:entry.titleZh,category:entry.kind==='race'?words()[raceCategoryKeys[entry.category]]||words().raceRecord:words().channelLabel,lead:formatDate(entry.date)+(entry.kind==='article'&&entry.publishedTime?' '+entry.publishedTime:'')+(metrics?' · '+metrics:''),...reading,summary,readingMeta,primaryPhoto:entry.kind==='race'?racePhotoRoles(entry).primary:'',certificates:entry.kind==='race'?entry.certificates:[],link:entry.wechatUrl?{href:entry.wechatUrl,label:words().wechatRead}:null,kind:entry.kind};
+  return {id:entry.id,title:en?entry.titleEn:entry.titleZh,category:entry.kind==='race'?words()[raceCategoryKeys[entry.category]]||words().raceRecord:words().channelLabel,lead:formatDate(entry.date)+(entry.kind==='article'&&entry.publishedTime?' '+entry.publishedTime:'')+(metrics?' · '+metrics:''),...reading,summary,readingMeta,primaryPhoto:entry.kind==='race'?racePhotoRoles(entry).primary:'',certificates:entry.kind==='race'?entry.certificates:[],link:entry.wechatUrl?{href:entry.wechatUrl,label:words().wechatRead}:null,kind:entry.kind};
 }
 function formatDate(date){return new Intl.DateTimeFormat(root.dataset.language==='en'?'en-GB':'zh-CN',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date(date+'T00:00:00Z'));}
 function renderRaces(container) {
@@ -41,7 +41,7 @@ function renderRaces(container) {
   const selected=representativeRace(races,counts.Trail?'Trail':races[0].category).entry;
   const feature=el('a','race-card race-spotlight');feature.href='#entry/'+selected.id;
   const primary=racePhotoRoles(selected).primary;
-  if(primary){const image=createMediaImage('./media/'+primary,getEntry(selected.id).title,{originalLink:false});image.classList.add('race-spotlight-photo');feature.append(image);}
+  if(primary){const image=createMediaImage('./media/'+primary,getEntry(selected.id).title,{originalLink:false,entry:selected.id});image.classList.add('race-spotlight-photo');feature.append(image);}
   const top=el('div','race-spotlight-top');top.append(el('span','race-format-tag',w[raceCategoryKeys[selected.category]]),el('span','eyebrow',w.raceLatestRecord));
   const content=el('div','race-spotlight-content');content.append(el('p','race-feature-date',formatDate(selected.date)),el('h3','',getEntry(selected.id).title),el('span','race-feature-result',formatResult(selected.result)||w.raceResultMissing));
   const metrics=el('div','race-feature-metrics');for(const [value,label]of [[selected.distance!=null?selected.distance+' km':null,w.raceDistance],[selected.ascent!=null?'+'+selected.ascent+' m':null,w.raceAscent]])if(value){const item=el('div','');item.append(el('strong','',value),el('span','',label));metrics.append(item);}

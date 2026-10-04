@@ -4,6 +4,7 @@ import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {crc32} from 'node:zlib';
+import {spawnSync} from 'node:child_process';
 import sharp from 'sharp';
 import {handle} from '../server/api.js';
 import {LocalStore} from '../server/local-store.js';
@@ -145,4 +146,84 @@ test('raw large image responses remain streams and HEAD never reads their body',
   const response=await media(store,'large','');assert.equal(pulls,0);assert.equal(response.headers.get('content-length'),String(bytes.length));
   assert.deepEqual(Buffer.from(await response.arrayBuffer()),bytes);assert.equal(pulls,1);
   assert.equal((await media(store,'large','','HEAD')).status,200);assert.equal(fileReads,1);
+});
+
+
+test('entry-scoped public images authorize only fresh published references and retain owner and legacy access',async()=>{
+  const published={id:'published',published:true,photos:['photo'],certificates:['certificate']};
+  const records=new Map([[published.id,published],['private',{...published,id:'private',published:false}],['unrelated',{...published,id:'unrelated',photos:[],certificates:[]}]]);
+  const counts={catalog:0,entry:0,file:0};
+  const store={
+    auth:async()=>null,
+    entries:async()=>{counts.catalog++;return [...records.values()];},
+    entry:async id=>{counts.entry++;return records.get(id)||null;},
+    media:async id=>({id,mime:'image/jpeg',size:1}),
+    file:async()=>{counts.file++;return {size:1,body:new Blob(['x']).stream()};}
+  };
+  const request=async(path,method='GET',headers={})=>handle(new Request('https://waypoint.test'+path,{method,headers}),store,{});
+  const valid=await request('/media/photo?entry=published');assert.equal(valid.status,200);assert.match(valid.headers.get('cache-control'),/private, no-store/);await valid.body.cancel();
+  assert.deepEqual(counts,{catalog:0,entry:2,file:1});
+  for(const hint of ['private','unrelated','missing','', '../settings/auth', 'a'.repeat(65), 'published&entry=unrelated'])assert.equal((await request('/media/photo?entry='+hint)).status,404);
+  assert.equal(counts.catalog,0,'invalid hints never fall back to a catalog scan');assert.equal(counts.file,1,'unauthorized hints do not read image bytes');
+  const head=await request('/media/certificate?entry=published','HEAD');assert.equal(head.status,200);assert.equal(await head.text(),'');assert.equal(counts.file,1);
+  const legacy=await request('/media/photo');assert.equal(legacy.status,200);await legacy.body.cancel();assert.equal(counts.catalog,1);
+  records.set('published',{...published,published:false});assert.equal((await request('/media/photo?entry=published')).status,404);assert.equal((await request('/media/photo')).status,404);
+  const {sessionCookie}=await import('../server/auth.js');const env={WAYPOINT_SESSION_SECRET:'fixture-owner-secret'};
+  const cookie=sessionCookie(new Request('https://waypoint.test'),env).split(';')[0];
+  const owner=await handle(new Request('https://waypoint.test/media/photo?entry=private',{headers:{cookie}}),store,env);assert.equal(owner.status,200);await owner.body.cancel();
+  assert.equal((await request('/media/photo?entry=private','GET',{'oai-authenticated-user-id':'owner'})).status,404);
+});
+
+test('withdrawal, deleted entries and removed references during the file read deny scoped GET and HEAD',async()=>{
+  for(const change of ['withdraw','remove','delete'])for(const method of ['GET','HEAD']) {
+    let entry={id:'publisher',published:true,photos:['photo'],certificates:[]};let canceled=false;
+    const changed=()=>{entry=change==='delete'?null:change==='withdraw'?{...entry,published:false}:{...entry,photos:[]};};
+    const store={
+      entries:async()=>{throw new Error('scoped requests must not scan the catalog');},entry:async()=>entry,
+      media:async()=>{if(method==='HEAD')changed();return {id:'photo',mime:'image/jpeg',size:1};},
+      file:async()=>{changed();return {size:1,body:new ReadableStream({cancel(){canceled=true;}},{highWaterMark:0})};}
+    };
+    const response=await handle(new Request('https://waypoint.test/media/photo?entry=publisher',{method}),store,{});
+    assert.equal(response.status,404);if(method==='GET')assert.equal(canceled,true);
+  }
+});
+
+test('scoped variants deny withdrawal during generation even when another entry publishes the same photo',()=>isolated(async store=>{
+  const bytes=await sharp({create:{width:800,height:1200,channels:3,background:'#879ab1'}}).jpeg({quality:95}).toBuffer();
+  const id='hinted-withdrawal';await source(store,id,bytes);await store.saveEntry(publicEntry(id));await store.saveEntry({...publicEntry(id),id:'other-publisher'});
+  const save=store.saveImageInfo.bind(store);store.saveImageInfo=async(...args)=>{const result=await save(...args);await store.saveEntry({...publicEntry(id),published:false});return result;};
+  store.entries=async()=>{throw new Error('scoped generation must not scan the catalog');};
+  const response=await handle(new Request('https://waypoint.test/media/'+id+'?entry='+publicEntry(id).id+'&size=preview'),store,{});
+  assert.equal(response.status,404);assert.ok(await store.imageInfo(id,IMAGE_VERSION));
+}));
+
+test('100-entry image requests reduce uncached JSON reads from 102 to 3 while retaining final authorization',async()=>{
+  const entries=Array.from({length:100},(_,index)=>({id:'entry-'+index,published:true,photos:index===0?['photo']:[],certificates:[]}));
+  const observed=[];
+  for(const hinted of [false,true]) {
+    const counts={catalog:0,json:0};
+    const store={entries:async()=>{counts.catalog++;counts.json+=entries.length;return entries;},entry:async id=>{counts.json++;return entries.find(entry=>entry.id===id)||null;},media:async()=>{counts.json++;return {id:'photo',mime:'image/jpeg',size:1};},file:async()=>({size:1,body:new Blob(['x']).stream()})};
+    const response=await handle(new Request('https://waypoint.test/media/photo'+(hinted?'?entry=entry-0':'')),store,{});assert.equal(response.status,200);await response.body.cancel();observed.push(counts);
+  }
+  assert.deepEqual(observed,[{catalog:1,json:102},{catalog:0,json:3}]);
+});
+
+test('Blob SDK caches only immutable image info while auth, entries and mutable metadata bypass its cache',()=>{
+  const storeModule=new URL('../server/blob-store.js',import.meta.url).href;
+  const code=`
+    import assert from 'node:assert/strict';
+    import {BlobStore} from ${JSON.stringify(storeModule)};
+    import {MockAgent,setGlobalDispatcher} from 'undici';
+    const calls=[],agent=new MockAgent();agent.disableNetConnect();setGlobalDispatcher(agent);
+    agent.get('https://fixture.private.blob.vercel-storage.com').intercept({path:/.*/,method:'GET'}).reply(options=>{
+      const url=new URL(options.path,'https://fixture.private.blob.vercel-storage.com');calls.push({path:url.pathname,cache:url.searchParams.get('cache')});
+      return {statusCode:200,data:'{"fixture":true}',responseOptions:{headers:{'content-type':'application/json','content-length':'16','etag':'"fixture"'}}};
+    }).persist();
+    const store=new BlobStore();await store.auth();await store.entry('fixture');await store.media('fixture');assert.deepEqual(await store.imageInfo('fixture','v1'),{fixture:true});
+    assert.deepEqual(calls,[{path:'/settings/auth.json',cache:'0'},{path:'/entries/fixture.json',cache:'0'},{path:'/metadata/fixture.json',cache:'0'},{path:'/image-variants/v1/fixture/info.json',cache:null}]);
+    await agent.close();
+  `;
+  // The child gets only dummy credentials and a network-disabled mock dispatcher, never the live environment.
+  const result=spawnSync(process.execPath,['--input-type=module','--eval',code],{env:{BLOB_READ_WRITE_TOKEN:'vercel_blob_rw_fixture_dummy'},encoding:'utf8'});
+  assert.equal(result.status,0,result.stdout+result.stderr);
 });

@@ -1,5 +1,5 @@
 import {copy} from './i18n.js';
-import {loadMediaImage} from './media-images.js';
+import {loadMediaImage,mediaURL} from './media-images.js';
 
 const timers=new WeakMap();
 const words=()=>copy[document.documentElement.dataset.language==='en'?'en':'zh'];
@@ -62,7 +62,7 @@ export function clearMedia(container) {
 }
 
 // Decode before showing the photo, then let its natural proportions set the frame.
-export function createMediaImage(src,alt,{size='read',originalLink=true}={}) {
+export function createMediaImage(src,alt,{size='read',entry,originalLink=true}={}) {
   const frame=document.createElement('div');frame.className='media-frame';
   let revision=0,timer,disposed=false;
   const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();load();}},{rootMargin:'240px'});
@@ -79,12 +79,12 @@ export function createMediaImage(src,alt,{size='read',originalLink=true}={}) {
       if(keyboard)retry.focus({preventScroll:true});
     };
     timer=setTimeout(failed,20000);
-    loadMediaImage(src,{size}).then(image=>{
+    loadMediaImage(src,{size,entry}).then(image=>{
       if(disposed||revision!==ticket)return;
       clearTimeout(timer);clearLoading(frame);image.className='media-image';image.alt=alt;
       frame.style.setProperty('--media-width',image.naturalWidth+'px');frame.classList.add('is-ready');
       if(originalLink) {
-        const link=document.createElement('a');link.className='media-photo-link';link.href=src;link.target='_blank';link.rel='noopener';
+        const link=document.createElement('a');link.className='media-photo-link';link.href=mediaURL(src,entry);link.target='_blank';link.rel='noopener';
         link.setAttribute('aria-label',words().viewOriginal+' · '+alt);
         const label=document.createElement('span');label.className='media-original-label';label.textContent=words().viewOriginal+' ↗';
         link.append(image,label);frame.replaceChildren(link);
