@@ -18,11 +18,13 @@ export function initAmbientMotion() {
     listeners.push(() => target.removeEventListener(event, handler, options));
   }
   function stop() { cancelAnimationFrame(frame); frame = 0; previous = 0; }
-  function schedule() { if (!frame && !destroyed && !document.hidden && pageActive) frame = requestAnimationFrame(update); }
+  // Touch scrolling belongs to the browser. Its static document backdrop does
+  // not share the oversized fixed layer or its per-scroll transform updates.
+  function schedule() { if (fine.matches && !frame && !destroyed && !document.hidden && pageActive) frame = requestAnimationFrame(update); }
   function measure() { maximumScroll = Math.max(1, root.scrollHeight - innerHeight); schedule(); }
   function update(now) {
     frame = 0;
-    if (destroyed || document.hidden || !pageActive) return;
+    if (destroyed || !fine.matches || document.hidden || !pageActive) return;
     const staticView = blocked();
     const progress = staticView ? .16 : clamp(scrollY / maximumScroll, 0, 1);
     const dt = Math.min((now - (previous || now - 16)) / 1000, .08);
@@ -53,6 +55,12 @@ export function initAmbientMotion() {
   listen(window, 'blur', () => { pageActive = false; targetX = targetY = 0; stop(); });
   listen(window, 'focus', () => { pageActive = true; schedule(); });
   listen(reduce, 'change', schedule);
+  listen(fine, 'change', () => {
+    stop(); x = y = targetX = targetY = 0;
+    for (const name of ['x','y','scale','turn','lift']) backdrop.style.removeProperty('--ambient-' + name);
+    delete backdrop.dataset.backgroundProgress;
+    if (fine.matches) measure();
+  });
   const observer = new MutationObserver(schedule);
   observer.observe(root, {attributes: true, attributeFilter: ['class','data-input']});
   const resize = new ResizeObserver(measure);

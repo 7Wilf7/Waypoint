@@ -3,12 +3,26 @@
 .ambient-depth {position:absolute;inset:-16vmax;transform-origin:50% 55%;transform:translate3d(var(--ambient-x,0px),var(--ambient-y,0px),0) scale(var(--ambient-scale,1)) rotate(var(--ambient-turn,-6deg));}
 .ambient-glow {position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse at 74% 24%,var(--halo-primary),transparent 55%),radial-gradient(ellipse at 8% 86%,var(--halo-edge),transparent 48%);transition:opacity 250ms ease;}
 .ambient-glow::after {content:'';position:absolute;inset:8% -8%;background:radial-gradient(ellipse at 38% 74%,var(--halo-secondary),transparent 48%);transform:translate3d(0,var(--ambient-lift,0px),0) scale(1.18);}
-.ambient-glow-dark {--halo-primary:rgb(255 255 255 / 17%);--halo-edge:rgb(255 255 255 / 7%);--halo-secondary:rgb(255 255 255 / 9%);}
-.ambient-glow-light {--halo-primary:rgb(255 255 255 / 95%);--halo-edge:rgb(65 65 65 / 9%);--halo-secondary:rgb(70 70 70 / 7%);}
-.ambient-glow-moss {--halo-primary:rgb(161 196 128 / 29%);--halo-edge:rgb(84 140 119 / 19%);--halo-secondary:rgb(153 178 110 / 17%);}
-.ambient-glow-gray {--halo-primary:rgb(232 238 224 / 24%);--halo-edge:rgb(162 184 176 / 13%);--halo-secondary:rgb(218 226 207 / 13%);}
+:root,.ambient-glow-dark {--halo-primary:rgb(255 255 255 / 17%);--halo-edge:rgb(255 255 255 / 7%);--halo-secondary:rgb(255 255 255 / 9%);}
+[data-theme="light"],.ambient-glow-light {--halo-primary:rgb(255 255 255 / 95%);--halo-edge:rgb(65 65 65 / 9%);--halo-secondary:rgb(70 70 70 / 7%);}
+[data-theme="moss"],.ambient-glow-moss {--halo-primary:rgb(161 196 128 / 29%);--halo-edge:rgb(84 140 119 / 19%);--halo-secondary:rgb(153 178 110 / 17%);}
+[data-theme="gray"],.ambient-glow-gray {--halo-primary:rgb(232 238 224 / 24%);--halo-edge:rgb(162 184 176 / 13%);--halo-secondary:rgb(218 226 207 / 13%);}
 [data-theme="dark"] .ambient-glow-dark,[data-theme="light"] .ambient-glow-light,[data-theme="moss"] .ambient-glow-moss,[data-theme="gray"] .ambient-glow-gray {opacity:1;}
 .ambient-grain {position:absolute;inset:0;opacity:.027;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='white' filter='url(%23noise)' d='M0 0h144v144H0z'/%3E%3C/svg%3E");}
+/* The exact complement of the JavaScript fine-pointer gate. Native document
+   backgrounds avoid a rotating fixed texture during Android touch scrolling.
+   Every ellipse ends before the repeated tile's top/bottom, so joins are clear. */
+@media not all and (hover:hover) and (pointer:fine) {
+  .ambient-backdrop {display:none;}
+  .waypoint-home,.race-archive-page,.manage-page {
+    background-image:radial-gradient(ellipse 85% 32% at 74% 38%,var(--halo-primary),transparent 100%),radial-gradient(ellipse 80% 25% at 8% 74%,var(--halo-edge),transparent 100%),radial-gradient(ellipse 80% 40% at 38% 50%,var(--halo-secondary),transparent 100%);
+    background-size:100% 200vh;
+    background-size:100% 200lvh;
+    background-repeat:repeat-y;
+  }
+  [data-theme="light"] :is(.waypoint-home,.race-archive-page,.manage-page) {--halo-edge:rgb(65 65 65 / 7%);--halo-secondary:rgb(70 70 70 / 5%);}
+  [data-theme="gray"] :is(.waypoint-home,.race-archive-page,.manage-page) {--halo-primary:rgb(232 238 224 / 16%);--halo-secondary:rgb(218 226 207 / 9%);}
+}
 .sound-toggle {position:relative;display:grid;place-items:center;width:46px;height:46px;padding:0;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--text);cursor:pointer;flex:none;}
 .sound-toggle[hidden] {display:none;}
 .sound-bars {display:flex;align-items:center;gap:2px;height:19px;}
