@@ -4,16 +4,18 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { notes, notesByLanguage } from '../dist/content.js';
 import { copy } from '../dist/i18n.js';
+import { ambientTracks } from '../dist/ambient-tracks.js';
 import {previewProducts,previewScreens,previewViewport} from '../dist/preview-screens.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
-for (const filename of ['app.js', 'theme.js', 'homepage-copy.js', 'hero-gallery.js', 'hero-motion.js', 'surface-motion.js', 'scroll-motion.js', 'pointer-field.js', 'elastic-details.js', 'ambient-motion.js', 'ambient-audio.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'article-utils.js', 'race-utils.js', 'race-photos.js', 'race-archive.js', 'manage.js', 'loading.js', 'media-images.js']) {
+for (const filename of ['app.js', 'theme.js', 'homepage-copy.js', 'hero-gallery.js', 'hero-motion.js', 'surface-motion.js', 'scroll-motion.js', 'pointer-field.js', 'elastic-details.js', 'ambient-motion.js', 'ambient-audio.js', 'ambient-tracks.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'article-utils.js', 'race-utils.js', 'race-photos.js', 'race-archive.js', 'manage.js', 'loading.js', 'media-images.js']) {
   const result = spawnSync(process.execPath, ['--check', resolve(root, filename)], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr);
 }
 const html = await readFile(resolve(root, 'index.html'), 'utf8');
 const manager = await readFile(resolve(root, 'manage.html'), 'utf8');
 const archive = await readFile(resolve(root, 'races.html'), 'utf8');
+for (const track of ambientTracks) await access(resolve(root, 'assets/audio', track.id + '.m4a'));
 const translationKeys = Object.keys(copy.zh);
 if (translationKeys.length !== Object.keys(copy.en).length) throw new Error('Translation editions differ');
 for (const key of translationKeys) {
