@@ -1,4 +1,5 @@
 /* Temporary promotion exists only while an existing detail is settling. */
+.elastic-inline {display:inline-block;}
 .elastic-detail.is-elastic-moving {will-change:translate,rotate;}
 @media (prefers-reduced-motion:reduce) {
   .elastic-detail.is-elastic-moving {will-change:auto;}

@@ -7,7 +7,7 @@ import { copy } from '../dist/i18n.js';
 import {previewProducts,previewScreens,previewViewport} from '../dist/preview-screens.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
-for (const filename of ['app.js', 'homepage-copy.js', 'hero-gallery.js', 'hero-motion.js', 'surface-motion.js', 'scroll-motion.js', 'pointer-field.js', 'elastic-details.js', 'ambient-motion.js', 'ambient-audio.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'article-utils.js', 'race-utils.js', 'race-photos.js', 'race-archive.js', 'manage.js', 'loading.js', 'media-images.js']) {
+for (const filename of ['app.js', 'theme.js', 'homepage-copy.js', 'hero-gallery.js', 'hero-motion.js', 'surface-motion.js', 'scroll-motion.js', 'pointer-field.js', 'elastic-details.js', 'ambient-motion.js', 'ambient-audio.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'article-utils.js', 'race-utils.js', 'race-photos.js', 'race-archive.js', 'manage.js', 'loading.js', 'media-images.js']) {
   const result = spawnSync(process.execPath, ['--check', resolve(root, filename)], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr);
 }

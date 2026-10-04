@@ -1,4 +1,5 @@
 import {copy} from './i18n.js';
+import {initTheme} from './theme.js';
 import {upload as uploadBlob} from './upload-client.js';
 import {reconcileArticleLayout} from './article-layout.js';
 import {raceCategoryKeys} from './race-utils.js';
@@ -24,14 +25,12 @@ function translate(){
   const w=words();root.lang=root.dataset.language==='en'?'en':'zh-CN';document.title='Waypoint · '+w.manage;
   document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=w[e.dataset.i18n]);document.querySelectorAll('[data-i18n-aria]').forEach(e=>e.setAttribute('aria-label',w[e.dataset.i18nAria]));
   const toggle=document.querySelector('.language-toggle');toggle.textContent=root.dataset.language==='en'?'中':'EN';toggle.setAttribute('aria-label',w.languageLabel);toggle.title=w.languageLabel;
-  const theme=document.querySelector('.manage-theme'),themeLabel=root.dataset.theme==='dark'?w.toLight:w.toDark;theme.setAttribute('aria-label',themeLabel);theme.title=themeLabel;
-  document.querySelector('meta[name="theme-color"]').content=root.dataset.theme==='dark'?'#101113':'#f5f6f8';
   for(const [target,state]of messageStates)target.textContent=format(w[state.key],state.values);
   if(sessionLoading)renderLoading(loading,'manageLoading',{rows:3});
   renderList();renderEditorHeading();renderMedia();renderOperation();
 }
 document.querySelector('.language-toggle').addEventListener('click',()=>{root.dataset.language=root.dataset.language==='en'?'zh':'en';try{localStorage.setItem('waypoint-language',root.dataset.language);}catch{}translate();});
-document.querySelector('.manage-theme').addEventListener('click',()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('waypoint-theme',root.dataset.theme);}catch{}translate();});
+initTheme();
 const messages={request_timeout:'requestTimedOut',invalid_password:'invalidPassword',password_length:'passwordLength',password_mismatch:'passwordMismatch',password_unchanged:'passwordUnchanged',auth_changed:'signInAgain',owner_required:'signInAgain',english_required:'englishRequired',article_body_required:'englishRequired',title_date_required:'titleDateRequired',file_too_large:'fileTooLarge',file_type:'raceFileType',invalid_metrics:'invalidMetrics',invalid_result:'invalidMetrics',invalid_wechat_url:'invalidWechat',invalid_published_time:'invalidPublishedTime',summary_translation_required:'bilingualSummaryRequired',race_photo_limit:'racePhotoLimit',invalid_photo_roles:'invalidPhotoRoles',certificate_image_required:'certificateImageRequired',invalid_article_layout:'invalidArticleLayout'};
 async function api(path,options={},timeoutMs=options.method&&options.method!=='GET'?60000:20000){return requestJSON('./api/'+path,options,timeoutMs);}
 function renderList(){

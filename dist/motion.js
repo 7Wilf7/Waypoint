@@ -11,14 +11,10 @@ export function initMotion() {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
   const wide = matchMedia('(min-width: 1101px)');
-  const easeOut = 'cubic-bezier(0.23, 1, 0.32, 1)';
-  const running = new Set();
   const preview = document.querySelector('.note-preview');
   setTimeout(() => root.classList.add('intro-complete'), 1100);
 
   function stopDecorativeMotion() {
-    running.forEach(animation => animation.cancel());
-    running.clear();
     preview.classList.remove('is-visible');
   }
   document.addEventListener('keydown', event => {
@@ -33,52 +29,6 @@ export function initMotion() {
     if (event.pointerType === 'mouse' && root.dataset.input !== 'pointer') root.dataset.input = 'pointer';
   }, { passive: true });
 
-  // Text travels through a line mask; the readable layout never depends on the reveal.
-  function reveal(element, frames, options) {
-    if (reduce.matches || document.hidden || root.classList.contains('reading') || root.dataset.input === 'keyboard') return;
-    const animation = element.animate(frames, options);
-    running.add(animation);
-    animation.finished.then(() => running.delete(animation), () => running.delete(animation));
-  }
-  const seen = new WeakSet();
-  const registered = new WeakSet();
-  function revealHeading(heading) {
-    heading.querySelectorAll('.type-ink').forEach((line,index) => reveal(line,[
-      {opacity:0,transform:'translateY(105%) rotate(3deg)'},
-      {opacity:1,transform:'translateY(0) rotate(0deg)'}
-    ],{duration:850,delay:index*65,easing:easeOut}));
-  }
-  const revealObserver = new IntersectionObserver(entries => {
-    for (const entry of entries) {
-      if (!entry.isIntersecting) continue;
-      revealObserver.unobserve(entry.target);
-      seen.add(entry.target);
-      revealHeading(entry.target);
-    }
-  },{threshold:.12,rootMargin:'0px 0px -24px 0px'});
-  function prepareHeading(heading) {
-    if(heading.querySelector('.type-line'))return;
-    const nodes=[...heading.childNodes];
-    const groups=[[]];
-    for(const node of nodes){if(node.nodeName==='BR')groups.push([]);else groups.at(-1).push(node);}
-    const fragment=document.createDocumentFragment();
-    for(const nodes of groups) {
-      const mask=document.createElement('span');mask.className='type-line';
-      const ink=document.createElement('span');ink.className='type-ink';
-      ink.append(...nodes);mask.append(ink);fragment.append(mask);
-    }
-    heading.replaceChildren(fragment);
-    // A language change rebuilds the authored markup; preserve a completed entrance.
-    if(seen.has(heading))return;
-    if(!registered.has(heading)){registered.add(heading);revealObserver.observe(heading);}
-  }
-  function registerContent() {
-    document.querySelectorAll('.editorial-hero h1').forEach(prepareHeading);
-  }
-  let contentFrame=0;
-  const registerLater=()=>{if(!contentFrame)contentFrame=requestAnimationFrame(()=>{contentFrame=0;registerContent();});};
-  new MutationObserver(registerLater).observe(document.querySelector('main'),{childList:true,subtree:true});
-  registerContent();
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDecorativeMotion();});
   document.addEventListener('waypoint-reader',()=>{if(root.classList.contains('reading'))stopDecorativeMotion();});
 

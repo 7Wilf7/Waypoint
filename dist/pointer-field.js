@@ -1,10 +1,12 @@
 // One transparent WebGL renderer: drifting, diffusing fog + existing-image refraction.
 // Original images, alt text, layout and native App hotspots remain in the DOM.
 let instance = null;
-const MAX_WAVES = 8, MAX_POINTS = 40, MAX_TEXTURES = 6, MAX_TEXTURE_PIXELS = 2400000;
+const MAX_WAVES = 8, MAX_TEXTURES = 6, MAX_TEXTURE_PIXELS = 2400000;
 const MAX_IMAGE_PIXELS = 1000000, MAX_EDGE = 1536, MAX_FRAME_PIXELS = 1600000;
 const MAX_FOG_PIXELS = 180000, MAX_FOG_EDGE = 640;
 const TRAIL_LIFE = 2.3, WAVE_LIFE = 1.25;
+const TRAIL_SAMPLE_INTERVAL = 1 / 60;
+const MAX_POINTS = Math.ceil(TRAIL_LIFE / TRAIL_SAMPLE_INTERVAL) + 1;
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
 const vertex = `attribute vec2 aPosition;attribute vec3 aData;uniform mediump vec2 uView;
@@ -79,7 +81,7 @@ export function initPointerField() {
   let destroyed = false, failed = false, frame = 0, width = innerWidth, height = innerHeight;
   let pixelBudget = 0, previous = 0, focused = true, keyboard = root.dataset.input === 'keyboard';
   let modal = root.classList.contains('reading') || Boolean(document.querySelector('dialog[open]'));
-  let refreshQueued = false, points = [], waves = [], lastWave = 0, lastMove = 0;
+  let refreshQueued = false, points = [], waves = [], lastWave = 0, lastMove = 0, lastPoint = 0;
   let pointer = { x: -1000, y: -1000, vx: 0, vy: 0 };
   const epoch = performance.now();
   const nowSeconds = () => (performance.now() - epoch) / 1000;
@@ -98,8 +100,12 @@ export function initPointerField() {
     return true;
   }
   function stop() { if (frame) cancelAnimationFrame(frame); frame = 0; previous = 0; }
+  function releaseSampling() {
+    lastMove = lastPoint = 0;
+    pointer = { x: -1000, y: -1000, vx: 0, vy: 0 };
+  }
   function clear() {
-    stop(); points = []; waves = []; pointer.vx = pointer.vy = 0;
+    stop(); points = []; waves = []; releaseSampling();
     if (gl && !gl.isContextLost()) {
       wipeFog(); gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
@@ -225,7 +231,7 @@ export function initPointerField() {
       host.append(guide); state.guide = guide;
     }
     const guide = state.guide;
-    Object.assign(guide.style, { position: fixed ? 'fixed' : 'absolute', left: img.offsetLeft + 'px', top: img.offsetTop + 'px', width: img.offsetWidth + 'px', height: img.offsetHeight + 'px', transform: css.transform, transformOrigin: css.transformOrigin });
+    Object.assign(guide.style, { position: fixed ? 'fixed' : 'absolute', left: img.offsetLeft + 'px', top: img.offsetTop + 'px', width: img.offsetWidth + 'px', height: img.offsetHeight + 'px', translate: css.translate, rotate: css.rotate, scale: css.scale, transform: css.transform, transformOrigin: css.transformOrigin });
     return [...guide.children].map(marker => { const r = marker.getBoundingClientRect(); return [r.left,r.top]; });
   }
   function validVersion(state, version, source, context) {
@@ -426,20 +432,25 @@ export function initPointerField() {
   on(document,'pointermove',event=>{
     if(event.pointerType!=='mouse'||!fine.matches)return;
     keyboard=false;if(!allowed())return;
-    // Entering the readable screen interrupts old trails; no waves originate
-    // from its image or controls, while nearby page areas still respond.
-    if(event.target instanceof Element&&event.target.closest('.preview-device,.preview-display')){clear();lastMove=0;return;}
+    // The readable screen emits no effects. Existing clouds outside it keep
+    // their own lifetimes; clearPreview still removes its final painted pixels.
+    if(event.target instanceof Element&&event.target.closest('.preview-device,.preview-display')){releaseSampling();return;}
     const time=nowSeconds(),dx=event.clientX-pointer.x,dy=event.clientY-pointer.y;
-    if(Math.hypot(dx,dy)<2&&time-lastMove<.08)return;
-    const dt=Math.max(.008,time-lastMove),speed=lastMove?Math.min(2000,Math.hypot(dx,dy)/dt):100;
-    if(time-lastMove>.25)points=[];
-    pointer={x:event.clientX,y:event.clientY,vx:lastMove?clamp(dx/dt,-1800,1800):0,vy:lastMove?clamp(dy/dt,-1800,1800):0};
+    const continuous=lastMove>0&&time-lastMove<=.25;
+    if(continuous&&Math.hypot(dx,dy)<2&&time-lastMove<.08)return;
+    const dt=Math.max(.008,time-lastMove),speed=continuous?Math.min(2000,Math.hypot(dx,dy)/dt):100;
+    pointer={x:event.clientX,y:event.clientY,vx:continuous?clamp(dx/dt,-1800,1800):0,vy:continuous?clamp(dy/dt,-1800,1800):0};
     lastMove=time;const pressure=event.pressure>0?clamp(.65+event.pressure,.65,1.3):1;
-    points.push({x:pointer.x,y:pointer.y,vx:pointer.vx,vy:pointer.vy,t:time,speed,pressure});if(points.length>MAX_POINTS)points.shift();
+    // Sampling and capacity share a lifetime budget. A busy mouse cannot evict
+    // a living cloud; every point retains its birth velocity until it expires.
+    points=points.filter(point=>time-point.t<TRAIL_LIFE);
+    if(time-lastPoint>=TRAIL_SAMPLE_INTERVAL&&points.length<MAX_POINTS){
+      points.push({x:pointer.x,y:pointer.y,vx:pointer.vx,vy:pointer.vy,t:time,speed,pressure});lastPoint=time;
+    }
     if(time-lastWave>.055){waves.push({x:pointer.x,y:pointer.y,t:time,strength:clamp(.5+speed/1800,.5,1.25)});if(waves.length>MAX_WAVES)waves.shift();lastWave=time;}
     schedule();
   },{passive:true});
-  on(document,'pointerleave',clear);on(window,'blur',()=>{focused=false;clear();});on(window,'focus',()=>{focused=true;updateGate();});
+  on(document,'pointerleave',releaseSampling);on(window,'blur',()=>{focused=false;clear();});on(window,'focus',()=>{focused=true;updateGate();});
   on(document,'keydown',()=>{keyboard=true;clear();});on(document,'visibilitychange',updateGate);
   on(document,'waypoint-reader',updateGate);on(document,'toggle',updateGate,true);on(document,'close',updateGate,true);
   on(window,'scroll',()=>{clear();releaseOffscreen();},{passive:true});on(window,'resize',()=>{resize();clear();},{passive:true});

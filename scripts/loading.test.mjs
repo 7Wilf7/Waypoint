@@ -22,11 +22,12 @@ test('the homepage is visible immediately with no blocking greeting deadline',()
   assert.equal(first.listeners.size,0);
   assert.doesNotMatch(html,/intro-pending[^}]*visibility:hidden/);
 });
-test('language and both theme preferences are applied before the main module runs',()=>{
+test('language and all four background preferences are applied before the main module runs',()=>{
   const english=startup({english:true,theme:'light'});
   assert.equal(english.root.dataset.language,'en');assert.equal(english.root.lang,'en');assert.equal(english.root.dataset.theme,'light');
   const chinese=startup({theme:'dark'});
   assert.equal(chinese.root.dataset.language,'zh');assert.equal(chinese.root.lang,'zh-CN');assert.equal(chinese.root.dataset.theme,'dark');
+  for(const theme of ['dark','light','moss','gray'])assert.equal(startup({theme}).root.dataset.theme,theme);
   assert.equal(startup({theme:'invalid'}).root.dataset.theme,'dark');
 });
 test('repeat visits, reduced motion, and direct content links always retain visible content',()=>{

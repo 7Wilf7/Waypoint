@@ -1,8 +1,10 @@
-// Transfer the mouse's momentum to existing decorative details only. The
-// individual transform properties leave every authored transform intact.
+// Transfer the mouse's momentum to content, keeping control hit areas fixed.
+// Individual transforms compose with the inner scroll entrances and surfaces.
 let activeController = null;
-const selector = '.live-dot,.hero-coordinate,.hero-gallery-label,.project-visual .orbit,.project-visual .visual-coordinate';
-const protectedSelector = 'a,button,input,textarea,select,[role="button"],[role="tab"],dialog,.reader-dialog,.preview-device,.preview-display';
+const selector = '.waypoint-home main :is(h2,h3,h4,h5,h6,p,blockquote,li,dt,dd,span,strong,small,img),.race-archive-page main :is(h1,h2,h3,h4,h5,h6,p,blockquote,li,dt,dd,span,strong,small,img),.live-dot,.hero-gallery-label,.project-visual .orbit,.product-orbit,.aevum-center';
+const protectedSelector = 'button,input,textarea,select,[role="button"],[role="tab"],[contenteditable],dialog,.reader-dialog,.preview-device,.preview-display,.note-preview,.loading-state,.startup-error,.pointer-image-guide,[hidden]';
+const generatedSelector = '.type-line,.type-ink,.scroll-unit,.scroll-word,.material-light,.legacy-anchor';
+const headingSelector = 'h1,h2,h3,h4,h5,h6,.footer-statement';
 const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
 
 export function initElasticDetails() {
@@ -12,9 +14,21 @@ export function initElasticDetails() {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const states = new Map(), listeners = [];
   let destroyed = false, frame = 0, previous = 0, pointer = null, pending = null;
-  let pageActive = true, keyboard = root.dataset.input === 'keyboard', dirty = true;
+  let pageActive = true, keyboard = root.dataset.input === 'keyboard', dirty = true, refreshQueued = false, selecting = false;
   let reading = root.classList.contains('reading') || Boolean(document.querySelector('dialog[open]'));
-  const allowed = () => !destroyed && fine.matches && !reduce.matches && !keyboard && !reading && !document.hidden && pageActive;
+  const allowed = () => !destroyed && fine.matches && !reduce.matches && !keyboard && !reading && !selecting && !document.hidden && pageActive && getSelection()?.isCollapsed !== false;
+
+  function eligible(element) {
+    if (!element.isConnected || !element.matches(selector) || element.matches(generatedSelector) || element.closest(protectedSelector)) return false;
+    // The hero's outer lines already have their own pointer spring. Any other
+    // heading may move inside a link; the surrounding link stays in place.
+    if (element.closest('.editorial-hero h1')) return false;
+    if (element.closest('a,summary') && !element.matches(headingSelector)) return false;
+    if (element.querySelector('a,button,input,textarea,select,[role="button"],[role="tab"],.preview-device')) return false;
+    if (element.closest('[aria-hidden="true"]') && !element.matches('.orbit,.live-dot')) return false;
+    if (!element.matches('img,.orbit,.live-dot') && !element.textContent.trim()) return false;
+    return true;
+  }
 
   function listen(target, event, handler, options) {
     target.addEventListener(event, handler, options);
@@ -61,7 +75,7 @@ export function initElasticDetails() {
     }
   }
   function inject(state, move) {
-    if (!state.visible || !state.element.isConnected || state.element.closest(protectedSelector)) return;
+    if (!state.visible || !state.element.isConnected) return;
     const dx = move.to.x - move.from.x, dy = move.to.y - move.from.y;
     const travel = Math.hypot(dx, dy);
     if (travel < .5) return;
@@ -141,32 +155,51 @@ export function initElasticDetails() {
   }
   function refresh() {
     if (destroyed) return;
-    stop();
-    for (const [element, state] of states) if (!element.isConnected || !element.matches(selector) || element.closest(protectedSelector)) {
+    // Register incrementally: async content and line wrapping must not reset
+    // the velocity of elements that are already returning to their position.
+    const candidates = new Set();
+    for (const element of document.querySelectorAll(selector)) {
+      if (!eligible(element)) continue;
+      let nested = false;
+      for (let parent = element.parentElement; parent; parent = parent.parentElement) if (candidates.has(parent)) { nested = true; break; }
+      if (!nested) candidates.add(element);
+    }
+    for (const [element, state] of states) if (!candidates.has(element)) {
       intersection?.unobserve(element); resizing?.unobserve(element);
       restore(state);
       if (!state.originalClass) element.classList.remove('elastic-detail');
+      if (!state.originalInlineClass) element.classList.remove('elastic-inline');
       states.delete(element);
     }
-    for (const element of document.querySelectorAll(selector)) {
-      if (states.has(element) || element.closest(protectedSelector)) continue;
+    for (const element of candidates) {
+      if (states.has(element)) continue;
       const ring = element.matches('.orbit');
+      const heading = element.matches(headingSelector);
+      const image = element.matches('img,.aevum-center,.product-orbit');
+      const copy = !ring && !heading && !image;
       const originalTranslate = property(element, 'translate'), originalRotate = property(element, 'rotate');
       const computed = getComputedStyle(element);
       const translated = computed.translate === 'none' ? ['0px', '0px'] : computed.translate.split(/\s+/);
       const angle = computed.rotate === 'none' ? '0deg' : computed.rotate;
       const rect = element.getBoundingClientRect();
       const state = { element, ring, originalTranslate, originalRotate, originalClass: element.classList.contains('elastic-detail'),
+        originalInlineClass: element.classList.contains('elastic-inline'),
         originalMovingClass: element.classList.contains('is-elastic-moving'), baseX: translated[0], baseY: translated[1] || '0px', baseZ: translated[2],
-        baseAngle: angle, turn: ring || /\s/.test(angle) ? 0 : element.matches('.live-dot') ? 0 : 3.5,
-        limit: ring ? 26 : element.matches('.live-dot') ? 12 : 16,
-        radius: ring ? 72 : 65, gain: ring ? 4.2 : 3,
+        baseAngle: angle, turn: ring || copy || /\s/.test(angle) ? 0 : heading ? .65 : .35,
+        limit: ring ? 26 : heading ? 14 : image ? 8 : 5,
+        radius: ring ? 72 : heading ? 85 : 54, gain: ring ? 4.2 : heading ? 2.5 : image ? 1.5 : .85,
         position: [0, 0, 0], velocity: [0, 0, 0], points: [], ownsStyles: false,
         visible: rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight };
       element.classList.add('elastic-detail'); states.set(element, state);
+      if (computed.display === 'inline') element.classList.add('elastic-inline');
       intersection?.observe(element); resizing?.observe(element); measure(state);
     }
     dirty = true;
+  }
+  function queueRefresh() {
+    if (refreshQueued || destroyed) return;
+    refreshQueued = true;
+    queueMicrotask(() => { refreshQueued = false; refresh(); });
   }
   function gate() {
     reading = root.classList.contains('reading') || Boolean(document.querySelector('dialog[open]'));
@@ -184,20 +217,25 @@ export function initElasticDetails() {
   const resizing = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { dirty = true; });
   const observer = new MutationObserver(records => {
     if (records.some(record => record.attributeName === 'data-input')) keyboard = root.dataset.input === 'keyboard';
-    if (records.some(record => ['data-language', 'data-theme'].includes(record.attributeName))) refresh();
+    if (records.some(record => ['data-language', 'data-theme'].includes(record.attributeName))) queueRefresh();
     gate();
   });
   observer.observe(root, { attributes: true, attributeFilter: ['class', 'data-input', 'data-language', 'data-theme'] });
   listen(document, 'pointermove', event => {
     if (event.pointerType !== 'mouse' || !fine.matches) return;
     if (keyboard) { keyboard = false; gate(); }
-    if (!allowed() || event.target.closest('dialog,.reader-dialog,.preview-device,.preview-display')) { stop(); return; }
+    if (!allowed()) { stop(); return; }
+    if (event.target.closest('dialog,.reader-dialog,.preview-device,.preview-display')) { pointer = pending = null; return; }
     const next = { x: event.clientX, y: event.clientY, time: event.timeStamp };
-    if (pointer) pending = { from: pending?.from || pointer, to: next, duration: Math.min(.1, Math.max(.008, (next.time - (pending?.from || pointer).time) / 1000)) };
+    if (pointer && next.time - pointer.time < 250) pending = { from: pending?.from || pointer, to: next, duration: Math.min(.1, Math.max(.008, (next.time - (pending?.from || pointer).time) / 1000)) };
     pointer = next;
     if (pending) schedule();
   }, { passive: true });
   listen(document, 'pointerleave', () => { pointer = pending = null; });
+  listen(document, 'pointerdown', event => { if (event.pointerType === 'mouse' && !event.target.closest('a,button,summary')) { selecting = true; stop(); } });
+  listen(document, 'pointerup', () => { selecting = false; gate(); });
+  listen(document, 'pointercancel', () => { selecting = false; gate(); });
+  listen(document, 'selectionchange', gate);
   listen(document, 'keydown', event => {
     if (event.altKey || event.ctrlKey || event.metaKey || ['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return;
     keyboard = true; gate();
@@ -209,12 +247,19 @@ export function initElasticDetails() {
   listen(window, 'scroll', () => { dirty = true; pointer = pending = null; gate(); }, { passive: true });
   listen(window, 'resize', () => { dirty = true; });
   listen(reduce, 'change', gate); listen(fine, 'change', gate);
+  listen(document, 'journal-ready', queueRefresh); listen(document, 'journal-loading', queueRefresh);
+  const contentObserver = new MutationObserver(records => {
+    if (records.some(record => !record.target.closest?.('.pointer-image-guide,.preview-device,.preview-display'))) queueRefresh();
+  });
+  const content = document.querySelector('main');
+  if (content) contentObserver.observe(content, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-hidden','hidden'] });
   activeController = { refresh, destroy() {
     if (destroyed) return;
-    destroyed = true; stop(); intersection?.disconnect(); resizing?.disconnect(); observer.disconnect();
+    destroyed = true; stop(); intersection?.disconnect(); resizing?.disconnect(); observer.disconnect(); contentObserver.disconnect();
     listeners.forEach(remove => remove());
     for (const state of states.values()) {
       restore(state); if (!state.originalClass) state.element.classList.remove('elastic-detail');
+      if (!state.originalInlineClass) state.element.classList.remove('elastic-inline');
     }
     states.clear(); activeController = null;
   } };

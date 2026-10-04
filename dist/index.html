@@ -22,7 +22,7 @@
         const language = localStorage.getItem('waypoint-language') === 'en' ? 'en' : 'zh';
         document.documentElement.dataset.language = language;
         document.documentElement.lang = language === 'en' ? 'en' : 'zh-CN';
-        document.documentElement.dataset.theme = saved === 'light' || saved === 'dark' ? saved : 'dark';
+        document.documentElement.dataset.theme = ['dark', 'light', 'moss', 'gray'].includes(saved) ? saved : 'dark';
       } catch { document.documentElement.dataset.theme = 'dark'; }
       document.documentElement.classList.add('intro-complete');
     </script>
@@ -34,7 +34,7 @@
     <script type="module" src="./app.js" onerror="document.documentElement.classList.add('app-failed')"></script>
   </head>
   <body class="waypoint-home">
-    <div class="ambient-backdrop" aria-hidden="true"><div class="ambient-depth"><div class="ambient-glow ambient-glow-one"></div><div class="ambient-glow ambient-glow-two"></div><div class="ambient-grain"></div></div></div>
+    <div class="ambient-backdrop" aria-hidden="true"><div class="ambient-depth"><div class="ambient-glow ambient-glow-dark"></div><div class="ambient-glow ambient-glow-light"></div><div class="ambient-glow ambient-glow-moss"></div><div class="ambient-glow ambient-glow-gray"></div><div class="ambient-grain"></div></div></div>
     <noscript><style>:is(.race-entries,.article-entries,.preview-message,.preview-options){display:none!important}</style><p class="section-shell load-error">请启用 JavaScript，以浏览比赛、文章和交互预览。 / Enable JavaScript to browse race records, articles, and interactive previews.</p></noscript>
 
     <a class="skip-link" href="#main" data-i18n="skip">跳到主要内容</a>
@@ -49,10 +49,7 @@
           <a href="#trails" data-i18n="trailsNav">山野</a>
           <a href="#making" data-i18n="makingNav">创造</a>
         </nav>
-        <div class="header-controls"><button class="language-toggle" type="button" aria-label="Switch to English" title="Switch to English">EN</button><button class="theme-toggle" type="button" aria-label="切换为浅色模式" title="切换为浅色模式">
-          <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41"/></svg>
-          <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.1 15.4A8.6 8.6 0 0 1 8.6 3.9 8.6 8.6 0 1 0 20.1 15.4Z"/></svg>
-        </button><button class="sound-toggle" type="button" aria-label="播放背景音乐" aria-pressed="false" hidden><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><svg class="sound-off" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 3 10 14"/></svg></button></div>
+        <div class="header-controls"><button class="language-toggle" type="button" aria-label="Switch to English" title="Switch to English">EN</button><button class="theme-toggle" type="button" aria-label="当前背景：曜黑。切换为雾白背景" title="当前背景：曜黑。切换为雾白背景"><span class="theme-palette" aria-hidden="true"><i class="theme-swatch theme-swatch-dark"></i><i class="theme-swatch theme-swatch-light"></i><i class="theme-swatch theme-swatch-moss"></i><i class="theme-swatch theme-swatch-gray"></i></span></button><button class="sound-toggle" type="button" aria-label="播放背景音乐" aria-pressed="false" hidden><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><svg class="sound-off" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 3 10 14"/></svg></button></div>
       </div>
     </header>
 

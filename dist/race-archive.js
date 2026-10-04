@@ -1,7 +1,11 @@
 import {copy} from './i18n.js';
+import {initTheme} from './theme.js';
+import {initElasticDetails} from './elastic-details.js';
 import {raceCategories,raceCategoryKeys,sortRaces,raceCounts,formatResult,subtypeLabel,fastestRace} from './race-utils.js';
 import {requestJSON,renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
 const root=document.documentElement;
+const theme=initTheme();
+initElasticDetails();
 const list=document.querySelector('.race-archive-results'),filters=document.querySelector('.race-filters'),status=document.querySelector('.race-archive-status');
 const el=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=text;return node;};
 const locale=()=>root.dataset.language==='en'?'en':'zh',words=()=>copy[locale()];
@@ -16,13 +20,11 @@ function syncPreferences(){
   document.querySelectorAll('[data-i18n]').forEach(node=>node.textContent=w[node.dataset.i18n]);
   document.querySelectorAll('[data-i18n-aria]').forEach(node=>node.setAttribute('aria-label',w[node.dataset.i18nAria]));
   const language=document.querySelector('.language-toggle');language.textContent=locale()==='en'?'中':'EN';language.setAttribute('aria-label',w.languageLabel);language.title=w.languageLabel;
-  const theme=document.querySelector('.theme-toggle');theme.setAttribute('aria-label',root.dataset.theme==='dark'?w.toLight:w.toDark);theme.title=theme.getAttribute('aria-label');
-  document.querySelector('meta[name="theme-color"]').content=root.dataset.theme==='dark'?'#101114':'#f5f5f3';
+  theme.sync();
   document.querySelector('meta[name="description"]').content=w.raceArchiveIntro;
 }
 document.querySelector('.language-toggle').addEventListener('click',()=>{root.dataset.language=locale()==='en'?'zh':'en';try{localStorage.setItem('waypoint-language',root.dataset.language);}catch{}syncPreferences();renderFilters();renderResults();});
-document.querySelector('.theme-toggle').addEventListener('click',()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('waypoint-theme',root.dataset.theme);}catch{}syncPreferences();document.querySelector('.theme-announcement').textContent=root.dataset.theme==='dark'?words().darkChanged:words().lightChanged;});
-window.addEventListener('storage',event=>{if(event.key==='waypoint-language'&&['zh','en'].includes(event.newValue)){root.dataset.language=event.newValue;syncPreferences();renderFilters();renderResults();}if(event.key==='waypoint-theme'&&['light','dark'].includes(event.newValue)){root.dataset.theme=event.newValue;syncPreferences();}});
+window.addEventListener('storage',event=>{if(event.key==='waypoint-language'&&['zh','en'].includes(event.newValue)){root.dataset.language=event.newValue;syncPreferences();renderFilters();renderResults();}});
 
 function renderFilters(){
   const counts=raceCounts(races),w=words();filters.replaceChildren();

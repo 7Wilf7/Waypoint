@@ -13,7 +13,7 @@
 .waypoint-home .hero-eyebrow {font-size:.75rem;letter-spacing:.12em;gap:12px;margin-bottom:35px;animation:none;}
 .live-dot {width:5px;height:5px;background:var(--text);border-radius:50%;flex:none;}
 .waypoint-home h1 {display:block;font-size:clamp(4rem,7.2vw,7.3rem);font-weight:450;line-height:1.15;letter-spacing:-.065em;margin:0;animation:none;}
-.waypoint-home h1 .type-ink>span {color:var(--muted);background:linear-gradient(165deg,var(--text),var(--muted) 44%,var(--text) 75%,var(--muted));background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.waypoint-home h1 .type-ink>span:not(.scroll-unit) {color:var(--muted);background:linear-gradient(165deg,var(--text),var(--muted) 44%,var(--text) 75%,var(--muted));background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 html[lang="en"] .waypoint-home h1 {font-size:clamp(2.8rem,5.4vw,5.7rem);line-height:1.12;letter-spacing:-.055em;}
 .type-line {display:block;overflow:clip;padding-block:.07em;margin-block:-.07em;}
 .type-ink {display:block;transform-origin:0 100%;}
@@ -131,7 +131,7 @@ html[lang="en"] .waypoint-home h1 {font-size:clamp(2.8rem,5.4vw,5.7rem);line-hei
   .waypoint-home .nav-indicator {display:none;}
   .waypoint-home .site-nav a[aria-current] {background:var(--surface-raised);}
   .waypoint-home .header-controls {gap:6px;}
-  .waypoint-home .theme-toggle,.waypoint-home .language-toggle {width:40px;height:40px;min-height:40px;}
+  .waypoint-home .theme-toggle,.waypoint-home .language-toggle {width:44px;height:44px;min-height:44px;}
   .waypoint-home .editorial-hero {min-height:calc(100svh - 112px);}
   .waypoint-home .hero-copy {min-height:0;padding-top:48px;padding-bottom:30px;grid-template-columns:1fr;gap:36px;}
   .hero-gallery {height:clamp(370px,114vw,560px);border-radius:14px;}

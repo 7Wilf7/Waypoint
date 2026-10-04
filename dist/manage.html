@@ -4,16 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="robots" content="noindex" />
-    <meta name="theme-color" content="#101113" />
+    <meta name="theme-color" content="#101010" />
     <meta name="color-scheme" content="dark light" />
     <title>Waypoint · 内容管理</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./manage.css" />
-    <script>try{document.documentElement.dataset.theme=localStorage.getItem('waypoint-theme')==='light'?'light':'dark';document.documentElement.dataset.language=localStorage.getItem('waypoint-language')==='en'?'en':'zh';}catch{}</script>
+    <link rel="stylesheet" href="./ambient-motion.css" />
+    <script>try{const saved=localStorage.getItem('waypoint-theme');document.documentElement.dataset.theme=['dark','light','moss','gray'].includes(saved)?saved:'dark';document.documentElement.dataset.language=localStorage.getItem('waypoint-language')==='en'?'en':'zh';}catch{}</script>
     <script type="module" src="./manage.js"></script>
   </head>
   <body class="manage-page">
+    <div class="ambient-backdrop" aria-hidden="true"><div class="ambient-depth"><div class="ambient-glow ambient-glow-dark"></div><div class="ambient-glow ambient-glow-light"></div><div class="ambient-glow ambient-glow-moss"></div><div class="ambient-glow ambient-glow-gray"></div><div class="ambient-grain"></div></div></div>
     <a class="skip-link" href="#main" data-i18n="skip">跳到主要内容</a>
     <header class="site-header">
       <div class="header-inner">
@@ -23,10 +25,7 @@
         </a>
         <div class="header-controls">
           <button class="language-toggle" type="button" aria-label="Switch to English">EN</button>
-          <button class="theme-toggle manage-theme" type="button" aria-label="切换为浅色模式">
-            <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41"/></svg>
-            <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.1 15.4A8.6 8.6 0 0 1 8.6 3.9 8.6 8.6 0 1 0 20.1 15.4Z"/></svg>
-          </button>
+          <button class="theme-toggle manage-theme" type="button" aria-label="当前背景：曜黑。切换为雾白背景"><span class="theme-palette" aria-hidden="true"><i class="theme-swatch theme-swatch-dark"></i><i class="theme-swatch theme-swatch-light"></i><i class="theme-swatch theme-swatch-moss"></i><i class="theme-swatch theme-swatch-gray"></i></span></button>
           <a class="button button-quiet manage-home" href="./"><span data-i18n="manageBack">回到起点</span><span aria-hidden="true">↗</span></a>
         </div>
       </div>
@@ -110,5 +109,6 @@
         </div>
       </div>
     </main>
+  <div class="theme-announcement sr-only" role="status" aria-live="polite"></div>
   </body>
 </html>

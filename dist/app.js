@@ -6,13 +6,13 @@ import { initAppPreview, updateAppPreview } from './app-preview.js';
 import { initHeroGallery } from './hero-gallery.js';
 import { initAmbientMotion } from './ambient-motion.js';
 import { initAmbientAudio } from './ambient-audio.js';
+import { initTheme } from './theme.js';
 import {renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
 
 const root = document.documentElement;
-const themeButton = document.querySelector('.theme-toggle');
+const theme = initTheme();
 const languageButtons = [...document.querySelectorAll('.language-toggle')];
 const announcement = document.querySelector('.theme-announcement');
-const themeColor = document.querySelector('meta[name="theme-color"]');
 const dialog = document.querySelector('.reader-dialog');
 const readerTitle = document.querySelector('#reader-title');
 const readerBody = document.querySelector('#reader-body');
@@ -25,14 +25,6 @@ const readingDestination = key => ['aevum','memory'].includes(key) ? '#making' :
 const language = () => root.dataset.language === 'en' ? 'en' : 'zh';
 const words = () => copy[language()];
 const notes = () => notesByLanguage[language()];
-
-function syncThemeUI() {
-  const dark = root.dataset.theme === 'dark';
-  const label = dark ? words().toLight : words().toDark;
-  themeButton.setAttribute('aria-label', label);
-  themeButton.title = label;
-  themeColor.content = dark ? '#101010' : '#f5f5f5';
-}
 
 function applyLanguage(next, announce = false) {
   root.dataset.language = next === 'en' ? 'en' : 'zh';
@@ -53,7 +45,7 @@ function applyLanguage(next, announce = false) {
     button.setAttribute('aria-label', text.languageLabel);
     button.title = text.languageLabel;
   });
-  syncThemeUI();
+  theme.sync();
   if (readingKey && dialog.open&&!renderNote(readingKey, dialog.dataset.input === 'keyboard', true))renderPendingNote(readingKey);
   if (announce) announcement.textContent = text.languageChanged;
   else announcement.textContent = '';
@@ -69,17 +61,7 @@ languageButtons.forEach(button => button.addEventListener('click', event => {
   try { localStorage.setItem('waypoint-language', next); } catch { /* Optional preference. */ }
   applyLanguage(next, true);
 }));
-themeButton.addEventListener('click', () => {
-  root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
-  try { localStorage.setItem('waypoint-theme', root.dataset.theme); } catch { /* Optional preference. */ }
-  syncThemeUI();
-  announcement.textContent = root.dataset.theme === 'dark' ? words().darkChanged : words().lightChanged;
-});
 window.addEventListener('storage', event => {
-  if (event.key === 'waypoint-theme' && ['light', 'dark'].includes(event.newValue)) {
-    root.dataset.theme = event.newValue;
-    syncThemeUI();
-  }
   if (event.key === 'waypoint-language' && ['zh', 'en'].includes(event.newValue)) applyLanguage(event.newValue);
 });
 
