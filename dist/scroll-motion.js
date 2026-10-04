@@ -77,7 +77,9 @@ export function initScrollMotion() {
       ink.append(...line); mask.append(ink); fragment.append(mask);
     }
     element.replaceChildren(fragment);
-    return splitText(element, true);
+    // Keep the hero's native text shaping and spacing intact throughout entry.
+    // Its outer lines follow the pointer; only each inner line slides into view.
+    return element.id === 'hero-heading' ? [...element.querySelectorAll(':scope>.type-line>.type-ink')] : splitText(element, true);
   }
   function register(element, kind) {
     const existing = records.get(element);
@@ -88,7 +90,7 @@ export function initScrollMotion() {
     if (existing) cancel(existing);
     const originalAriaLabel = existing ? existing.originalAriaLabel : element.getAttribute('aria-label');
     const units = kind === 'heading' ? prepareHeading(element) : kind === 'passage' ? splitText(element, false) : [];
-    const variant = element.id === 'trails-heading' ? 'spread' : element.id === 'projects-heading' ? 'turn' : element.matches('.footer-statement') ? 'rise' : 'lift';
+    const variant = element.id === 'hero-heading' ? 'line' : element.id === 'trails-heading' ? 'spread' : element.id === 'projects-heading' ? 'turn' : element.matches('.footer-statement') ? 'rise' : 'lift';
     const state = { element, kind, units, variant, played, direction: existing?.direction || 1, phase: phase === 'running' ? 'complete' : phase,
       applied: -1, generation: 0, animations: new Set(), originalTransform: existing?.originalTransform ?? element.style.transform,
       originalOpacity: existing?.originalOpacity ?? element.style.opacity, originalAriaLabel };
@@ -111,6 +113,14 @@ export function initScrollMotion() {
     state.applied = progress;
     state.element.dataset.scrollProgress = progress.toFixed(3);
     if (state.kind === 'heading') {
+      if (state.variant === 'line') {
+        const remaining = 1 - progress;
+        state.units.forEach(unit => {
+          unit.style.transform = remaining < .001 ? '' : 'translate3d(0,' + (remaining * 20 * state.direction).toFixed(2) + '%,0)';
+          unit.style.opacity = String(progress);
+        });
+        return;
+      }
       const spread = .58, reveal = 1 - spread;
       state.units.forEach((unit, index) => {
         const local = clamp((progress - index / Math.max(1, state.units.length - 1) * spread) / reveal);
@@ -177,7 +187,7 @@ export function initScrollMotion() {
     state.element.dataset.revealState = state.phase;
     const generation = ++state.generation;
     const smallHeading = state.element.matches('h3');
-    const duration = state.kind === 'heading' ? smallHeading ? 500 : 650 : 400;
+    const duration = state.kind === 'heading' ? smallHeading || state.variant === 'line' ? 500 : 650 : 400;
     const groups = state.kind === 'heading' ? smallHeading ? 3 : 7 : state.kind === 'passage' ? 3 : 0;
     const finished = [];
     try {
@@ -279,7 +289,7 @@ export function initScrollMotion() {
         state.element.style.transform = state.originalTransform; state.element.style.opacity = state.originalOpacity;
       } else {
         // Unwrap the display-only segmentation, keeping authored spans and breaks.
-        state.units.forEach(unit => unit.replaceWith(document.createTextNode(unit.textContent)));
+        if (state.variant !== 'line') state.units.forEach(unit => unit.replaceWith(document.createTextNode(unit.textContent)));
         if (state.kind === 'heading' && state.element.querySelector(':scope>.type-line>.type-ink')) {
           const lines = [...state.element.querySelectorAll(':scope>.type-line')];
           const fragment = document.createDocumentFragment();
