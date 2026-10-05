@@ -1,6 +1,6 @@
 # 公开内容随部署交付
 
-本地候选基于远端核对后的 `0a62d871c3a1a8f09dfb0bbb9094c036a9689757`。第一阶段的虚构 LocalStore 验证已完成；2026-10-05 经用户批准完成真实公开内容的只读本地导出和发布入口核对。尚未设置线上环境变量、推送、部署、改变连接或权限，也未写入真实存储。当前授权覆盖准备，正式发布仍待具体范围批准。
+本候选基于远端核对后的 `0a62d871c3a1a8f09dfb0bbb9094c036a9689757`。虚构 LocalStore 验证、真实公开内容的只读本地导出、发布入口核对和慢网反馈检查已完成。2026-10-05 用户批准具体 Production 发布清单及安全回滚，并重新确认后台暂停；正式执行先比较当前公开范围，变化或读取失败则停止。线上验收记录存放在忽略的 `verification/production-release/`，不能把本文件中的授权状态当成发布成功的证明。
 
 ## 方案与生效时间
 
@@ -95,7 +95,7 @@ WAYPOINT_PUBLIC_SOURCE=local WAYPOINT_LOCAL_DIRECTORY="$PWD/.local/static-fixtur
 
 证据与具体待批准步骤在忽略的 `verification/real-public/`：`export-report.json`、`real-size-comparison.json`、`browser.json`、`inventory/report.md` 和 `RELEASE-PLAN.md`。截图含真实已公开内容，只用于本地审阅。以后不能把这次快照直接当最新状态发布，正式构建仍从当时的私有权威重新导出。
 
-当前生产 Git 集成会自动发布 main 的推送；新分支的推送也可能创建 Preview，因此未推送候选或创建远端 PR。当前入口清单与保护核验已完成，明确区分匿名抽样与配置推断。下一次生产切换无需升级套餐、改变 Blob 连接、放开 Preview 或删除历史部署；正式发布、Production 两项开关及相应推送仍要按具体清单批准。
+当前生产 Git 集成会自动发布 main 的推送；新分支的推送也可能创建 Preview。当前入口清单与保护核验已完成，明确区分匿名抽样与配置推断；本次获准直接安全合入并推送 main，不另外推送测试分支或创建真实内容 Preview。正式发布、Production 两项开关及相应推送已按具体清单获准，无需升级套餐、改变 Blob 连接、放开 Preview 或删除历史部署；这些额外操作不在授权范围。
 
 ## 获准后的首次切换
 
