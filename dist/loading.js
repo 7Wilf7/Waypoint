@@ -1,5 +1,6 @@
 import {copy} from './i18n.js';
 import {loadMediaImage,mediaURL} from './media-images.js';
+import {publicationMode} from './publication-config.js';
 
 const timers=new WeakMap();
 const words=()=>copy[document.documentElement.dataset.language==='en'?'en':'zh'];
@@ -85,8 +86,9 @@ export function createMediaImage(src,alt,{size='read',entry,originalLink=true}={
       frame.style.setProperty('--media-width',image.naturalWidth+'px');frame.classList.add('is-ready');
       if(originalLink) {
         const link=document.createElement('a');link.className='media-photo-link';link.href=mediaURL(src,entry);link.target='_blank';link.rel='noopener';
-        link.setAttribute('aria-label',words().viewOriginal+' · '+alt);
-        const label=document.createElement('span');label.className='media-original-label';label.textContent=words().viewOriginal+' ↗';
+        const fullSize=publicationMode==='static'?words().viewFullSize:words().viewOriginal;
+        link.setAttribute('aria-label',fullSize+' · '+alt);
+        const label=document.createElement('span');label.className='media-original-label';label.textContent=fullSize+' ↗';
         link.append(image,label);frame.replaceChildren(link);
       }else frame.replaceChildren(image);
       if(keyboard){frame.tabIndex=-1;frame.focus({preventScroll:true});}

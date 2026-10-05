@@ -1,6 +1,6 @@
 import {get,list,put} from '@vercel/blob';
 
-// Drafts and original files always live in a private store. Only the API publishes them.
+// Private authority for drafts and originals; approved builds publish sanitized copies.
 export class BlobStore {
   mode='blob';
   // Override only for isolated verification; the live owner record has a fixed path.

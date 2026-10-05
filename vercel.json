@@ -18,6 +18,7 @@
     {"source": "/media/:path*", "destination": "/api/index"}
   ],
   "headers": [
+    {"source": "/published/:path*", "headers": [{"key": "Cache-Control", "value": "no-store"}, {"key": "CDN-Cache-Control", "value": "no-store"}]},
     {"source": "/(.*)", "headers": [{"key": "X-Content-Type-Options", "value": "nosniff"}, {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"}]}
   ]
 }

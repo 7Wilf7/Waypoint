@@ -3,6 +3,7 @@ import {BlobPreconditionFailedError} from '@vercel/blob';
 import {ID,MAX_FILE,validateEntry,fileType} from './content.js';
 import {isOwner,checkPassword,sessionCookie,sameOrigin,hasOwnerCookie,credentialSettings,changedCredentials} from './auth.js';
 import {IMAGE_PRESETS,ensureImageVariants,imageVariant} from './image-variants.js';
+import {runtimePublicationAllowed} from './publication-policy.js';
 
 const json=(value,status=200,headers={})=>Response.json(value,{status,headers:{'cache-control':'no-store','x-content-type-options':'nosniff',...headers}});
 async function readJson(request,limit=180000) {
@@ -12,14 +13,29 @@ async function readJson(request,limit=180000) {
 }
 export async function handle(request,store,env=process.env) {
   const url=new URL(request.url),path=url.pathname;
+  const publication=env.WAYPOINT_PUBLICATION_BUILD||{source:'live',mode:'live',lifecycle:null};
+  if(!runtimePublicationAllowed(publication,env))return json({error:'unavailable'},503);
+  if(publication.source==='local'&&store.mode==='blob')return json({error:'unavailable'},503);
+  const staticDelivery=publication.mode==='static';
   if(path==='/api/entries'&&request.method==='GET') {
     const kind=url.searchParams.get('kind');
     if(kind&&!['race','article'].includes(kind))return json({error:'invalid_kind'},400);
+    if(staticDelivery) {
+      if(url.searchParams.getAll('kind').length>1||kind==='')return json({error:'invalid_kind'},400);
+      return new Response(null,{status:307,headers:{location:'/published/'+(kind==='race'?'races':kind==='article'?'articles':'catalog')+'.json','cache-control':'no-store','x-content-type-options':'nosniff'}});
+    }
     return json({entries:(await store.entries()).filter(entry=>entry.published&&(!kind||entry.kind===kind))});
+  }
+  // Static images have independent deployment assets. Only explicitly scoped
+  // PDF originals retain a fresh publication check for anonymous visitors.
+  const staticMedia=path.match(/^\/media\/([a-z0-9-]{1,64})$/i);
+  if(staticDelivery&&staticMedia&&['GET','HEAD'].includes(request.method)&&!hasOwnerCookie(request)) {
+    const hints=url.searchParams.getAll('entry'),formats=url.searchParams.getAll('format');
+    if(hints.length!==1||!ID.test(hints[0])||formats.length!==1||formats[0]!=='pdf'||url.searchParams.has('size'))return new Response('Not found',{status:404,headers:{'cache-control':'private, no-store'}});
   }
   const authRecord=path==='/api/login'||hasOwnerCookie(request)?await store.auth():null;
   const credentials=credentialSettings(env,authRecord),owner=isOwner(request,credentials);
-  if(path==='/api/session'&&request.method==='GET')return json({owner,uploads:store.mode});
+  if(path==='/api/session'&&request.method==='GET')return json({owner,uploads:store.mode,publication:publication.mode});
   if(path==='/api/login'&&request.method==='POST') {
     if(!sameOrigin(request))return json({error:'same_origin_required'},403);
     if(!credentials.WAYPOINT_PASSWORD_HASH||!credentials.WAYPOINT_SESSION_SECRET)return json({error:'unavailable'},503);
@@ -104,6 +120,10 @@ export async function handle(request,store,env=process.env) {
     const notFound=()=>new Response('Not found',{status:404,headers:{'cache-control':'private, no-store'}});
     const entryHints=url.searchParams.getAll('entry'),entryId=entryHints[0];
     if(entryHints.length&&(entryHints.length!==1||!ID.test(entryId)))return notFound();
+    if(staticDelivery&&!owner) {
+      const formats=url.searchParams.getAll('format');
+      if(entryHints.length!==1||formats.length!==1||formats[0]!=='pdf'||url.searchParams.has('size'))return notFound();
+    }
     const scoped=entryHints.length===1;
     // The hint locates an entry; only its fresh publication and references authorize access.
     const publishers=owner?[]:(scoped?[await store.entry(entryId)]:await store.entries()).filter(references);
@@ -119,6 +139,7 @@ export async function handle(request,store,env=process.env) {
     if(!owner&&!publishers.length)return notFound();
     if(preset!==null&&!IMAGE_PRESETS.includes(preset))return json({error:'invalid_image_size'},400);
     let meta=await store.media(id);if(!meta)return notFound();
+    if(staticDelivery&&!owner&&meta.mime!=='application/pdf')return notFound();
     let file;
     if(preset!==null)({meta,file}=await imageVariant(store,meta,preset,head));
     else file=head?null:await store.file(id);

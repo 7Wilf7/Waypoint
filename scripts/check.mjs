@@ -8,7 +8,7 @@ import { ambientTracks } from '../dist/ambient-tracks.js';
 import {previewProducts,previewScreens,previewViewport} from '../dist/preview-screens.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
-for (const filename of ['app.js', 'theme.js', 'homepage-copy.js', 'hero-gallery.js', 'hero-motion.js', 'surface-motion.js', 'scroll-motion.js', 'pointer-field.js', 'elastic-details.js', 'ambient-motion.js', 'ambient-audio.js', 'ambient-tracks.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'article-utils.js', 'race-utils.js', 'race-photos.js', 'race-archive.js', 'manage.js', 'loading.js', 'media-images.js']) {
+for (const filename of ['app.js', 'theme.js', 'homepage-copy.js', 'hero-gallery.js', 'hero-motion.js', 'surface-motion.js', 'scroll-motion.js', 'pointer-field.js', 'elastic-details.js', 'ambient-motion.js', 'ambient-audio.js', 'ambient-tracks.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'article-utils.js', 'race-utils.js', 'race-photos.js', 'race-archive.js', 'manage.js', 'loading.js', 'media-images.js', 'public-content.js', 'publication-config.js']) {
   const result = spawnSync(process.execPath, ['--check', resolve(root, filename)], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr);
 }
@@ -82,6 +82,8 @@ const articleTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts
 if(articleTests.status!==0)throw new Error(articleTests.stdout+articleTests.stderr);
 const loadingTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/loading.test.mjs')],{encoding:'utf8'});
 if(loadingTests.status!==0)throw new Error(loadingTests.stdout+loadingTests.stderr);
+const publicationTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/export-public.test.mjs'),resolve(root,'../scripts/public-delivery.test.mjs')],{encoding:'utf8'});
+if(publicationTests.status!==0)throw new Error(publicationTests.stdout+publicationTests.stderr);
 console.log('JavaScript syntax, assets, navigation, complete language dictionaries, and both reading editions passed.');
 console.log('Interactive bilingual preview routes and interrupted product/language selections passed.');
 console.log('Owner authorization, password changes and session revocation, publication visibility, file validation, draft media privacy, and input validation passed.');
@@ -89,3 +91,4 @@ console.log('Original image integrity, proportional previews, EXIF orientation, 
 console.log('Race categories, divisions, original dates, representative selection, result formatting, and archive ordering passed.');
 console.log('Complete text-only articles, bilingual summaries, reading estimates, original times, stable article ordering, and fixed race photo roles passed.');
 console.log('Immediate first paint, stored themes/languages, storage-denial recovery, bounded response bodies, and no automatic write replay passed.');
+console.log('Deployment snapshots, draft/media isolation, no-store public delivery, strict live PDFs, Preview boundaries, and withdrawal-safe rebuilds passed.');

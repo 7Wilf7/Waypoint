@@ -5,8 +5,14 @@ import {reconcileArticleLayout} from './article-layout.js';
 import {raceCategoryKeys} from './race-utils.js';
 import {racePhotoRoles} from './race-photos.js';
 import {requestJSON,renderLoading,clearLoading} from './loading.js';
+import {publicationMode} from './publication-config.js';
 const root=document.documentElement,form=document.querySelector('.entry-editor'),status=document.querySelector('#manage-status');
-const words=()=>copy[root.dataset.language==='en'?'en':'zh'];
+let publicationDelivery=publicationMode;
+const words=()=>{
+  const w=copy[root.dataset.language==='en'?'en':'zh'];
+  if(publicationDelivery!=='static')return w;
+  return {...w,manageIntro:w.staticManageIntro,published:w.staticSelected,publish:w.staticPublish,saveDraft:w.staticSaveDraft,savedDraft:w.staticSavedDraft,savedPublished:w.staticSavedPublished,manageListSummary:w.staticListSummary,photoUploaded:w.staticPhotoUploaded,photoRemoved:w.staticPhotoRemoved};
+};
 const format=(template,values)=>template.replace(/\{(\w+)\}/g,(_,key)=>values[key]??'');
 const field=name=>form.elements.namedItem(name);
 const categoryFilter=document.querySelector('#manage-category-filter');
@@ -60,7 +66,7 @@ function renderEditorHeading(){
   document.querySelector('.editor-title').textContent=(root.dataset.language==='en'?field('titleEn').value:field('titleZh').value)||field('titleZh').value||(race?w.newRace:w.editorArticleTitle);
   document.querySelector('.editor-publication').textContent=activeEntry.published?w.published:w.draft;
   document.querySelector('.editor-publication').classList.toggle('is-published',!!activeEntry.published);
-  document.querySelector('.editor-publish-help').textContent=race?w.racePublishHelp:w.articlePublishHelp;
+  document.querySelector('.editor-publish-help').textContent=(race?w.racePublishHelp:w.articlePublishHelp)+(publicationDelivery==='static'?' '+w.staticPublishHelp:'');
 }
 function updateEditorFields(){
   const race=activeEntry?.kind==='race';
@@ -151,6 +157,7 @@ for(const slot of document.querySelectorAll('.race-photo-slot')){
 }
 form.addEventListener('submit',async event=>{
   event.preventDefault();if(busy)return;
+  const previouslyPublished=activeEntry?.published===true;
   const entry=Object.fromEntries(new FormData(form));entry.published=event.submitter?.value==='publish';
   if(entry.kind==='race'){
     entry.bodyZh=activeEntry?.bodyZh||'';entry.bodyEn=activeEntry?.bodyEn||'';entry.primaryPhoto=photoRoles.primary;entry.secondaryPhoto=photoRoles.secondary;entry.photos=[photoRoles.primary,photoRoles.secondary].filter(Boolean);entry.certificates=certificate?[certificate]:[];
@@ -159,7 +166,7 @@ form.addEventListener('submit',async event=>{
     entry.photos=[];entry.certificates=[];entry.articleLayout=reconcileArticleLayout(articleLayout?.filter(block=>block.type!=='image'),entry);
   }
   beginOperation('saving',{button:event.submitter,target:editorStatus,progress:document.querySelector('#editor-progress')});
-  try{const result=await api('manage/entries/'+entry.id,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(entry)});records=records.filter(record=>record.id!==result.entry.id);records.unshift(result.entry);if(activeEntry?.id===entry.id){activeEntry=result.entry;articleLayout=result.entry.articleLayout;photoFeedback.clear();renderEditorHeading();message(editorStatus,entry.published?'savedPublished':'savedDraft');}renderList();}
+  try{const result=await api('manage/entries/'+entry.id,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(entry)});records=records.filter(record=>record.id!==result.entry.id);records.unshift(result.entry);if(activeEntry?.id===entry.id){activeEntry=result.entry;articleLayout=result.entry.articleLayout;photoFeedback.clear();renderEditorHeading();message(editorStatus,entry.published?'savedPublished':publicationDelivery==='static'&&previouslyPublished?'staticSavedWithdrawal':'savedDraft');}renderList();}
   catch(error){message(editorStatus,errorMessage(error,'saveFailed'));}
   finally{endOperation();}
 });
@@ -167,9 +174,10 @@ async function refreshSession(){
   sessionLoading=true;loading.hidden=false;retry.hidden=true;signin.hidden=true;logout.hidden=true;account.hidden=true;workspace.hidden=true;recordsReady=false;message(status);if(operation?.progress)operation.progress.hidden=true;renderList();renderLoading(loading,'manageLoading',{rows:3});
   try{
     const session=await api('session'),entries=session.owner?(await api('manage/entries')).entries:[];
+    if(['live','static'].includes(session.publication))publicationDelivery=session.publication;
     uploadMode=session.uploads;records=entries;recordsReady=true;signin.hidden=session.owner;logout.hidden=!session.owner;account.hidden=!session.owner;workspace.hidden=!session.owner;
     if(!session.owner){activeEntry=null;form.hidden=true;signin.reset();passwordForm.reset();message(editorStatus);message(passwordStatus);}
-    renderList();
+    translate();
   }catch(error){error.readFailure=true;retry.hidden=false;throw error;}
   finally{sessionLoading=false;clearLoading(loading);loading.hidden=true;}
 }

@@ -4,6 +4,7 @@ import {articleReading,articleParagraphs} from './article-layout.js';
 import {articleStats,sortArticles} from './article-utils.js';
 import {racePhotoRoles} from './race-photos.js';
 import {requestJSON,renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
+import {requestPublishedEntries} from './public-content.js';
 const root=document.documentElement;
 const words=()=>copy[root.dataset.language==='en'?'en':'zh'];
 let entries=[];
@@ -90,7 +91,7 @@ export function initJournal(focusContainer=null) {
   if(request)return request;
   requested=true;loading=true;failed=false;renderJournal();document.dispatchEvent(new Event('journal-loading'));
   request=(async()=>{
-    try {const data=await requestJSON('./api/entries');if(!Array.isArray(data.entries))throw new Error('unavailable');entries=data.entries;}
+    try {const data=await requestPublishedEntries();if(!Array.isArray(data.entries))throw new Error('unavailable');entries=data.entries;}
     catch(error){failed=true;errorKey=error.message==='request_timeout'?'loadTimedOut':'unavailable';}
     finally {
       loading=false;request=null;renderJournal();document.dispatchEvent(new Event('journal-ready'));
@@ -100,7 +101,7 @@ export function initJournal(focusContainer=null) {
   return request;
 }
 
-// Keep every list read fresh, but only request it when published content is needed.
+// Request the current deployment catalog only when published content is needed.
 export function initJournalOnDemand(hasStaticNote=()=>false) {
   let started=false;
   const start=()=>{

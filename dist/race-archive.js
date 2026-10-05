@@ -3,8 +3,9 @@ import {initTheme} from './theme.js';
 import {initElasticDetails} from './elastic-details.js';
 import {initTouchMotion} from './touch-motion.js';
 import {raceCategories,raceCategoryKeys,sortRaces,raceCounts,formatResult,subtypeLabel,fastestRace} from './race-utils.js';
-import {requestJSON,renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
+import {renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
 import {mediaURL} from './media-images.js';
+import {requestPublishedEntries} from './public-content.js';
 const root=document.documentElement;
 const theme=initTheme();
 initElasticDetails();
@@ -83,7 +84,7 @@ function load(event){
   const keyboard=event?.detail===0;
   loading=true;failed=false;renderFilters();renderResults();
   request=(async()=>{
-    try{const data=await requestJSON('/api/entries?kind=race');if(!Array.isArray(data.entries))throw new Error('unavailable');races=sortRaces(data.entries);}
+    try{const data=await requestPublishedEntries('race');if(!Array.isArray(data.entries))throw new Error('unavailable');races=sortRaces(data.entries);}
     catch(error){failed=true;errorKey=error.message==='request_timeout'?'loadTimedOut':'unavailable';}
     finally{loading=false;request=null;renderFilters();renderResults();if(keyboard)list.querySelector('summary,button')?.focus({preventScroll:true});}
   })();

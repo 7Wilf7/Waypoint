@@ -1,5 +1,5 @@
 .DS_Store
-node_modules/
+node_modules
 .sites-runtime/
 verification/
 *.tar.gz
@@ -11,5 +11,6 @@ dist/.openai/
 .env*
 .vercel/
 public/
+server/publication-build.json
 dist/upload-client.js
 !.env.example

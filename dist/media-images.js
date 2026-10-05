@@ -1,22 +1,65 @@
 // Public reading images only. Owner-only management previews use a separate loader.
 // Keep decoded, private responses in bounded page memory; never persist image bytes.
+import {publicationMode} from './publication-config.js';
 const cache=new Map(),queue=[];
 const limits={requests:2,entries:20,bytes:12*1024*1024,pixels:24000000,age:5*60*1000};
 let active=0;
+let publishedMedia=new Map(),publishedReferences=new Map();
+const publicAsset=/^\/published\/media\/[a-f0-9]{64}-(original|preview|read)\.webp$/;
+const identifier=/^[a-z0-9-]{1,64}$/i;
 
-export function mediaURL(source,entry) {
+export function setPublishedMedia(data) {
+  if(data?.schema!==1||!Array.isArray(data.entries)||!data.media||typeof data.media!=='object'||Array.isArray(data.media))throw new Error('invalid_public_media');
+  const media=new Map(),references=new Map();
+  for(const entry of data.entries) {
+    if(entry?.published!==true||!identifier.test(entry.id||'')||!['race','article'].includes(entry.kind)||!Array.isArray(entry.photos)||!Array.isArray(entry.certificates)||references.has(entry.id))throw new Error('invalid_public_media');
+    const ids=[...entry.photos,...entry.certificates];
+    if(ids.some(id=>typeof id!=='string'||!identifier.test(id)))throw new Error('invalid_public_media');
+    references.set(entry.id,new Set(ids));
+  }
+  for(const [id,item]of Object.entries(data.media)) {
+    if(!identifier.test(id)||!item||!['image','pdf'].includes(item.type)||![...references.values()].some(ids=>ids.has(id)))throw new Error('invalid_public_media');
+    if(item.type==='image')for(const preset of ['original','preview','read']) {
+      if(typeof item[preset]!=='string'||!publicAsset.test(item[preset])||!item[preset].endsWith('-'+preset+'.webp'))throw new Error('invalid_public_media');
+    }
+    media.set(id,item.type==='pdf'?{type:'pdf'}:{type:'image',original:item.original,preview:item.preview,read:item.read});
+  }
+  for(const ids of references.values())for(const id of ids)if(!media.has(id))throw new Error('invalid_public_media');
+  publishedMedia=media;publishedReferences=references;
+}
+
+function sourceURL(source,entry) {
   const url=new URL(source,document.baseURI);
   if(url.origin!==location.origin||!/^\/media\/[a-z0-9-]{1,64}$/.test(url.pathname))throw new Error('invalid_image_source');
   url.search='';url.hash='';
   if(entry!=null) {
-    if(typeof entry!=='string'||!/^[a-z0-9-]{1,64}$/i.test(entry))throw new Error('invalid_entry');
+    if(typeof entry!=='string'||!identifier.test(entry))throw new Error('invalid_entry');
     url.searchParams.set('entry',entry);
   }
+  return url;
+}
+function staticMedia(url,entry,preset) {
+  const id=url.pathname.slice('/media/'.length),item=publishedMedia.get(id);
+  if(!item||!publishedReferences.get(entry)?.has(id))throw new Error('invalid_image_source');
+  if(item.type==='pdf') {
+    if(preset!=='original')throw new Error('invalid_image_source');
+    url.searchParams.set('format','pdf');return url.href;
+  }
+  return new URL(item[preset],location.origin).href;
+}
+
+export function mediaURL(source,entry) {
+  const url=sourceURL(source,entry);
+  if(publicationMode==='static')return staticMedia(url,entry,'original');
+  if(publicationMode!=='live')throw new Error('invalid_image_source');
   return url.href;
 }
 export function mediaImageURL(source,size='read',entry) {
   if(!['preview','read'].includes(size))throw new Error('invalid_image_size');
-  const url=new URL(mediaURL(source,entry));url.searchParams.set('size',size);return url.href;
+  const url=sourceURL(source,entry);
+  if(publicationMode==='static')return staticMedia(url,entry,size);
+  if(publicationMode!=='live')throw new Error('invalid_image_source');
+  url.searchParams.set('size',size);return url.href;
 }
 
 async function decode(source) {

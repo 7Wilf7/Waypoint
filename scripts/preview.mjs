@@ -4,13 +4,17 @@ import { resolve, dirname, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {safeHandle} from '../server/api.js';
 import {LocalStore} from '../server/local-store.js';
-try{process.loadEnvFile(resolve(import.meta.dirname,'../.env.local'));}catch(error){if(error.code!=='ENOENT')throw error;}
-const store=new LocalStore(resolve(import.meta.dirname,'../.local/content'));
+if(!process.env.WAYPOINT_LOCAL_DIRECTORY)try{process.loadEnvFile(resolve(import.meta.dirname,'../.env.local'));}catch(error){if(error.code!=='ENOENT')throw error;}
+const store=new LocalStore(process.env.WAYPOINT_LOCAL_DIRECTORY||resolve(import.meta.dirname,'../.local/content'));
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
+const previewBuild=process.env.WAYPOINT_PREVIEW_BUILD==='1';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), previewBuild?'../public':'../dist');
+const publication=previewBuild?JSON.parse(await readFile(resolve(import.meta.dirname,'../server/publication-build.json'),'utf8')):{source:'live',mode:'live',lifecycle:null};
+const config=previewBuild?await import(new URL('../public/publication-config.js',import.meta.url)):await import(new URL('../dist/publication-config.js',import.meta.url));
+const runtimeEnv={...process.env,WAYPOINT_CONTENT_DELIVERY:config.publicationMode,WAYPOINT_PUBLICATION_BUILD:publication};
 const port = Number(process.env.WAYPOINT_PORT || 4173);
 const host = process.env.WAYPOINT_HOST || '127.0.0.1';
-const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.ogg': 'audio/ogg' };
+const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.ogg': 'audio/ogg' };
 
 const server = createServer(async (request, response) => {
   try {
@@ -19,7 +23,7 @@ const server = createServer(async (request, response) => {
       const headers=new Headers(request.headers);
       const chunks=[];
       for await(const chunk of request) {chunks.push(chunk);if(chunks.reduce((n,c)=>n+c.length,0)>9*1024*1024){response.writeHead(413).end();return;}}
-      const result=await safeHandle(new Request(url,{method:request.method,headers,...(['GET','HEAD'].includes(request.method)?{}:{body:Buffer.concat(chunks)})}),store);
+      const result=await safeHandle(new Request(url,{method:request.method,headers,...(['GET','HEAD'].includes(request.method)?{}:{body:Buffer.concat(chunks)})}),store,runtimeEnv);
       response.writeHead(result.status,Object.fromEntries(result.headers));
       response.end(Buffer.from(await result.arrayBuffer()));
       return;
@@ -60,7 +64,7 @@ const server = createServer(async (request, response) => {
       response.end(request.method === 'HEAD' ? undefined : body);
       return;
     }
-    response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream', 'Cache-Control': 'no-cache', 'Content-Length': body.length });
+    response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream', 'Cache-Control': pathname.startsWith('/published/')?'no-store':'no-cache', 'Content-Length': body.length });
     response.end(request.method === 'HEAD' ? undefined : body);
   } catch (error) {
     response.writeHead(error.code === 'ENOENT' ? 404 : 400).end(error.code === 'ENOENT' ? 'Not found' : 'Bad request');
