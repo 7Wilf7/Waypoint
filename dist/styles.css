@@ -39,6 +39,8 @@
   .loading-state {grid-column:1/-1;width:100%;padding:24px 0;min-width:0;}
   .loading-copy {font-size:1rem;line-height:1.6;color:var(--text);}
   .loading-detail {font-size:.875rem;line-height:1.7;color:var(--muted);margin-top:12px;max-width:50ch;}
+  [data-loading-language="en"],html[data-language="en"] [data-loading-language="zh"] {display:none;}
+  html[data-language="en"] [data-loading-language="en"] {display:inline;}
   .loading-progress {position:relative;overflow:hidden;height:3px;border-radius:100px;background:var(--line);margin-top:16px;width:100%;}
   .loading-progress::before {content:'';display:block;height:100%;width:40%;background:var(--text);transform:translateX(-110%);animation:loading-travel 1250ms linear infinite;}
   @keyframes loading-travel {to{transform:translateX(350%);}}
