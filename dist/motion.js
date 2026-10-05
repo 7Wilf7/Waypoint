@@ -5,7 +5,7 @@ import {initScrollMotion} from './scroll-motion.js';
 import {initPointerField} from './pointer-field.js';
 import {initHeroMotion} from './hero-motion.js';
 import {initTouchMotion} from './touch-motion.js';
-import {loadMediaImage,preloadMediaImage} from './media-images.js';
+import {loadMediaImage} from './media-images.js';
 
 export function initMotion() {
   const root = document.documentElement;
@@ -44,23 +44,8 @@ export function initMotion() {
   const previewSummary = preview.querySelector('.preview-summary');
   const previewMeta = preview.querySelector('.preview-meta');
   const previewAssets = { trail: './assets/mountain.jpg', memory: './assets/aevum.png', waypoint: './favicon.svg' };
-  let previewTarget=null,previewRevision=0,readWarmTimer=0;
-  const hidePreview=()=>{previewTarget=null;previewRevision++;clearTimeout(readWarmTimer);preview.classList.remove('is-visible');};
-  const warmed=new WeakSet();
-  const warmObserver=new IntersectionObserver(entries=>{
-    for(const item of entries)if(item.isIntersecting) {
-      warmObserver.unobserve(item.target);
-      const entry=getEntry(item.target.getAttribute('href').split('/')[1]);
-      if(entry?.primaryPhoto)preloadMediaImage('./media/'+entry.primaryPhoto,{size:'preview',entry:entry.id}).catch(()=>{});
-    }
-  },{rootMargin:'900px'});
-  function registerPreviewTargets() {
-    if(!finePointer.matches||!wide.matches||reduce.matches)return;
-    document.querySelectorAll('.race-card').forEach(row=>{if(!warmed.has(row)){warmed.add(row);warmObserver.observe(row);}});
-  }
-  new MutationObserver(registerPreviewTargets).observe(document.querySelector('main'),{childList:true,subtree:true});
-  finePointer.addEventListener('change',registerPreviewTargets);wide.addEventListener('change',registerPreviewTargets);reduce.addEventListener('change',registerPreviewTargets);
-  registerPreviewTargets();
+  let previewTarget=null,previewRevision=0;
+  const hidePreview=()=>{previewTarget=null;previewRevision++;preview.classList.remove('is-visible');};
   async function staticPreviewImage(source) {
     const image=new Image();image.decoding='async';
     const ready=new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;});image.src=source;
@@ -74,7 +59,7 @@ export function initMotion() {
     if(!entry&&!row.matches('.note-row')){hidePreview();return;}
     const w=copy[root.dataset.language==='en'?'en':'zh'];
     const image=entry?(entry.kind==='race'&&entry.primaryPhoto?'./media/'+entry.primaryPhoto:''):previewAssets[key];
-    const ticket=++previewRevision;clearTimeout(readWarmTimer);
+    const ticket=++previewRevision;
     previewArt.hidden=!image;
     previewArt.classList.remove('is-ready');previewArt.replaceChildren();
     if(image) {
@@ -83,8 +68,7 @@ export function initMotion() {
         if(previewRevision!==ticket||previewTarget!==row)return;
         previewImage.alt='';previewImage.classList.add('is-ready');previewArt.classList.add('is-ready');previewArt.replaceChildren(previewImage);
       },()=>{if(previewRevision===ticket&&previewTarget===row){status.dataset.i18n='imageFailed';status.textContent=copy[root.dataset.language==='en'?'en':'zh'].imageFailed;}});
-      // Prepare the reading size only after a deliberate hover, not for every race.
-      if(entry)readWarmTimer=setTimeout(()=>{if(previewTarget===row)preloadMediaImage(image,{size:'read',entry:entry.id}).catch(()=>{});},220);
+      // Reading-size images load when the reader opens; hovering only needs a preview.
     }
     preview.dataset.note=key;preview.dataset.kind=entry?.kind||'note';preview.dataset.presentation=image?'image':'text';
     previewCategory.textContent=entry?entry.kind==='article'?w.articleOverview:w.racePreview:row.querySelector('.note-category').textContent;

@@ -104,6 +104,26 @@ test('race photo roles survive save/reopen and a secondary photo is never promot
   assert.equal(removed.primaryPhoto,'');assert.equal(removed.secondaryPhoto,'slot-secondary');
   assert.equal((await write({...entry,certificates:['test-certificate']})).status,400);
 });
+test('retaining a legacy PDF reads only that race and rechecks current attachment eligibility',async()=>{
+  const prior={...race,id:'legacy-pdf-race',certificates:['legacy-pdf']};
+  let current=prior,saves=0;
+  const counts={catalog:0,entry:0,json:0};
+  const scopedStore={
+    auth:async()=>null,
+    media:async()=>({id:'legacy-pdf',mime:'application/pdf'}),
+    entry:async id=>{counts.entry++;counts.json++;assert.equal(id,prior.id);return current;},
+    entries:async()=>{counts.catalog++;counts.json+=100;return [current,...Array.from({length:99},(_,i)=>({...race,id:'unrelated-'+i}))].filter(Boolean);},
+    saveEntry:async()=>{saves++;}
+  };
+  const save=(extraHeaders={})=>handle(request('/api/manage/entries/'+prior.id,{method:'PUT',headers:{...headers,cookie,...extraHeaders},body:JSON.stringify(prior)}),scopedStore,env);
+  assert.equal((await save()).status,200);
+  assert.deepEqual(counts,{catalog:0,entry:1,json:1});assert.equal(saves,1);
+  for(const changed of [{...prior,certificates:[]},{...prior,kind:'article'},null]) {
+    current=changed;assert.equal((await save()).status,400);
+  }
+  assert.equal(saves,1);assert.equal(counts.catalog,0);
+  const reads=counts.entry;assert.equal((await save({cookie:''})).status,403);assert.equal(counts.entry,reads);
+});
 test('large direct uploads are finalized and streamed; oversize and anonymous tokens are rejected',async()=>{
   const bytes=Buffer.alloc(6*1024*1024);bytes.write('%PDF-1.7');await store.saveFile('large-certificate',bytes);
   const blobStore=Object.create(store);blobStore.mode='blob';
