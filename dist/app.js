@@ -9,6 +9,8 @@ import { initAmbientAudio } from './ambient-audio.js';
 import { initTheme } from './theme.js';
 import {renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
 import {mediaURL} from './media-images.js';
+import {initRaceArchive} from './race-archive.js';
+import {initTouchMotion} from './touch-motion.js';
 
 const root = document.documentElement;
 const theme = initTheme();
@@ -21,11 +23,16 @@ let returnHash = '#trails';
 let readingKey = null;
 let routing = false;
 let readerOrigin = null;
+let homeInitialized=false,activeView=null,routeSequence=0,historySequence=0,routeURL=null,restoredHref=null;
+const homeView=document.querySelector('#home-view'),archiveView=document.querySelector('#race-archive-view');
+const routeOrigins=new Map();
 const readingDestination = key => ['aevum','memory'].includes(key) ? '#making' : ['about','waypoint'].includes(key) ? '#about' : getEntry(key)?.kind === 'race' ? '#races' : '#writing';
 
 const language = () => root.dataset.language === 'en' ? 'en' : 'zh';
 const words = () => copy[language()];
 const notes = () => notesByLanguage[language()];
+const archive=initRaceArchive(archiveView,{navigate,locale:language});
+const pageTitle=()=>root.dataset.view==='races'?words().raceArchiveDocumentTitle:words().pageTitle;
 
 function applyLanguage(next, announce = false) {
   root.dataset.language = next === 'en' ? 'en' : 'zh';
@@ -38,8 +45,8 @@ function applyLanguage(next, announce = false) {
   document.querySelectorAll('[data-i18n-aria]').forEach(element => element.setAttribute('aria-label', text[element.dataset.i18nAria]));
   document.querySelectorAll('[data-i18n-alt]').forEach(element => element.alt = text[element.dataset.i18nAlt]);
   document.querySelectorAll('[data-i18n-roledescription]').forEach(element => element.setAttribute('aria-roledescription', text[element.dataset.i18nRoledescription]));
-  document.querySelector('meta[name="description"]').content = text.description;
-  document.title = text.pageTitle;
+  document.querySelector('meta[name="description"]').content = root.dataset.view === 'races' ? text.raceArchiveIntro : text.description;
+  document.title = pageTitle();
   languageButtons.forEach(button => {
     button.textContent = language() === 'en' ? '中' : 'EN';
     button.lang = language() === 'en' ? 'zh-CN' : 'en';
@@ -52,7 +59,8 @@ function applyLanguage(next, announce = false) {
   else announcement.textContent = '';
   document.querySelector('.note-preview').classList.remove('is-visible');
   renderJournal();
-  updateAppPreview();
+  if(homeInitialized)updateAppPreview();
+  archive.refresh();
 }
 
 applyLanguage(language());
@@ -164,79 +172,116 @@ function renderPendingNote(key) {
   if(!dialog.open){root.classList.add('reading');dialog.showModal();document.dispatchEvent(new Event('waypoint-reader'));}
 }
 
-function applyRoute() {
-  const match = location.hash.match(/^#(read|entry)\/([a-z0-9-]+)$/i);
-  if (match && (notes()[match[2]] || getEntry(match[2]))) {
-    if (!dialog.open && !history.state?.reading) returnHash = readingDestination(match[2]);
-    renderNote(match[2]);
-  } else if(match&&match[1]==='entry') {
-    if(!dialog.open)returnHash=match[2].startsWith('race-')?'#races':'#writing';
-    renderPendingNote(match[2]);
-  } else if (dialog.open) {
-    routing = true;
-    dialog.close();
-    routing = false;
-  }
+function ensureHome() {
+  if(homeInitialized)return;
+  homeInitialized=true;
+  initJournalOnDemand(key=>Boolean(notes()[key]));
+  initAppPreview();initMotion();initHeroGallery();
 }
-
-document.addEventListener('click', event => {
-  const link = event.target.closest('a[href^="#read/"],a[href^="#entry/"]');
-  if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
-  const key = link.getAttribute('href').split('/')[1];
-  if (!notes()[key] && !getEntry(key)) return;
-  event.preventDefault();
-  readerOrigin = link;
-  if (!dialog.open) returnHash = /^#(read|entry)\//.test(location.hash) ? readingDestination(key) : location.hash;
-  history.pushState({ reading: true }, '', (notes()[key] ? '#read/' : '#entry/') + key);
-  renderNote(key, event.detail === 0);
-});
-document.querySelector('.reader-close').addEventListener('click', () => dialog.close());
-dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
-dialog.addEventListener('close', () => {
-  const fallbackHash = readingDestination(readingKey);
-  const readHash = '#' + (notes()[readingKey] ? 'read/' : 'entry/') + readingKey;
-  clearLoading(readerBody);clearMedia(readerBody);
-  root.classList.remove('reading');
-  document.title = words().pageTitle;
-  readingKey = null;
-  if (!routing && /^#(read|entry)\//.test(location.hash)) history.replaceState(null, '', location.pathname + location.search + returnHash);
-  document.dispatchEvent(new Event('waypoint-reader'));
-  requestAnimationFrame(() => {
-    if(dialog.open)return;
-    const active=document.activeElement;
-    if(active!==document.body&&!dialog.contains(active)&&active?.getClientRects().length)return;
-    const currentOrigin = readerOrigin?.isConnected && readerOrigin.getAttribute('href') === readHash
-      ? readerOrigin : document.querySelector('a[href="' + readHash + '"]');
-    if(currentOrigin?.getClientRects().length)currentOrigin.focus({preventScroll:true});
-    else {
-      const anchor = /^#[a-z][\w-]*$/i.test(returnHash) ? returnHash : fallbackHash;
-      const section=document.querySelector(anchor);
-      const heading=section?.querySelector('h2')||document.querySelector('#trails-heading');
-      if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
+function savePosition(origin) {
+  const state={...history.state,waypointKey:history.state?.waypointKey||'initial',waypointScroll:[scrollX,scrollY]};
+  history.replaceState(state,'',location.href);
+  if(origin)routeOrigins.set(state.waypointKey,origin);
+}
+function navigate(target,{keyboard=false,origin=null,preserveScroll=false}={}) {
+  const url=new URL(target,location.href);
+  if(url.origin!==location.origin||!['/','/races'].includes(url.pathname))return;
+  savePosition(origin);
+  const reading=/^#(?:read|entry)\//.test(url.hash)&&url.pathname==='/';
+  if(reading){readerOrigin=origin;returnHash=/^#(?:read|entry)\//.test(location.hash)?readingDestination(url.hash.split('/')[1]):location.hash||'#trails';}
+  history.pushState({waypointKey:'route-'+(++historySequence),waypointScroll:preserveScroll?[scrollX,scrollY]:[0,0],reading},'',url.pathname+url.search+url.hash);
+  applyRoute({position:preserveScroll?'preserve':'navigate',keyboard,origin});
+}
+function applyRoute({position='preserve',keyboard=false,origin=null}={}) {
+  const url=new URL(location.href),nextView=url.pathname==='/races'?'races':'home';
+  const ticket=routeURL!==url.href||position!=='preserve'?++routeSequence:routeSequence;
+  routeURL=url.href;
+  const changed=nextView!==activeView;
+  activeView=nextView;root.dataset.view=nextView;
+  homeView.hidden=nextView!=='home';archiveView.hidden=nextView!=='races';
+  document.body.classList.toggle('waypoint-home',nextView==='home');
+  document.body.classList.toggle('race-archive-page',nextView==='races');
+  document.querySelector('meta[name="description"]').content=nextView==='races'?words().raceArchiveIntro:words().description;
+  document.title=pageTitle();
+  if(nextView==='races')archive.show(url);else{archive.hide();ensureHome();}
+  const match=nextView==='home'?url.hash.match(/^#(read|entry)\/([a-z0-9-]+)$/i):null;
+  if(match) {
+    if(!dialog.open&&!history.state?.reading)returnHash=readingDestination(match[2]);
+    if(!renderNote(match[2],keyboard,readingKey===match[2]))renderPendingNote(match[2]);
+    if(match[1]==='entry'&&!getEntry(match[2])&&journalState()==='loading')void initJournal();
+  }else if(dialog.open){routing=true;dialog.close();routing=false;}
+  scheduleNavigation();
+  if(dialog.open||position==='preserve'&&!(keyboard&&origin?.matches('.race-filter')))return;
+  requestAnimationFrame(()=>{
+    if(ticket!==routeSequence||dialog.open)return;
+    const stored=position==='restore'?history.state?.waypointScroll:null;
+    const anchor=url.hash&&document.getElementById(url.hash.slice(1));
+    if(stored)scrollTo({left:stored[0],top:stored[1],behavior:'instant'});
+    else if(anchor&&!anchor.closest('[hidden]'))anchor.scrollIntoView({behavior:'instant'});
+    else if(changed||position==='navigate')scrollTo({left:0,top:0,behavior:'instant'});
+    const previous=position==='restore'?routeOrigins.get(history.state?.waypointKey):null;
+    if(previous?.isConnected&&previous.getClientRects().length)previous.focus({preventScroll:true});
+    else if(keyboard) {
+      const focus=origin?.matches('.race-filter')?archiveView.querySelector('.race-filter[aria-pressed="true"]'):nextView==='races'?archiveView.querySelector('h1'):anchor?.querySelector('h2,h1')||anchor;
+      if(focus){if(!focus.matches('a,button,input,summary'))focus.tabIndex=-1;focus.focus({preventScroll:true});}
     }
   });
+}
+
+document.addEventListener('click',event=>{
+  const link=event.target.closest('a[href]');
+  if(!link||event.defaultPrevented||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.button!==0||link.hasAttribute('download')||link.target&&link.target!=='_self')return;
+  const url=new URL(link.href,location.href);
+  if(url.origin!==location.origin||!['/','/races'].includes(url.pathname))return;
+  // The active view's skip link keeps the browser's native anchor behavior.
+  if(link.classList.contains('skip-link'))return;
+  event.preventDefault();navigate(url,{keyboard:event.detail===0,origin:link});
 });
-window.addEventListener('popstate', applyRoute);
-window.addEventListener('hashchange', applyRoute);
-document.addEventListener('journal-ready',applyRoute);
-document.addEventListener('journal-loading',applyRoute);
-applyRoute();
+document.querySelector('.reader-close').addEventListener('click',()=>dialog.close());
+dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+dialog.addEventListener('close',()=>{
+  const fallbackHash=readingDestination(readingKey),readHash='#'+(notes()[readingKey]?'read/':'entry/')+readingKey;
+  clearLoading(readerBody);clearMedia(readerBody);root.classList.remove('reading');readingKey=null;
+  document.title=pageTitle();document.dispatchEvent(new Event('waypoint-reader'));
+  if(!routing&&/^#(?:read|entry)\//.test(location.hash)) {
+    if(history.state?.reading){history.back();return;}
+    history.replaceState({...history.state,reading:false},'',location.pathname+location.search+(returnHash||fallbackHash));
+    applyRoute({position:'restore'});
+  }
+  requestAnimationFrame(()=>{
+    if(dialog.open||root.dataset.view!=='home')return;
+    const active=document.activeElement;
+    if(active!==document.body&&!dialog.contains(active)&&active?.getClientRects().length)return;
+    const current=readerOrigin?.isConnected&&readerOrigin.getAttribute('href')===readHash?readerOrigin:homeView.querySelector('a[href="'+readHash+'"]');
+    if(current?.getClientRects().length)current.focus({preventScroll:true});
+  });
+});
+window.addEventListener('popstate',()=>{restoredHref=location.href;applyRoute({position:'restore'});});
+window.addEventListener('hashchange',()=>{const restored=restoredHref===location.href;restoredHref=null;if(!restored)applyRoute({position:'hash'});});
+document.addEventListener('journal-ready',()=>applyRoute());
+document.addEventListener('journal-loading',()=>applyRoute());
 
 const navLinks = [...document.querySelectorAll('.site-nav a')];
 const indicator = document.createElement('span');
 indicator.className = 'nav-indicator';
 indicator.setAttribute('aria-hidden', 'true');
 document.querySelector('.site-nav').prepend(indicator);
-const navSections=navLinks.map(link=>document.querySelector(link.getAttribute('href')));
+const navSections=navLinks.map(link=>document.querySelector(new URL(link.href).hash));
 let navFrame=0;
 function updateNavigation() {
   navFrame=0;
   if(readingKey)return;
+  root.style.setProperty('--race-header-bottom',Math.ceil(document.querySelector('.site-header').getBoundingClientRect().bottom)+'px');
+  if(activeView==='races') {
+    indicator.classList.add('is-visible');indicator.style.transform='translateX(100%)';
+    navLinks.forEach(link=>new URL(link.href).hash==='#trails'?link.setAttribute('aria-current','page'):link.removeAttribute('aria-current'));
+    return;
+  }
   const readingLine=document.querySelector('.site-header').getBoundingClientRect().bottom+Math.min(innerHeight*.12,80);
   const active=navSections.filter(section=>section.getBoundingClientRect().top<=readingLine).at(-1);
   indicator.classList.toggle('is-visible',Boolean(active));
   navLinks.forEach((link, index) => {
-    if (active&&link.getAttribute('href') === '#' + active.id) {
+    if (active&&new URL(link.href).hash === '#' + active.id) {
       link.setAttribute('aria-current', 'location');
       indicator.style.transform = 'translateX(' + (index * 100) + '%)';
     } else link.removeAttribute('aria-current');
@@ -249,10 +294,8 @@ window.addEventListener('load',scheduleNavigation);
 new ResizeObserver(scheduleNavigation).observe(document.querySelector('main'));
 document.addEventListener('journal-ready',scheduleNavigation);
 scheduleNavigation();
-initJournalOnDemand(key=>Boolean(notes()[key]));
-initAppPreview();
-initMotion();
-initHeroGallery();
-initAmbientMotion();
-initAmbientAudio();
+history.scrollRestoration='manual';
+if(!history.state?.waypointKey)history.replaceState({...history.state,waypointKey:'initial'},'',location.href);
+initAmbientMotion();initTouchMotion();initAmbientAudio();
+applyRoute({position:'initial'});
 import('./elastic-details.js').then(module => module.initElasticDetails()).catch(() => {});

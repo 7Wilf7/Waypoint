@@ -14,7 +14,7 @@ const config=previewBuild?await import(new URL('../public/publication-config.js'
 const runtimeEnv={...process.env,WAYPOINT_CONTENT_DELIVERY:config.publicationMode,WAYPOINT_PUBLICATION_BUILD:publication};
 const port = Number(process.env.WAYPOINT_PORT || 4173);
 const host = process.env.WAYPOINT_HOST || '127.0.0.1';
-const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.ogg': 'audio/ogg' };
+const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.ogg': 'audio/ogg' };
 
 const server = createServer(async (request, response) => {
   try {
@@ -38,7 +38,7 @@ const server = createServer(async (request, response) => {
       return;
     }
     if(pathname==='/manage')pathname='/manage.html';
-    if(pathname==='/races')pathname='/races.html';
+    if(pathname==='/races')pathname='/index.html';
     const path = resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!path.startsWith(root + sep) || !(await stat(path)).isFile()) {
       response.writeHead(404).end('Not found');

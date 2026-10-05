@@ -1,0 +1,5 @@
+/* Apply the route before the module runs, then retain inactive DOM state. */
+html[data-view="races"] #home-view,
+html:not([data-view="races"]) #race-archive-view {display:none;}
+.reader-controls .sound-toggle {flex:none;}
+.race-archive-footer .footer-music {flex-basis:100%;}

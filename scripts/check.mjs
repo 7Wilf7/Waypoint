@@ -8,7 +8,7 @@ import { ambientTracks } from '../dist/ambient-tracks.js';
 import {previewProducts,previewScreens,previewViewport} from '../dist/preview-screens.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
-for (const filename of ['app.js', 'theme.js', 'homepage-copy.js', 'hero-gallery.js', 'hero-motion.js', 'surface-motion.js', 'scroll-motion.js', 'pointer-field.js', 'elastic-details.js', 'ambient-motion.js', 'ambient-audio.js', 'ambient-tracks.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'article-utils.js', 'race-utils.js', 'race-photos.js', 'race-archive.js', 'manage.js', 'loading.js', 'media-images.js', 'public-content.js', 'publication-config.js']) {
+for (const filename of ['app.js', 'theme.js', 'homepage-copy.js', 'hero-gallery.js', 'hero-motion.js', 'surface-motion.js', 'scroll-motion.js', 'pointer-field.js', 'elastic-details.js', 'ambient-motion.js', 'ambient-audio.js', 'ambient-tracks.js', 'conductor.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'article-utils.js', 'race-utils.js', 'race-photos.js', 'race-archive.js', 'manage.js', 'loading.js', 'media-images.js', 'public-content.js', 'publication-config.js']) {
   const result = spawnSync(process.execPath, ['--check', resolve(root, filename)], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr);
 }
@@ -54,7 +54,7 @@ for (const note of Object.values(notes)) {
   for (const product of note.products || []) await access(resolve(root, product.image));
 }
 const nav=html.match(/<nav class="site-nav"[\s\S]*?<\/nav>/)[0];
-const navIds=[...nav.matchAll(/href="#([^"]+)"/g)].map(match=>match[1]);
+const navIds=[...nav.matchAll(/href="\/?#([^"]+)"/g)].map(match=>match[1]);
 const sectionIds=[...html.matchAll(/<section[^>]+id="([^"]+)"/g)].map(match=>match[1]).filter(id=>navIds.includes(id));
 if(navIds.join(',')!==sectionIds.join(','))throw new Error('Navigation order differs from page sections');
 for(const [app,product] of Object.entries(previewProducts))for(const [view,label] of Object.entries(product.views))for(const locale of ['zh','en']) {
@@ -82,6 +82,8 @@ const articleTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts
 if(articleTests.status!==0)throw new Error(articleTests.stdout+articleTests.stderr);
 const loadingTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/loading.test.mjs')],{encoding:'utf8'});
 if(loadingTests.status!==0)throw new Error(loadingTests.stdout+loadingTests.stderr);
+const audioTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/ambient-audio.test.mjs')],{encoding:'utf8'});
+if(audioTests.status!==0)throw new Error(audioTests.stdout+audioTests.stderr);
 const publicationTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/export-public.test.mjs'),resolve(root,'../scripts/public-delivery.test.mjs')],{encoding:'utf8'});
 if(publicationTests.status!==0)throw new Error(publicationTests.stdout+publicationTests.stderr);
 console.log('JavaScript syntax, assets, navigation, complete language dictionaries, and both reading editions passed.');

@@ -5,17 +5,23 @@ const cache=new Map(),queue=[];
 const limits={requests:2,entries:20,bytes:12*1024*1024,pixels:24000000,age:5*60*1000};
 let active=0;
 let publishedMedia=new Map(),publishedReferences=new Map();
+let publishedKinds=new Map(),publishedMediaRevisions=new Map(),publishedSequence=0;
+const publishedRevisions=new Map();
 const publicAsset=/^\/published\/media\/[a-f0-9]{64}-(original|preview|read)\.webp$/;
 const identifier=/^[a-z0-9-]{1,64}$/i;
 
-export function setPublishedMedia(data) {
+export function setPublishedMedia(data,kind,revision=++publishedSequence) {
+  if(kind!==undefined&&!['race','article'].includes(kind))throw new Error('invalid_public_media');
+  if(!Number.isSafeInteger(revision)||revision<1)throw new Error('invalid_public_media');
+  publishedSequence=Math.max(publishedSequence,revision);
   if(data?.schema!==1||!Array.isArray(data.entries)||!data.media||typeof data.media!=='object'||Array.isArray(data.media))throw new Error('invalid_public_media');
-  const media=new Map(),references=new Map();
+  const media=new Map(),references=new Map(),kinds=new Map();
   for(const entry of data.entries) {
-    if(entry?.published!==true||!identifier.test(entry.id||'')||!['race','article'].includes(entry.kind)||!Array.isArray(entry.photos)||!Array.isArray(entry.certificates)||references.has(entry.id))throw new Error('invalid_public_media');
+    if(entry?.published!==true||!identifier.test(entry.id||'')||!['race','article'].includes(entry.kind)||(kind&&entry.kind!==kind)||!Array.isArray(entry.photos)||!Array.isArray(entry.certificates)||references.has(entry.id))throw new Error('invalid_public_media');
     const ids=[...entry.photos,...entry.certificates];
     if(ids.some(id=>typeof id!=='string'||!identifier.test(id)))throw new Error('invalid_public_media');
     references.set(entry.id,new Set(ids));
+    kinds.set(entry.id,entry.kind);
   }
   for(const [id,item]of Object.entries(data.media)) {
     if(!identifier.test(id)||!item||!['image','pdf'].includes(item.type)||![...references.values()].some(ids=>ids.has(id)))throw new Error('invalid_public_media');
@@ -25,7 +31,22 @@ export function setPublishedMedia(data) {
     media.set(id,item.type==='pdf'?{type:'pdf'}:{type:'image',original:item.original,preview:item.preview,read:item.read});
   }
   for(const ids of references.values())for(const id of ids)if(!media.has(id))throw new Error('invalid_public_media');
-  publishedMedia=media;publishedReferences=references;
+  // A subset replaces only its own kind. Older responses cannot overwrite a
+  // newer full catalog or resurrect references removed by that response.
+  const updated=new Set((kind?[kind]:['race','article']).filter(scope=>revision>=(publishedRevisions.get(scope)||0)));
+  for(const [id,scope]of kinds)if(updated.has(scope)&&publishedKinds.has(id)&&publishedKinds.get(id)!==scope&&!updated.has(publishedKinds.get(id)))throw new Error('invalid_public_media');
+  for(const [id,scope]of publishedKinds)if(updated.has(scope)){publishedKinds.delete(id);publishedReferences.delete(id);}
+  const acceptedMedia=new Set();
+  for(const [id,ids]of references)if(updated.has(kinds.get(id))) {
+    publishedKinds.set(id,kinds.get(id));publishedReferences.set(id,ids);
+    for(const mediaId of ids)acceptedMedia.add(mediaId);
+  }
+  for(const id of acceptedMedia)if(revision>=(publishedMediaRevisions.get(id)||0)) {
+    publishedMedia.set(id,media.get(id));publishedMediaRevisions.set(id,revision);
+  }
+  for(const scope of updated)publishedRevisions.set(scope,revision);
+  const retained=new Set([...publishedReferences.values()].flatMap(ids=>[...ids]));
+  for(const id of publishedMedia.keys())if(!retained.has(id)){publishedMedia.delete(id);publishedMediaRevisions.delete(id);}
 }
 
 function sourceURL(source,entry) {

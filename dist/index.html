@@ -11,7 +11,7 @@
     <style>
       .startup-error{display:none}
       html.app-failed .startup-error{display:block}
-      html.app-failed :is(.race-entries,.article-entries,.preview-message){display:none}
+      html.app-failed :is(.race-entries,.article-entries,.preview-message,.race-archive-results,.race-archive-status){display:none}
     </style>
     <link rel="modulepreload" href="./i18n.js" />
     <link rel="modulepreload" href="./content.js" />
@@ -25,14 +25,18 @@
         document.documentElement.dataset.theme = ['dark', 'light', 'moss', 'gray'].includes(saved) ? saved : 'dark';
       } catch { document.documentElement.dataset.theme = 'dark'; }
       document.documentElement.classList.add('intro-complete');
+      document.documentElement.dataset.view = location.pathname === '/races' ? 'races' : 'home';
     </script>
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./homepage.css" />
+    <link rel="stylesheet" href="./conductor.css" />
     <link rel="stylesheet" href="./pointer-field.css" />
     <link rel="stylesheet" href="./touch-motion.css" />
     <link rel="stylesheet" href="./elastic-details.css" />
     <link rel="stylesheet" href="./ambient-motion.css" />
+    <link rel="stylesheet" href="./site-views.css" />
     <script type="module" src="./app.js" onerror="document.documentElement.classList.add('app-failed')"></script>
+    <script type="module" src="./conductor.js"></script>
   </head>
   <body class="waypoint-home">
     <div class="ambient-backdrop" aria-hidden="true"><div class="ambient-depth"><div class="ambient-glow ambient-glow-dark"></div><div class="ambient-glow ambient-glow-light"></div><div class="ambient-glow ambient-glow-moss"></div><div class="ambient-glow ambient-glow-gray"></div><div class="ambient-grain"></div></div></div>
@@ -41,14 +45,14 @@
     <a class="skip-link" href="#main" data-i18n="skip">跳到主要内容</a>
     <header class="site-header">
       <div class="header-inner">
-        <a class="brand" href="#home" aria-label="Waypoint，返回首页" data-i18n-aria="homeLabel">
+        <a class="brand" href="/#home" aria-label="Waypoint，返回首页" data-i18n-aria="homeLabel">
           <img class="brand-mark" src="./assets/aevum.png" width="32" height="32" alt="" aria-hidden="true" draggable="false" />
           <span>Waypoint<span class="brand-period">.</span></span>
         </a>
         <nav class="site-nav" aria-label="主要导航" data-i18n-aria="navLabel">
-          <a href="#about" data-i18n="about">关于</a>
-          <a href="#trails" data-i18n="trailsNav">山野</a>
-          <a href="#making" data-i18n="makingNav">创造</a>
+          <a href="/#about" data-i18n="about">关于</a>
+          <a href="/#trails" data-i18n="trailsNav">山野</a>
+          <a href="/#making" data-i18n="makingNav">创造</a>
         </nav>
         <div class="header-controls"><button class="language-toggle" type="button" aria-label="Switch to English" title="Switch to English">EN</button><button class="theme-toggle" type="button" aria-label="当前背景：曜黑。切换为雾白背景" title="当前背景：曜黑。切换为雾白背景"><span class="theme-palette" aria-hidden="true"><i class="theme-swatch theme-swatch-dark"></i><i class="theme-swatch theme-swatch-light"></i><i class="theme-swatch theme-swatch-moss"></i><i class="theme-swatch theme-swatch-gray"></i></span></button><button class="sound-toggle" type="button" aria-label="播放背景音乐" aria-pressed="false" hidden><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><svg class="sound-off" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 3 10 14"/></svg></button></div>
       </div>
@@ -56,6 +60,7 @@
 
     <main id="main">
       <div class="startup-error section-shell load-error" role="status"><p><span data-welcome="zh">页面暂时未能完整载入，请重新加载。</span><span data-welcome="en">The page could not finish loading. Please reload.</span></p><button class="button button-quiet" type="button" onclick="location.reload()"><span data-welcome="zh">重新加载</span><span data-welcome="en">Reload</span></button></div>
+      <div id="home-view">
       <section class="hero editorial-hero" id="home" aria-labelledby="hero-heading">
         <div class="hero-copy section-shell">
           <div class="hero-writing">
@@ -116,7 +121,7 @@
 
       <section class="section-shell projects-section" id="making" aria-labelledby="projects-heading">
         <span class="legacy-anchor" id="projects" aria-hidden="true"></span><div class="section-topline"><span class="eyebrow" data-i18n="projectLabel">03 / 创造</span><span class="section-aside" data-i18n="projectAside">把好奇，变成看得见的东西。</span></div>
-        <div class="section-heading-row"><h2 id="projects-heading" data-i18n="projectTitle">从一个念头，<br /><span class="muted-heading">到自己的作品。</span></h2><span class="section-count" data-i18n="projectCount">Aevum · 四个入口</span></div>
+        <div class="section-heading-row"><h2 id="projects-heading" data-i18n="projectTitle">从一个念头，<br /><span class="muted-heading">到自己的作品。</span></h2><span class="section-count" data-i18n="projectCount">Aevum · Conductor Mode</span></div>
         <article class="project-card spotlight-surface">
           <div class="project-copy"><div class="project-label"><span class="project-tag" data-i18n="projectTag">个人应用</span><span data-i18n="projectStatus">持续打磨中</span></div><h3>Aevum<span>.</span></h3><p class="project-summary" data-i18n="projectSummary">给自己的生活，<br />做一个顺手的入口。</p><p class="project-description" data-i18n="projectDescription">把训练、账本、日历和笔记放在一起，再通过 AI 对话把它们联系起来。它从我每天碰到的小问题里长出来。</p><a class="button button-primary" href="#read/aevum" data-i18n="projectCTA">看看这个项目</a><div class="project-stack"><span data-i18n="projectStack">PERSONAL TOOLS</span><span data-i18n="projectPlatform">WEB / ANDROID</span></div></div>
           <div class="project-visual" aria-label="Aevum 产品家族" data-i18n-aria="familyLabel">
@@ -138,6 +143,29 @@
             <p class="preview-provenance" data-i18n="previewDemo">真实应用界面 · 演示数据</p>
           </div></div>
         </div>
+      <article class="conductor-card" id="conductor" aria-labelledby="conductor-title">
+        <div class="conductor-copy">
+          <p class="eyebrow" data-i18n="conductorLabel">协作方式 / CODEX</p>
+          <h3 id="conductor-title">Conductor Mode</h3>
+          <p class="conductor-standfirst" data-i18n="conductorIntro">我的 AI 协作方式。</p>
+          <p class="conductor-description" data-i18n="conductorDescription">我把这种协作叫作 Conductor Mode：主会话统筹，按任务需要调用不同角色。能独立推进的工作并行做，有依赖的步骤按顺序来。</p>
+          <dl class="conductor-roles">
+            <div><dt>Main session</dt><dd data-i18n="conductorMain">拆解目标、分配任务，最后整合证据与结果。</dd></div>
+            <div><dt>Explorer &amp; Researcher</dt><dd data-i18n="conductorEvidence">查代码与一手资料，把证据交回主会话。</dd></div>
+            <div><dt>Worker</dt><dd data-i18n="conductorWorker">实现、排错与验证，负责有明确边界的工作。</dd></div>
+            <div><dt>Architect</dt><dd data-i18n="conductorArchitect">在重要方案、重复失败和交付前独立审查。</dd></div>
+          </dl>
+        </div>
+        <figure class="conductor-figure">
+          <img data-conductor-image src="./assets/conductor/conductor-zh.webp" width="1200" height="1500" loading="lazy" decoding="async" alt="Conductor Mode 协作流程：主会话统筹 Explorer、Researcher 和 Worker 的并行任务，Architect 按需独立审查，证据与结果回到主会话。" data-i18n-alt="conductorImage" />
+          <figcaption class="conductor-caption"><span data-i18n="conductorCaption">8 秒并行流程 · 动图示意</span></figcaption>
+          <div class="conductor-actions">
+            <button class="conductor-control" type="button" data-conductor-toggle aria-pressed="false" hidden><svg class="conductor-play-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6Z" /></svg><svg class="conductor-pause-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5v10M13 5v10" /></svg><span data-i18n="conductorPlay">播放动图</span></button>
+            <button class="conductor-control" type="button" data-conductor-expand hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4" /></svg><span data-i18n="conductorExpand">查看大图</span></button>
+          </div>
+          <p class="conductor-status" role="status" aria-live="polite"></p>
+        </figure>
+      </article>
       </section>
 
       <footer class="site-footer section-shell">
@@ -145,11 +173,33 @@
         <div class="footer-bottom"><span data-i18n="signature">Waypoint · Wilf 吴凡</span><span data-i18n="location">广州，中国</span><span>© 2026</span><a class="manage-link" href="/manage" data-i18n="manage" hidden>内容管理</a></div>
         <p class="footer-music" hidden></p>
       </footer>
+      </div>
+      <section id="race-archive-view" class="section-shell race-archive-main" aria-labelledby="race-archive-heading">
+<a class="race-back-link" href="/#trails"><span aria-hidden="true">↖</span> <span data-i18n="raceBackHome">返回个人网站</span></a>
+<div class="race-archive-heading"><p class="eyebrow">OUT ON THE COURSE / RACE ARCHIVE</p><h1 id="race-archive-heading" data-i18n="raceArchiveTitle">赛事档案。</h1><p class="race-archive-intro" data-i18n="raceArchiveIntro">从城市公路，到山野和障碍赛场。按项目翻看每一次出发，以及留下的成绩。</p></div>
+<div class="race-archive-controls"><div class="race-filters" role="group" aria-label="按赛事类型筛选" data-i18n-aria="raceFilterLabel"></div></div>
+<div class="race-archive-summary"><p class="race-archive-status" role="status" aria-live="polite" data-i18n="racesLoading"><span data-loading-language="zh">正在载入比赛记录…</span><span data-loading-language="en">Loading race records…</span></p><p class="race-archive-best" hidden></p></div>
+<div class="race-archive-results" aria-busy="true"><div class="loading-state" role="status"><p class="loading-copy" data-i18n="racesLoading"><span data-loading-language="zh">正在载入比赛记录…</span><span data-loading-language="en">Loading race records…</span></p><div class="loading-progress" role="progressbar" aria-label="正在载入比赛记录…"></div><p class="loading-detail" data-i18n="loadingHint"><span data-loading-language="zh">内容准备好后会立即显示。</span><span data-loading-language="en">Content will appear as soon as it is ready.</span></p><div class="loading-rows" aria-hidden="true"><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div></div></div></div>
+<footer class="race-archive-footer"><a class="brand" href="/">Waypoint.</a><span data-i18n="signature">Waypoint · Wilf 吴凡</span><p class="footer-music" hidden></p></footer>
+</section>
     </main>
 
     <dialog class="reader-dialog" aria-labelledby="reader-title">
-      <div class="reader-toolbar"><span class="reader-brand" data-i18n="readerBrand">Waypoint / NOTES</span><div class="reader-controls"><button class="language-toggle" type="button" aria-label="Switch to English" title="Switch to English">EN</button><button class="reader-close" type="button" aria-label="关闭阅读" data-i18n-aria="close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div></div>
+      <div class="reader-toolbar"><span class="reader-brand" data-i18n="readerBrand">Waypoint / NOTES</span><div class="reader-controls"><button class="language-toggle" type="button" aria-label="Switch to English" title="Switch to English">EN</button><button class="sound-toggle" type="button" aria-label="播放背景音乐" aria-pressed="false" hidden><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><svg class="sound-off" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 3 10 14"/></svg></button><button class="reader-close" type="button" aria-label="关闭阅读" data-i18n-aria="close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div></div>
       <article class="reader-content"><p class="eyebrow" id="reader-category"></p><h2 id="reader-title"></h2><p class="reader-lead" id="reader-lead"></p><div class="reader-body" id="reader-body"></div><p class="reader-signature" data-i18n="readerSignature">Wilf 吴凡 <span>— Waypoint</span></p></article>
+    </dialog>
+    <dialog class="conductor-dialog" aria-labelledby="conductor-dialog-title">
+      <div class="conductor-toolbar">
+        <h2 id="conductor-dialog-title">Conductor Mode</h2>
+        <div class="conductor-toolbar-controls">
+          <button class="sound-toggle" type="button" aria-label="播放背景音乐" aria-pressed="false" hidden><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><svg class="sound-off" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 3 10 14"/></svg></button>
+          <button class="conductor-control" type="button" data-conductor-toggle aria-pressed="false" hidden><svg class="conductor-play-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6Z" /></svg><svg class="conductor-pause-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5v10M13 5v10" /></svg><span data-i18n="conductorPlay">播放动图</span></button>
+          <button class="conductor-control" type="button" data-conductor-zoom aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="m12 12 5 5M5 8h6M8 5v6"/></svg><span data-i18n="conductorZoom">放大细节</span></button>
+          <button class="conductor-control" type="button" data-conductor-close><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" /></svg><span data-i18n="conductorClose">关闭大图</span></button>
+        </div>
+      </div>
+      <div class="conductor-detail" tabindex="0" role="region" aria-label="协作流程图，放大后可滚动查看" data-i18n-aria="conductorPan"><img data-conductor-image src="./assets/conductor/conductor-zh.webp" width="1200" height="1500" loading="lazy" decoding="async" alt="Conductor Mode 协作流程" data-i18n-alt="conductorImage" /></div>
+      <p class="conductor-detail-hint" data-i18n="conductorHint">放大后，可滑动或用方向键查看细节。</p>
     </dialog>
     <div class="note-preview" aria-hidden="true"><div class="preview-art"><img src="./assets/mountain.jpg" alt="" /></div><div class="preview-copy"><span class="preview-category"></span><strong class="preview-title"></strong><p class="preview-summary"></p><span class="preview-meta"></span></div></div>
     <div class="pointer-bubble" aria-hidden="true"><span></span></div>

@@ -164,3 +164,38 @@ test('static loaders request catalog subsets once and never fall back to live st
   assert.equal(fixture.calls.some(path=>path.startsWith('/api/')),false);
   const live=frontend('live');live.context.payload={entries:[entry]};await live.api.requestPublishedEntries('race');assert.deepEqual(live.calls,['/api/entries?kind=race']);
 });
+
+function articleCatalog() {
+  const data=catalog(),image={type:'image'};
+  for(const size of ['original','preview','read'])image[size]='/published/media/'+'b'.repeat(64)+'-'+size+'.webp';
+  data.entries.push({id:'fictional-article',kind:'article',published:true,photos:['article-photo'],certificates:[]});
+  data.media['article-photo']=image;
+  return data;
+}
+test('a race subset preserves article associations and a newer full catalog removes withdrawn references',()=>{
+  const {api}=frontend();api.setPublishedMedia(articleCatalog());
+  const articleURL=api.mediaImageURL('/media/article-photo','read','fictional-article');
+  api.setPublishedMedia(catalog(),'race');
+  assert.equal(api.mediaImageURL('/media/article-photo','read','fictional-article'),articleURL);
+  assert.throws(()=>api.mediaImageURL('/media/article-photo','read',entry.id),/invalid_image_source/);
+  const collision=catalog();collision.entries=[{...entry,id:'fictional-article'}];
+  assert.throws(()=>api.setPublishedMedia(collision,'race'),/invalid_public_media/);
+  assert.equal(api.mediaImageURL('/media/article-photo','read','fictional-article'),articleURL);
+  api.setPublishedMedia(catalog());assert.throws(()=>api.mediaImageURL('/media/article-photo','read','fictional-article'),/invalid_image_source/);
+});
+test('late race and full-catalog responses cannot overwrite newer scoped media permissions',async()=>{
+  for(const olderKind of ['race',undefined]) {
+    const f=frontend(),laterKind=olderKind==='race'?undefined:'race';
+    const pending=[];f.context.requestJSON=()=>new Promise(resolve=>pending.push(resolve));
+    const older=f.api.requestPublishedEntries(olderKind),later=f.api.requestPublishedEntries(laterKind);
+    const fresh=articleCatalog(),newImage={...fresh.media['fictional-photo']};
+    fresh.entries[0]={...entry,photos:['new-race-photo']};
+    fresh.media['new-race-photo']=newImage;delete fresh.media['fictional-photo'];
+    const laterData=laterKind==='race'?{schema:1,entries:[fresh.entries[0]],media:{'new-race-photo':newImage,'fictional-pdf':{type:'pdf'}}}:fresh;
+    pending[1](laterData);await later;
+    pending[0](olderKind==='race'?catalog():articleCatalog());await older;
+    assert.match(f.api.mediaImageURL('/media/new-race-photo','read',entry.id),/a{64}-read\.webp$/);
+    assert.throws(()=>f.api.mediaImageURL('/media/fictional-photo','read',entry.id),/invalid_image_source/);
+    assert.match(f.api.mediaImageURL('/media/article-photo','read','fictional-article'),/b{64}-read\.webp$/);
+  }
+});
