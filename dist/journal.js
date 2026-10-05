@@ -9,6 +9,7 @@ const words=()=>copy[root.dataset.language==='en'?'en':'zh'];
 let entries=[];
 let failed=false;
 let loading=true,request=null,errorKey='unavailable';
+let requested=false;
 let articlesExpanded=false;
 const el=(tag,className,text)=>{const element=document.createElement(tag);if(className)element.className=className;if(text)element.textContent=text;return element;};
 export function journalState(){return loading?'loading':failed?'error':'ready';}
@@ -28,7 +29,7 @@ export function getEntry(id) {
 function formatDate(date){return new Intl.DateTimeFormat(root.dataset.language==='en'?'en-GB':'zh-CN',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date(date+'T00:00:00Z'));}
 function renderRaces(container) {
   clearMedia(container);
-  if(loading){renderLoading(container,'racesLoading');return;}
+  if(loading){renderLoading(container,'racesLoading');if(!requested)clearLoading(container);return;}
   clearLoading(container);
   container.replaceChildren();
   const races=sortRaces(entries);
@@ -41,7 +42,7 @@ function renderRaces(container) {
   const selected=representativeRace(races,counts.Trail?'Trail':races[0].category).entry;
   const feature=el('a','race-card race-spotlight');feature.href='#entry/'+selected.id;
   const primary=racePhotoRoles(selected).primary;
-  if(primary){const image=createMediaImage('./media/'+primary,getEntry(selected.id).title,{originalLink:false,entry:selected.id});image.classList.add('race-spotlight-photo');feature.append(image);}
+  if(primary){const image=createMediaImage('./media/'+primary,getEntry(selected.id).title,{size:'preview',originalLink:false,entry:selected.id});image.classList.add('race-spotlight-photo');feature.append(image);}
   const top=el('div','race-spotlight-top');top.append(el('span','race-format-tag',w[raceCategoryKeys[selected.category]]),el('span','eyebrow',w.raceLatestRecord));
   const content=el('div','race-spotlight-content');content.append(el('p','race-feature-date',formatDate(selected.date)),el('h3','',getEntry(selected.id).title),el('span','race-feature-result',formatResult(selected.result)||w.raceResultMissing));
   const metrics=el('div','race-feature-metrics');for(const [value,label]of [[selected.distance!=null?selected.distance+' km':null,w.raceDistance],[selected.ascent!=null?'+'+selected.ascent+' m':null,w.raceAscent]])if(value){const item=el('div','');item.append(el('strong','',value),el('span','',label));metrics.append(item);}
@@ -61,7 +62,7 @@ function renderEmpty(kind,container) {
   if(failed){const retry=el('button','button button-quiet',words().retry);retry.addEventListener('click',event=>initJournal(event.detail===0?container:null));container.append(retry);}
 }
 function renderArticles(container) {
-  if(loading){renderLoading(container,'articlesLoading');return;}
+  if(loading){renderLoading(container,'articlesLoading');if(!requested)clearLoading(container);return;}
   clearLoading(container);
   container.replaceChildren();
   const articles=sortArticles(entries);
@@ -87,7 +88,7 @@ function renderArticles(container) {
 export function renderJournal(){renderRaces(document.querySelector('.race-entries'));renderArticles(document.querySelector('.article-entries'));}
 export function initJournal(focusContainer=null) {
   if(request)return request;
-  loading=true;failed=false;renderJournal();document.dispatchEvent(new Event('journal-loading'));
+  requested=true;loading=true;failed=false;renderJournal();document.dispatchEvent(new Event('journal-loading'));
   request=(async()=>{
     try {const data=await requestJSON('./api/entries');if(!Array.isArray(data.entries))throw new Error('unavailable');entries=data.entries;}
     catch(error){failed=true;errorKey=error.message==='request_timeout'?'loadTimedOut':'unavailable';}
@@ -96,6 +97,25 @@ export function initJournal(focusContainer=null) {
       if(focusContainer)focusContainer.querySelector('a,button')?.focus({preventScroll:true});
     }
   })();
-  requestJSON('./api/session').then(session=>{document.querySelector('.manage-link').hidden=!session.owner;}).catch(()=>{/* The reader remains available without a management link. */});
   return request;
+}
+
+// Keep every list read fresh, but only request it when published content is needed.
+export function initJournalOnDemand(hasStaticNote=()=>false) {
+  let started=false;
+  const start=()=>{
+    if(started)return;
+    started=true;observer.disconnect();window.removeEventListener('hashchange',route);
+    initJournal();
+  };
+  const route=()=>{
+    const legacy=location.hash.match(/^#read\/([a-z0-9-]+)$/i);
+    if(/^#(?:entry\/|trails$|races$|writing$)/i.test(location.hash)||(legacy&&!hasStaticNote(legacy[1])))start();
+  };
+  const observer=new IntersectionObserver(items=>{if(items.some(item=>item.isIntersecting))start();},{rootMargin:'400px'});
+  for(const container of document.querySelectorAll('.race-entries,.article-entries'))observer.observe(container);
+  window.addEventListener('hashchange',route);
+  route();
+  // Owner discovery is independent of reading and runs once, including list retries.
+  requestJSON('./api/session').then(session=>{document.querySelector('.manage-link').hidden=!session.owner;}).catch(()=>{/* The reader remains available without a management link. */});
 }

@@ -1,7 +1,7 @@
 import { notesByLanguage } from './content.js';
 import { copy } from './i18n.js';
 import { initMotion } from './motion.js';
-import { initJournal, getEntry, renderJournal, journalState } from './journal.js';
+import { initJournal, initJournalOnDemand, getEntry, renderJournal, journalState } from './journal.js';
 import { initAppPreview, updateAppPreview } from './app-preview.js';
 import { initHeroGallery } from './hero-gallery.js';
 import { initAmbientMotion } from './ambient-motion.js';
@@ -249,7 +249,7 @@ window.addEventListener('load',scheduleNavigation);
 new ResizeObserver(scheduleNavigation).observe(document.querySelector('main'));
 document.addEventListener('journal-ready',scheduleNavigation);
 scheduleNavigation();
-initJournal();
+initJournalOnDemand(key=>Boolean(notes()[key]));
 initAppPreview();
 initMotion();
 initHeroGallery();
