@@ -6,7 +6,7 @@ import sharp from 'sharp';
 import {validateEntry,ID,MAX_FILE,fileType} from '../server/content.js';
 
 const MAX_PIXELS=64*1024*1024;
-const MAX_ENTRIES=256,MAX_MEDIA=256,MAX_OUTPUT=128*1024*1024;
+const MAX_ENTRIES=256,MAX_MEDIA=256,MAX_OUTPUT=192*1024*1024;
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const publicEntry=entry=>{
   if(entry?.published!==true)throw new Error('publication_changed');
@@ -85,7 +85,7 @@ export async function exportPublished(store,outputDirectory) {
       for(const [preset,encoded] of Object.entries(variants)) {
         const name=hash(encoded)+'-'+preset+'.webp';
         if(!files.has(name)) {
-          bytes+=encoded.length;if(bytes>MAX_OUTPUT)throw new Error('public_snapshot_too_large');
+          bytes+=encoded.length;if(bytes>MAX_OUTPUT)throw new Error('public_snapshot_too_large: '+bytes+' > '+MAX_OUTPUT+' bytes');
           await writeFile(join(stage,'media',name),encoded);files.set(name,encoded.length);
         }
         media[id][preset]='/published/media/'+name;
@@ -104,7 +104,7 @@ export async function exportPublished(store,outputDirectory) {
       const selected=entries.filter(entry=>!kind||entry.kind===kind);
       const selectedIds=new Set(selected.flatMap(entry=>[...entry.photos,...entry.certificates]));
       const data=Buffer.from(JSON.stringify({schema:1,entries:selected,media:Object.fromEntries(Object.entries(media).filter(([id])=>selectedIds.has(id)))}));
-      bytes+=data.length;if(bytes>MAX_OUTPUT)throw new Error('public_snapshot_too_large');
+      bytes+=data.length;if(bytes>MAX_OUTPUT)throw new Error('public_snapshot_too_large: '+bytes+' > '+MAX_OUTPUT+' bytes');
       await writeFile(join(stage,name+'.json'),data);
     }
     await rename(stage,output);installed=true;
