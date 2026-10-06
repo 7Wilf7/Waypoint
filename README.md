@@ -24,7 +24,7 @@ npm run dev
 
 Open `http://127.0.0.1:4173`. The same owner-password login is used in local development and production; no identity headers are trusted. Local content is stored under ignored `.local/content/`. Owner credentials are generated once in `.local/admin-access.txt` and `.env.local`; never commit them.
 
-`npm run build` bundles the direct-upload client, then copies only public frontend files into generated `public/`. Do not edit `dist/upload-client.js` or `public/`; they are generated. Server source, credentials, local content, and verification artifacts stay outside that output. `npm run check` verifies languages, assets, navigation, login, publication visibility, private files, and input validation.
+`npm run build` bundles the direct-upload client, then copies only public frontend files into generated `public/`. Do not edit `dist/upload-client.js` or `public/`; they are generated. Server source, credentials, local content, and verification artifacts stay outside that output. `.vercelignore` also excludes local data, credentials and generated output from CLI source uploads; `.gitignore` alone does not do this. `npm run check` verifies languages, assets, navigation, login, publication visibility, private files, and input validation.
 
 For same-network phone review, run `WAYPOINT_HOST=0.0.0.0 npm run dev` and open the computer's LAN address on the phone. The default server binds only to `127.0.0.1`. See [current experience acceptance](docs/EXPERIENCE-ACCEPTANCE.md) for review steps and verified boundaries. Production follows the latest successful Vercel deployment from `main`; verify the live page and its assets after each push.
 

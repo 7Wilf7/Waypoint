@@ -1,0 +1,14 @@
+.DS_Store
+node_modules/
+.sites-runtime/
+verification/
+*.tar.gz
+*.log
+.local/
+dist/server/
+dist/.openai/
+.vercel/
+.env*
+public/
+server/publication-build.json
+dist/upload-client.js
