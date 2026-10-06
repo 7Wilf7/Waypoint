@@ -46,9 +46,9 @@ export const notes = {
       '做这个应用的过程中，我也在逐渐学习如何把自己的需要说清楚、如何判断一个功能是否真的解决了问题。它一边服务我的生活，一边跟着我的理解一起变化。'
     ],
     products: [
-      { name: 'Ultreia', label: '训练 · 赛事 · 恢复', image: './assets/ultreia.png' },
-      { name: 'Viatica', label: '账本 · 项目 · 资产', image: './assets/viatica.png' },
-      { name: 'Sidera', label: '日历 · 笔记', image: './assets/sidera.png' }
+      { name: 'Ultreia', label: '训练 · 赛事 · 恢复', image: './assets/ultreia-refined.png' },
+      { name: 'Viatica', label: '账本 · 项目 · 资产', image: './assets/viatica-refined.png' },
+      { name: 'Sidera', label: '日历 · 笔记', image: './assets/sidera-refined.png' }
     ],
     link: { href: 'https://aevum.center/', label: '访问 Aevum' }
   }
@@ -102,9 +102,9 @@ export const notesEn = {
       'Building the app is also teaching me to describe my needs more clearly and judge whether a feature actually solves a problem. It serves my life while evolving with my understanding.'
     ],
     products: [
-      { name: 'Ultreia', label: 'Training · Races · Recovery', image: './assets/ultreia.png' },
-      { name: 'Viatica', label: 'Finances · Projects · Assets', image: './assets/viatica.png' },
-      { name: 'Sidera', label: 'Calendar · Notes', image: './assets/sidera.png' }
+      { name: 'Ultreia', label: 'Training · Races · Recovery', image: './assets/ultreia-refined.png' },
+      { name: 'Viatica', label: 'Finances · Projects · Assets', image: './assets/viatica-refined.png' },
+      { name: 'Sidera', label: 'Calendar · Notes', image: './assets/sidera-refined.png' }
     ],
     link: { href: 'https://aevum.center/', label: 'Visit Aevum' }
   }

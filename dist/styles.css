@@ -308,7 +308,7 @@
   .site-header { position: sticky; top: 0; z-index: 20; background: var(--header-bg); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
   .header-inner { height: 100px; width: calc(100% - 112px); max-width: var(--content-width); margin-inline: auto; display: flex; align-items: center; justify-content: space-between; position: relative; }
   .brand { display: flex; gap: 10px; align-items: center; font-size: 1.1rem; font-weight: 600; letter-spacing: -.04em; min-height: 44px; }
-  .brand-mark { width:32px; height:32px; flex:none; object-fit:contain; border-radius:8px; }
+  .brand-mark { width:32px; height:32px; flex:none; object-fit:contain; }
   .brand-period { color: var(--accent); }
   .site-nav { position: absolute; left: 50%; transform: translateX(-50%); display: flex; padding: 4px; border: 1px solid var(--line); border-radius: 30px; background: var(--nav-bg); box-shadow: 0 2px 12px rgb(0 0 0 / 3%); }
   .site-nav a { padding: 9px 23px; min-height: 42px; display: grid; place-items: center; font-size: .875rem; color: var(--muted); border-radius: 24px; white-space: nowrap; transition: background-color 180ms ease, color 180ms ease; }

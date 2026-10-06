@@ -43,7 +43,7 @@ export function initMotion() {
   const previewTitle = preview.querySelector('.preview-title');
   const previewSummary = preview.querySelector('.preview-summary');
   const previewMeta = preview.querySelector('.preview-meta');
-  const previewAssets = { trail: './assets/mountain.jpg', memory: './assets/aevum.png', waypoint: './favicon.svg' };
+  const previewAssets = { trail: './assets/mountain.jpg', memory: './assets/aevum-refined.png', waypoint: './assets/aevum-refined.png' };
   let previewTarget=null,previewRevision=0;
   const hidePreview=()=>{previewTarget=null;previewRevision++;preview.classList.remove('is-visible');};
   async function staticPreviewImage(source) {

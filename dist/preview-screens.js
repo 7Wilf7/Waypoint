@@ -357,9 +357,9 @@ export const previewScreens = {
         "label": "previewActivities",
         "view": "activities",
         "bounds": [
-          24.4861,
+          23.885,
           7.5055,
-          34.8434,
+          35.1449,
           3.9735
         ]
       },
@@ -367,9 +367,9 @@ export const previewScreens = {
         "label": "previewCharts",
         "view": "charts",
         "bounds": [
-          61.2712,
+          60.9716,
           7.5055,
-          34.8453,
+          35.1449,
           3.9735
         ]
       },
@@ -465,9 +465,9 @@ export const previewScreens = {
         "label": "previewActivities",
         "view": "activities",
         "bounds": [
-          24.4861,
+          23.885,
           7.5055,
-          34.8434,
+          35.1449,
           3.9735
         ]
       },
@@ -475,9 +475,9 @@ export const previewScreens = {
         "label": "previewCharts",
         "view": "charts",
         "bounds": [
-          61.2712,
+          60.9716,
           7.5055,
-          34.8453,
+          35.1449,
           3.9735
         ]
       },
@@ -1957,9 +1957,9 @@ export const previewScreens = {
         "label": "previewActivities",
         "view": "activities",
         "bounds": [
-          25.3584,
+          24.9697,
           7.5055,
-          34.4072,
+          34.6025,
           3.9735
         ]
       },
@@ -1967,9 +1967,9 @@ export const previewScreens = {
         "label": "previewCharts",
         "view": "charts",
         "bounds": [
-          61.7074,
+          61.514,
           7.5055,
-          34.4091,
+          34.6025,
           3.9735
         ]
       },
@@ -2065,9 +2065,9 @@ export const previewScreens = {
         "label": "previewActivities",
         "view": "activities",
         "bounds": [
-          25.3584,
+          24.9697,
           7.5055,
-          34.4072,
+          34.6025,
           3.9735
         ]
       },
@@ -2075,9 +2075,9 @@ export const previewScreens = {
         "label": "previewCharts",
         "view": "charts",
         "bounds": [
-          61.7074,
+          61.514,
           7.5055,
-          34.4091,
+          34.6025,
           3.9735
         ]
       },
