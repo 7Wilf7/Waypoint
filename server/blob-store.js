@@ -12,6 +12,13 @@ export class BlobStore {
   async saveAuth(record,previous) {
     await put(this.authPath,JSON.stringify(record),{access:'private',addRandomSuffix:false,allowOverwrite:Boolean(previous),...(previous?{ifMatch:previous.etag}:{}),contentType:'application/json',cacheControlMaxAge:60});
   }
+  async analyticsExclusions(){
+    const result=await get('settings/analytics-exclusions.json',{access:'private',useCache:false});
+    return result?{...await new Response(result.stream).json(),etag:result.blob.etag}:null;
+  }
+  async saveAnalyticsExclusions(record,previous){
+    await put('settings/analytics-exclusions.json',JSON.stringify(record),{access:'private',addRandomSuffix:false,allowOverwrite:Boolean(previous.etag),...(previous.etag?{ifMatch:previous.etag}:{}),contentType:'application/json',cacheControlMaxAge:60});
+  }
   async readJson(path,{useCache=false}={}) {
     const result=await get(path,{access:'private',useCache});
     return result?new Response(result.stream).json():null;

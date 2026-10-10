@@ -5,6 +5,7 @@ import {isOwner,checkPassword,sessionCookie,sameOrigin,hasOwnerCookie,credential
 import {IMAGE_PRESETS,ensureImageVariants,imageVariant} from './image-variants.js';
 import {runtimePublicationAllowed} from './publication-policy.js';
 import {getAnalytics} from './analytics.js';
+import {excludeAnalyticsBrowsers} from './analytics-exclusions.js';
 
 const json=(value,status=200,headers={})=>Response.json(value,{status,headers:{'cache-control':'no-store','x-content-type-options':'nosniff',...headers}});
 async function readJson(request,limit=180000) {
@@ -81,8 +82,14 @@ export async function handle(request,store,env=process.env) {
     const ranges=url.searchParams.getAll('days'),routePaths=url.searchParams.getAll('path');
     // Vercel's /api/:path* rewrite forwards its capture as a query parameter.
     if(ranges.length!==1||!['7','30'].includes(ranges[0])||routePaths.length>1||routePaths.some(value=>value!=='manage/analytics')||[...url.searchParams.keys()].some(key=>!['days','path'].includes(key)))return json({error:'invalid_range'},400);
-    try{return json(await getAnalytics(env,Number(ranges[0])));}
+    try{return json(await getAnalytics(env,Number(ranges[0]),store));}
     catch(error){return json({error:error.message==='analytics_not_configured'?'analytics_not_configured':'analytics_unavailable'},503);}
+  }
+  if(path==='/api/manage/analytics/browser'&&request.method==='POST'){
+    let body;try{body=await readJson(request,5000);}catch{return json({error:'invalid_browsers'},400);}
+    if(!body||Object.keys(body).length!==1||!Object.hasOwn(body,'browsers'))return json({error:'invalid_browsers'},400);
+    try{await excludeAnalyticsBrowsers(store,body.browsers);return json({excluded:true,browsers:body.browsers});}
+    catch(error){return json({error:['invalid_browsers','analytics_exclusion_limit'].includes(error.message)?error.message:'analytics_unavailable'},error.message==='invalid_browsers'?400:503);}
   }
   const item=path.match(/^\/api\/manage\/entries\/([a-z0-9-]{1,64})$/i);
   if(item&&request.method==='PUT') {

@@ -1,9 +1,11 @@
 import {readFile,writeFile,mkdir,readdir,rename,link,unlink} from 'node:fs/promises';
 import {resolve} from 'node:path';
+import {createHash} from 'node:crypto';
 
 export class LocalStore {
   mode='local';
   authWrites=Promise.resolve();
+  analyticsWrites=Promise.resolve();
   constructor(directory){this.directory=resolve(directory);}
   async auth(){const bytes=await this.read('auth.json');return bytes?JSON.parse(bytes):null;}
   saveAuth(record,previous) {
@@ -13,6 +15,15 @@ export class LocalStore {
       await this.write('auth.json',JSON.stringify(record));
     });
     this.authWrites=update.catch(()=>{});return update;
+  }
+  async analyticsExclusions(){const bytes=await this.read('analytics-exclusions.json');return bytes?{...JSON.parse(bytes),etag:createHash('sha256').update(bytes).digest('hex')}:null;}
+  saveAnalyticsExclusions(record,previous){
+    const update=this.analyticsWrites.then(async()=>{
+      const current=await this.analyticsExclusions();
+      if((current?.etag||null)!==previous.etag)throw new Error('analytics_changed');
+      await this.write('analytics-exclusions.json',JSON.stringify(record));
+    });
+    this.analyticsWrites=update.catch(()=>{});return update;
   }
   async read(path) {try{return await readFile(resolve(this.directory,path));}catch(error){if(error.code==='ENOENT')return null;throw error;}}
   async write(path,value) {

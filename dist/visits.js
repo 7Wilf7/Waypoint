@@ -2,6 +2,7 @@ import {inject,pageview} from './analytics-client.js';
 import {analyticsEnabled} from './analytics-config.js';
 import {visitPreference,visitSource,visitPage,visitPath,visitAllowed} from './visit-policy.js';
 import {ownerDevicePreference,ownerDeviceChanged,ownerDeviceState,rememberOwnerDevice} from './owner-device.js';
+import {visitBrowserForReport,syncOwnerVisitHistory} from './visit-browser.js';
 
 export function createVisitTracker({session,refreshSession}={}) {
   let owner=true,ready=false,injected=false,lastPage=null,preference=false,checking=false,checkingPage=null,sessionTicket=0,source=visitSource(new URL(location.href),document.referrer,navigator.userAgent);
@@ -12,20 +13,21 @@ export function createVisitTracker({session,refreshSession}={}) {
   const keyFor=next=>next==='reading'?next+location.hash:next;
   const send=()=>{
     const next=page(),key=keyFor(next);if(!allowed()||document.visibilityState==='hidden'||!next||key===lastPage)return;
+    const browser=visitBrowserForReport();if(!browser)return;
     if(!injected){
       inject({mode:'production',disableAutoTrack:true,beforeSend:event=>{
         if(!allowed()||event.type!=='pageview')return null;
-        const url=new URL(event.url);if(url.origin!==location.origin||!/^\/visits\/(direct|moments|wechat|other)\/(home|races|reading|about|making|writing|trails)$/.test(url.pathname))return null;
+        const url=new URL(event.url);if(url.origin!==location.origin||!/^\/visits\/v2\/[a-f0-9]{32}\/(direct|moments|wechat|other)\/(home|races|reading|about|making|writing|trails)$/.test(url.pathname))return null;
         return {type:'pageview',url:url.origin+url.pathname};
       }});injected=true;
     }
-    lastPage=key;const path=visitPath(source,next);pageview({path,route:path});
+    lastPage=key;const route=visitPath(source,next),path='/visits/v2/'+browser+'/'+source+'/'+next;pageview({path,route});
   };
   // Share the initial owner-link read. On returning from another tab, refresh
   // identity before sending: a login there must also exclude this open page.
   function confirmSession(read) {
     const current=++sessionTicket;owner=true;ready=false;checking=true;checkingPage=keyFor(page());
-    Promise.resolve().then(read).then(value=>{if(current!==sessionTicket)return;owner=value?.owner!==false;if(value?.owner===true)rememberOwnerDevice();ready=true;send();}).catch(()=>{}).finally(()=>{if(current===sessionTicket)checking=false;});
+    Promise.resolve().then(read).then(value=>{if(current!==sessionTicket)return;owner=value?.owner!==false;if(value?.owner===true){rememberOwnerDevice();void syncOwnerVisitHistory().catch(()=>{});}ready=true;send();}).catch(()=>{}).finally(()=>{if(current===sessionTicket)checking=false;});
   }
   function resume() {
     if(document.visibilityState==='hidden'||checking||!eligible())return;

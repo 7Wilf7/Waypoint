@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {readAnalyticsExclusions,VISIT_BROWSER,MAX_EXCLUDED_BROWSERS} from './analytics-exclusions.js';
 
 const API='https://api.vercel.com/v1/query/web-analytics/visits/';
 const DAY=86400000,HOUR=3600000,OFFSET=8*HOUR;
@@ -46,13 +47,19 @@ function sumBy(rows,key) {
   return [...totals].map(([key,pageviews])=>({key,pageviews})).sort((a,b)=>b.pageviews-a.pageviews||a.key.localeCompare(b.key));
 }
 function routeParts(row) {
-  const match=/^\/visits\/(direct|moments|wechat|other)\/(home|races|reading|about|making|writing|trails)$/.exec(row.requestPath||'');
+  const match=/^\/visits\/(direct|moments|wechat|other)\/(home|races|reading|about|making|writing|trails)$/.exec(row.route||'');
   return match?{source:match[1],page:match[2]}:{source:'other',page:'other'};
 }
-export async function fetchAnalytics(env,days,{fetchFn=fetch,now=Date.now()}={}) {
+export function analyticsFilter(excluded=[]){
+  if(!Array.isArray(excluded)||excluded.length>MAX_EXCLUDED_BROWSERS||excluded.some(id=>!VISIT_BROWSER.test(id)))throw failure();
+  const owner=[...new Set(excluded)].sort().map(id=>"startswith(requestPath, '/visits/v2/"+id+"/')");
+  const filter="environment eq 'production' and startswith(requestPath, '/visits/v2/')"+(owner.length?' and not ('+owner.join(' or ')+')':'');
+  if(filter.length>2048)throw failure();return filter;
+}
+export async function fetchAnalytics(env,days,{fetchFn=fetch,now=Date.now(),excluded=[]}={}) {
   if(![7,30].includes(days))throw new Error('invalid_range');
   const config=settings(env),today=Math.floor((now+OFFSET)/DAY)*DAY-OFFSET,start=today-(days-1)*DAY;
-  const common={filter:"environment eq 'production'",limit:100};
+  const common={filter:analyticsFilter(excluded),limit:100};
   const range={...common,since:new Date(start).toISOString(),until:new Date(now).toISOString()};
   // The API's maximum limit is 100. Four-day chunks contain at most 97 hourly
   // buckets, including inclusive endpoints; never silently fold time into Others.
@@ -62,7 +69,7 @@ export async function fetchAnalytics(env,days,{fetchFn=fetch,now=Date.now()}={})
     Promise.all(chunks.map(chunk=>query(config,{...common,by:'hour',since:new Date(chunk.since).toISOString(),until:new Date(chunk.until).toISOString()},fetchFn))),
     query(config,{...common,by:'environment',since:new Date(today).toISOString(),until:range.until},fetchFn),
     query(config,{filter:common.filter},fetchFn,'count'),
-    ...['requestPath','deviceType','country','browserName'].map(by=>query(config,{...range,by},fetchFn))
+    ...['route','deviceType','country','browserName'].map(by=>query(config,{...range,by},fetchFn))
   ]);
   const [trends,todayResult,totalResult,paths,devices,countries,browsers]=results;
   const daily=Array.from({length:days},(_,i)=>({date:localDate(start+i*DAY),pageviews:0})),byDate=new Map(daily.map(row=>[row.date,row]));
@@ -88,12 +95,15 @@ export async function fetchAnalytics(env,days,{fetchFn=fetch,now=Date.now()}={})
       browsers:sumBy(rows(browsers),row=>typeof row.browserName==='string'&&/^[a-zA-Z0-9 .()-]{1,48}$/.test(row.browserName)?row.browserName:'Other')
     }};
 }
-export async function getAnalytics(env,days) {
+export async function getAnalytics(env,days,store) {
   const config=settings(env),now=Date.now();
-  const key=config.project+':'+(config.team||'')+':'+createHash('sha256').update(config.token).digest('hex')+':'+days+':'+localDate(now);
+  // Read the authority before cache lookup: a login in another Function must
+  // invalidate every report, including its chart, visitor estimate and totals.
+  const exclusions=await readAnalyticsExclusions(store);
+  const key=config.project+':'+(config.team||'')+':'+createHash('sha256').update(config.token).digest('hex')+':'+days+':'+localDate(now)+':'+exclusions.etag;
   const current=cache.get(key);
   if(current&&current.expires>now)return current.promise;
-  const entry={expires:now+60000,promise:fetchAnalytics(env,days)};cache.set(key,entry);
+  const entry={expires:now+60000,promise:fetchAnalytics(env,days,{excluded:exclusions.browsers})};cache.set(key,entry);
   if(cache.size>8)cache.delete(cache.keys().next().value);
   try{return await entry.promise;}catch(error){if(cache.get(key)===entry)cache.delete(key);throw error;}
 }

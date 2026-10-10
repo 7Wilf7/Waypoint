@@ -1,11 +1,13 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {fetchAnalytics} from '../server/analytics.js';
+import {fetchAnalytics,analyticsFilter} from '../server/analytics.js';
+import {excludeAnalyticsBrowsers} from '../server/analytics-exclusions.js';
 import {handle} from '../server/api.js';
 import {sessionCookie,hashPassword} from '../server/auth.js';
 import {visitSource,visitPage,visitAllowed} from '../dist/visit-policy.js';
 import {build} from 'esbuild';
 import {runInNewContext} from 'node:vm';
+import {webcrypto} from 'node:crypto';
 
 const now=Date.parse('2026-10-10T02:00:00Z');
 const settings={WAYPOINT_ANALYTICS_TOKEN:'fake-test-token',WAYPOINT_ANALYTICS_PROJECT_ID:'prj_fixture',WAYPOINT_ANALYTICS_TEAM_ID:'team_fixture'};
@@ -17,7 +19,7 @@ function provider(calls=[],override=()=>null){return async(url,options)=>{
   if(url.pathname.endsWith('/count'))data={pageviews:42,visitors:18};
   else if(by==='hour')data=samples.filter(row=>Date.parse(row.timestamp)>=since&&Date.parse(row.timestamp)<=until);
   else if(by==='environment')data=[{environment:'production',pageviews:7,visitors:5}];
-  else if(by==='requestPath')data=[{requestPath:'/visits/moments/home',pageviews:4},{requestPath:'/visits/wechat/reading',pageviews:5,visitorId:'NEVER-RETURN-THIS'}];
+  else if(by==='route')data=[{route:'/visits/moments/home',pageviews:4},{route:'/visits/wechat/reading',pageviews:5,visitorId:'NEVER-RETURN-THIS'}];
   else if(by==='deviceType')data=[{deviceType:'mobile',pageviews:8},{deviceType:'desktop',pageviews:1}];
   else if(by==='country')data=[{country:'CN',pageviews:8},{country:'US',pageviews:1}];
   else if(by==='browserName')data=[{browserName:'WeChat',pageviews:8},{browserName:'Safari',pageviews:1}];
@@ -77,7 +79,7 @@ test('a cached report never bypasses revoked owner authentication or reads from 
   globalThis.fetch=async url=>{calls++;return Response.json({data:new URL(url).pathname.endsWith('/count')?{pageviews:0}:[]});};
   try {
     const env={...settings,WAYPOINT_ANALYTICS_TOKEN:'cache-test-token',WAYPOINT_SESSION_SECRET:'cache-owner-secret'};
-    const store={auth:async()=>record,entries:async()=>{throw new Error('analytics_must_not_scan_content');}};
+    const store={auth:async()=>record,analyticsExclusions:async()=>null,entries:async()=>{throw new Error('analytics_must_not_scan_content');}};
     const cookie=sessionCookie(new Request('https://waypoint.test'),env).split(';')[0];
     const call=(query='days=7')=>handle(new Request('https://waypoint.test/api/manage/analytics?'+query,{headers:{cookie}}),store,env);
     assert.equal((await call('days=7&path=manage%2Fanalytics')).status,200);const reads=calls;assert.ok(reads>0);
@@ -87,27 +89,124 @@ test('a cached report never bypasses revoked owner authentication or reads from 
   }finally{globalThis.fetch=originalFetch;}
 });
 
-async function trackerHarness({owner=false,dnt,gpc=false,enabled=true,hidden=false,fail=false,refreshSession,saved=new Map()}={}) {
-  const bundle=await build({entryPoints:[new URL('../dist/visits.js',import.meta.url).pathname],bundle:true,write:false,format:'iife',globalName:'trackerModule',plugins:[{name:'isolated-analytics',setup(build){
-    build.onResolve({filter:/analytics-(?:config|client)\.js$/},args=>({path:args.path,namespace:'analytics-fixture'}));
+async function trackerHarness({owner=false,dnt,gpc=false,enabled=true,hidden=false,fail=false,syncError=false,refreshSession,saved=new Map()}={}) {
+  const bundle=await build({stdin:{contents:"export {createVisitTracker} from './dist/visits.js'; export {rotateVisitBrowser} from './dist/visit-browser.js';",resolveDir:new URL('../',import.meta.url).pathname},bundle:true,write:false,format:'iife',globalName:'trackerModule',plugins:[{name:'isolated-analytics',setup(build){
+    build.onResolve({filter:/(?:analytics-(?:config|client)|loading)\.js$/},args=>({path:args.path,namespace:'analytics-fixture'}));
     build.onLoad({filter:/analytics-config\.js$/,namespace:'analytics-fixture'},()=>({contents:'export const analyticsEnabled='+enabled+';',loader:'js'}));
     build.onLoad({filter:/analytics-client\.js$/,namespace:'analytics-fixture'},()=>({contents:'export function inject(options){capture.injected.push(options)};export function pageview(options){capture.views.push(options)}',loader:'js'}));
+    build.onLoad({filter:/loading\.js$/,namespace:'analytics-fixture'},()=>({contents:'export async function requestJSON(url,options){const body=JSON.parse(options.body);capture.posts.push({url,body});if(capture.syncError)throw new Error("analytics_unavailable");return {excluded:true,browsers:body.browsers};}',loader:'js'}));
   }}]});
   const document=new EventTarget(),window=new EventTarget(),reader={open:false,dataset:{analytics:'pending'}},location=new URL('https://site.test/?from=moments&token=secret');
   document.visibilityState=hidden?'hidden':'visible';document.referrer='';document.querySelector=()=>reader;
-  const capture={injected:[],views:[]};
-  const context={capture,document,window,location,navigator:{userAgent:'Chrome',doNotTrack:dnt,globalPrivacyControl:gpc},URL,Event,localStorage:{getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value),removeItem:key=>saved.delete(key)}};
+  const capture={injected:[],views:[],posts:[],syncError};
+  const context={capture,document,window,location,crypto:webcrypto,navigator:{userAgent:'Chrome',doNotTrack:dnt,globalPrivacyControl:gpc},URL,Event,localStorage:{get length(){return saved.size;},key:index=>[...saved.keys()][index]??null,getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value),removeItem:key=>saved.delete(key)}};
   runInNewContext(bundle.outputFiles[0].text,context);
   const tracker=context.trackerModule.createVisitTracker({session:fail?Promise.reject(new Error('offline')):Promise.resolve({owner}),refreshSession});await new Promise(resolve=>setImmediate(resolve));
-  return {capture,document,window,location,tracker,reader,saved};
+  return {capture,document,window,location,tracker,reader,saved,rotateVisitBrowser:context.trackerModule.rotateVisitBrowser};
 }
 test('tracker honors privacy/owner/hidden/failure states before loading the provider SDK',async()=>{
-  for(const options of [{owner:true},{dnt:'1'},{gpc:true},{enabled:false},{hidden:true},{fail:true}])assert.equal((await trackerHarness(options)).capture.injected.length,0);
+  for(const options of [{owner:true},{dnt:'1'},{gpc:true},{enabled:false},{hidden:true},{fail:true}]){
+    const h=await trackerHarness(options);assert.equal(h.capture.injected.length,0);assert.equal(h.saved.has('waypoint-visit-browser'),false);
+  }
+});
+
+function exclusionStore(){
+  let record=null,version=0,writes=0;
+  return {auth:async()=>null,analyticsExclusions:async()=>record?structuredClone(record):null,
+    async saveAnalyticsExclusions(next,previous){
+      await new Promise(resolve=>setImmediate(resolve));
+      if((record?.etag||null)!==previous.etag)throw new Error('analytics_changed');
+      record={...structuredClone(next),etag:String(++version)};writes++;
+    },writes:()=>writes};
+}
+test('owner exclusion registration requires owner authentication and same-origin, never a client identity header',async()=>{
+  const store=exclusionStore(),env={WAYPOINT_SESSION_SECRET:'exclusion-test-secret'},id='a'.repeat(32);
+  const cookie=sessionCookie(new Request('https://waypoint.test'),env).split(';')[0];
+  const call=(headers,body={browsers:[id]})=>handle(new Request('https://waypoint.test/api/manage/analytics/browser',{method:'POST',headers,body:JSON.stringify(body)}),store,env);
+  for(const headers of [{origin:'https://waypoint.test'},{origin:'https://waypoint.test','oai-authenticated-user-id':'owner'},{cookie,origin:'https://evil.test'},{cookie,origin:'https://waypoint.test','sec-fetch-site':'cross-site'}])assert.equal((await call(headers)).status,403);
+  assert.equal(store.writes(),0);
+  for(const body of [{browsers:[]},{browsers:['secret/path']},{browsers:[null]},{browsers:[id],remove:true}])assert.equal((await call({cookie,origin:'https://waypoint.test'},body)).status,400);
+  const response=await call({cookie,origin:'https://waypoint.test'});assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');assert.deepEqual(await response.json(),{excluded:true,browsers:[id]});
+});
+test('concurrent owner registrations preserve all IDs, repeat registrations are read-only and capacity is bounded',async()=>{
+  const store=exclusionStore(),a='a'.repeat(32),b='b'.repeat(32);
+  await Promise.all([excludeAnalyticsBrowsers(store,[a]),excludeAnalyticsBrowsers(store,[b])]);
+  assert.deepEqual((await store.analyticsExclusions()).browsers,[a,b]);
+  const more=Array.from({length:24},(_,i)=>i.toString(16).padStart(32,'0'));await excludeAnalyticsBrowsers(store,more);
+  const full=await store.analyticsExclusions();assert.equal(full.browsers.length,26);assert.ok(analyticsFilter(full.browsers).length<=2048);
+  const writes=store.writes();await excludeAnalyticsBrowsers(store,[a]);assert.equal(store.writes(),writes);
+  await assert.rejects(excludeAnalyticsBrowsers(store,['c'.repeat(32)]),/analytics_exclusion_limit/);assert.deepEqual(await store.analyticsExclusions(),full);
+});
+test('all metrics filter owners and legacy paths before aggregation, using low-cardinality routes',async()=>{
+  const a='a'.repeat(32),b='b'.repeat(32),calls=[];
+  const events=[{path:'/visits/moments/home',id:'legacy',source:'moments',page:'home',time:now-1000},
+    {path:'/visits/v2/'+a+'/moments/home',id:a,source:'moments',page:'home',time:now-1000},
+    {path:'/visits/v2/'+a+'/moments/reading',id:a,source:'moments',page:'reading',time:now-1000},
+    {path:'/visits/v2/'+b+'/wechat/home',id:b,source:'wechat',page:'home',time:now-1000}];
+  const fetchFn=async url=>{
+    const q=new URL(url).searchParams,filter=q.get('filter');calls.push(q);
+    const excluded=[...filter.matchAll(/startswith\(requestPath, '\/visits\/v2\/([a-f0-9]{32})\/'\)/g)].map(match=>match[1]);
+    let selected=events.filter(event=>event.path.startsWith('/visits/v2/')&&!excluded.includes(event.id));
+    if(q.has('since'))selected=selected.filter(event=>event.time>=Date.parse(q.get('since'))&&event.time<=Date.parse(q.get('until')));
+    const count={pageviews:selected.length,visitors:new Set(selected.map(event=>event.id)).size};
+    if(new URL(url).pathname.endsWith('/count'))return Response.json({data:count});
+    const by=q.get('by');if(by==='environment')return Response.json({data:selected.length?[{environment:'production',...count}]:[]});
+    const groups=new Map();
+    for(const event of selected){
+      const key=by==='hour'?new Date(Math.floor(event.time/3600000)*3600000).toISOString():by==='route'?'/visits/'+event.source+'/'+event.page:by==='deviceType'?'mobile':by==='country'?'CN':'WeChat';
+      groups.set(key,(groups.get(key)||0)+1);
+    }
+    return Response.json({data:[...groups].map(([key,pageviews])=>({[by==='hour'?'timestamp':by]:key,pageviews}))});
+  };
+  const before=await fetchAnalytics(settings,7,{fetchFn,now});assert.equal(before.summary.totalViews,3);assert.equal(before.summary.todayVisitors,2);
+  const after=await fetchAnalytics(settings,7,{fetchFn,now,excluded:[a]});assert.deepEqual(after.summary,{todayViews:1,todayVisitors:1,periodViews:1,totalViews:1});
+  for(const rows of Object.values(after.breakdowns))assert.equal(rows.reduce((sum,row)=>sum+row.pageviews,0),1);
+  assert.deepEqual(after.breakdowns.sources,[{key:'wechat',pageviews:1}]);assert.deepEqual(after.breakdowns.pages,[{key:'home',pageviews:1}]);
+  assert.ok(calls.every(q=>q.get('filter').includes("startswith(requestPath, '/visits/v2/')")));assert.ok(!calls.some(q=>q.get('by')==='requestPath'));
+  events.push({...events[1],time:now-500});assert.equal((await fetchAnalytics(settings,7,{fetchFn,now,excluded:[a]})).summary.totalViews,1);
+  assert.doesNotMatch(JSON.stringify(after),new RegExp(a+'|'+b+'|legacy'));
+});
+test('fresh exclusion ETag invalidates reports across cached instances and authority failure never exposes unfiltered totals',async()=>{
+  const store=exclusionStore(),env={...settings,WAYPOINT_ANALYTICS_TOKEN:'etag-test-token',WAYPOINT_SESSION_SECRET:'etag-owner-secret'};
+  const cookie=sessionCookie(new Request('https://waypoint.test'),env).split(';')[0],originalFetch=globalThis.fetch,filters=[];
+  globalThis.fetch=async url=>{filters.push(new URL(url).searchParams.get('filter'));return Response.json({data:new URL(url).pathname.endsWith('/count')?{pageviews:0}:[]});};
+  const call=()=>handle(new Request('https://waypoint.test/api/manage/analytics?days=7',{headers:{cookie}}),store,env);
+  try{
+    assert.equal((await call()).status,200);const count=filters.length;assert.equal((await call()).status,200);assert.equal(filters.length,count);
+    const id='d'.repeat(32);await excludeAnalyticsBrowsers(store,[id]);assert.equal((await call()).status,200);assert.ok(filters.length>count);assert.ok(filters.slice(count).every(filter=>filter.includes(id)));
+    store.analyticsExclusions=async()=>{throw new Error('private-store-error');};const reads=filters.length;assert.equal((await call()).status,503);assert.equal(filters.length,reads);
+  }finally{globalThis.fetch=originalFetch;}
+});
+test('anonymous browser history is registered after login, failures stay pending and retry excludes all raced IDs',async()=>{
+  const h=await trackerHarness(),first=h.saved.get('waypoint-visit-browser');assert.equal(h.saved.get('waypoint-visit-pending:'+first),'1');
+  // Simulate a second tab replacing the current marker while the first report
+  // remains in flight. Each actually used marker retains its own pending key.
+  h.saved.delete('waypoint-visit-browser');const second=await trackerHarness({saved:h.saved});const next=second.saved.get('waypoint-visit-browser');assert.notEqual(first,next);
+  const failed=await trackerHarness({owner:true,saved:h.saved,syncError:true});assert.equal(failed.capture.posts.length,1);assert.equal(h.saved.get('waypoint-visit-pending:'+first),'1');assert.equal(h.saved.get('waypoint-visit-pending:'+next),'1');
+  const retry=await trackerHarness({owner:true,saved:h.saved});assert.deepEqual([...retry.capture.posts[0].body.browsers],[first,next].sort());
+  assert.equal(h.saved.has('waypoint-visit-pending:'+first),false);assert.equal(h.saved.has('waypoint-visit-pending:'+next),false);
+  const reopen=await trackerHarness({saved:h.saved});assert.equal(reopen.capture.views.length,0);
+});
+test('owner history sync and manual rotation never create collection IDs while privacy is disabled',async()=>{
+  for(const privacy of [{dnt:'1'},{gpc:true},{optOut:true}]){
+    const old='e'.repeat(32),saved=new Map([['waypoint-owner-device','0'],['waypoint-visit-browser',old],['waypoint-visit-pending:'+old,'1']]);
+    if(privacy.optOut)saved.set('waypoint-analytics-opt-out','1');
+    const owner=await trackerHarness({owner:true,saved,...privacy});
+    assert.deepEqual([...owner.capture.posts[0].body.browsers],[old]);
+    assert.equal(saved.has('waypoint-visit-pending:'+old),false);assert.equal(saved.get('waypoint-visit-excluded'),old);
+    assert.equal(saved.has('waypoint-visit-browser'),false);assert.equal(owner.capture.injected.length,0);assert.equal(owner.capture.views.length,0);
+    const paused=await trackerHarness({saved,...privacy});assert.equal(saved.has('waypoint-visit-browser'),false);assert.equal(paused.capture.views.length,0);
+    saved.set('waypoint-visit-browser',old);paused.rotateVisitBrowser();assert.equal(saved.has('waypoint-visit-browser'),false);
+    const stillPaused=await trackerHarness({saved,...privacy});assert.equal(saved.has('waypoint-visit-browser'),false);assert.equal(stillPaused.capture.injected.length,0);
+    saved.delete('waypoint-analytics-opt-out');const allowed=await trackerHarness({saved});
+    assert.equal(allowed.capture.views.length,1);assert.match(saved.get('waypoint-visit-browser'),/^[a-f0-9]{32}$/);assert.notEqual(saved.get('waypoint-visit-browser'),old);
+  }
 });
 test('tracker avoids duplicate routes, counts distinct completed readings and strips sensitive URLs',async()=>{
-  const h=await trackerHarness();assert.equal(h.capture.views.length,1);assert.equal(h.capture.views[0].path,'/visits/moments/home');
+  const h=await trackerHarness();assert.equal(h.capture.views.length,1);assert.match(h.capture.views[0].path,/^\/visits\/v2\/[a-f0-9]{32}\/moments\/home$/);assert.equal(h.capture.views[0].route,'/visits/moments/home');
   const middleware=h.capture.injected[0].beforeSend;assert.equal(h.capture.injected[0].disableAutoTrack,true);
-  assert.equal(middleware({type:'pageview',url:'https://site.test/visits/moments/home?token=secret#private'}).url,'https://site.test/visits/moments/home');
+  const reported='https://site.test'+h.capture.views[0].path;
+  assert.equal(middleware({type:'pageview',url:reported+'?token=secret#private'}).url,reported);
   assert.equal(middleware({type:'pageview',url:'https://site.test/manage'}),null);
   assert.equal(middleware({type:'event',url:'https://site.test/visits/moments/home'}),null);
   h.tracker.send();assert.equal(h.capture.views.length,1);
