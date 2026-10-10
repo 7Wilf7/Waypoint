@@ -28,7 +28,7 @@ Open `http://127.0.0.1:4173`. The same owner-password login is used in local dev
 
 For same-network phone review, run `WAYPOINT_HOST=0.0.0.0 npm run dev` and open the computer's LAN address on the phone. The default server binds only to `127.0.0.1`. See [current experience acceptance](docs/EXPERIENCE-ACCEPTANCE.md) for review steps and verified boundaries. Production follows the latest successful Vercel deployment from `main`; verify the live page and its assets after each push.
 
-The owner dashboard also includes anonymous visit analytics and a Moments-tagged sharing link. Collection is disabled in local/Preview builds and until Production reporting is configured. See [visitor analytics](docs/VISITOR-ANALYTICS.md) for setup, counting rules, privacy controls, and the current verification boundary.
+The owner dashboard also includes visit analytics and a Moments-tagged sharing link. A random, persistent, site-scoped browser marker lets owner sign-in retroactively exclude linkable history from the dashboard and stop future reporting. The switch exists only in management; each browser, including WeChat, has separate storage. Dashboard totals start fresh with the marked-path version; earlier anonymous provider records are retained outside this dashboard. Collection is disabled in local/Preview builds and until Production reporting is configured. See [visitor analytics](docs/VISITOR-ANALYTICS.md) for setup, counting rules, privacy controls, and the current verification boundary.
 
 ## Files
 
@@ -59,8 +59,9 @@ The owner dashboard also includes anonymous visit analytics and a Moments-tagged
 - `dist/index.html`, `race-archive.js`, and `race-utils.js`: a shared visitor shell, full race archive, category filters, recorded results, and representative selection. `races.html` remains a compatibility fallback.
 - `dist/app-preview.js`, `preview-controller.js`, and `preview-screens.js`: prepared image loading, interrupted selection handling, and interactive App screen navigation.
 - `dist/manage.html`, `manage.js`, and `manage.css`: themed owner editing, separate race/article workspaces, category filters, and three race image slots.
-- `dist/manage-analytics.js`, `analytics-copy.js`, and `server/analytics.js`: owner-only Vercel Web Analytics reports, Guangzhou daily boundaries, and a tagged Moments sharing link.
-- `dist/visits.js`, `visit-policy.js`, `visitor-session.js`, and `privacy.js`: bounded anonymous page reporting, a shared owner-session read, and bilingual footer privacy preferences.
+- `dist/manage-analytics.js`, `analytics-copy.js`, and `server/analytics.js`: owner-only Vercel Web Analytics reports, historical browser exclusions, Guangzhou daily boundaries, and a tagged Moments sharing link.
+- `dist/visits.js`, `visit-policy.js`, `visit-browser.js`, `owner-device.js`, and `visitor-session.js`: bounded page reporting, random browser markers, acknowledged owner-history exclusion, a browser preference and a shared owner-session read. Markers never grant owner access.
+- `dist/privacy.js` and `privacy-copy.js`: bilingual footer privacy disclosure, including persistent browser markers, and independent visitor opt-out preferences.
 - `server/`: signed owner sessions, content validation, private Blob storage, and local development storage.
 - `api/index.js`: Vercel Node.js function entry point.
 - `vercel.json`: public frontend routing and API/media rewrites.

@@ -68,7 +68,7 @@
         <div class="analytics-owner-device">
           <label><input type="checkbox" data-analytics-owner-device aria-describedby="owner-device-status owner-device-help" /><span data-analytics-copy="ownerDeviceLabel">不统计我的访问</span></label>
           <p id="owner-device-status" role="status" aria-live="polite" aria-atomic="true"></p>
-          <p id="owner-device-help" data-analytics-copy="ownerDeviceHelp">电脑、手机和微信内置浏览器需要分别标记。清除网站数据后需重新设置；已有统计不会被删除。</p>
+          <p id="owner-device-help" data-analytics-copy="ownerDeviceHelp">标记的是本浏览器。电脑、手机和微信内置浏览器各自登录一次，便会排除新版可关联历史及后续访问。清除网站数据会丢失关联；服务商原始记录保留。</p>
         </div>
         <p class="analytics-status" role="status" aria-live="polite" aria-atomic="true"></p>
         <progress class="manage-progress analytics-progress" hidden></progress>
@@ -79,7 +79,7 @@
           <p class="analytics-copy-status" role="status" aria-live="polite" aria-atomic="true"></p>
           <label class="analytics-manual-copy" hidden><span data-analytics-copy="manualCopy">长按或选中后复制这个链接</span><input type="url" readonly autocomplete="off" aria-label="朋友圈分享链接" data-analytics-aria="linkLabel" /></label>
         </div>
-        <p class="analytics-note" data-analytics-copy="note">按广州时间每日零点统计。浏览量包含页面打开、站内切换和阅读，累计值从启用统计时开始。访问可能漏报；估算访客数不代表微信身份。</p>
+        <p class="analytics-note" data-analytics-copy="note">按广州时间每日零点统计。新版从零累计，只统计带浏览器标记且未被排除的访问；旧匿名汇总无法关联，不纳入本面板。浏览量包含打开、切换和阅读，可能漏报。估算访客数不代表微信身份。</p>
       </section>
       <div class="manage-workspace" hidden>
         <aside class="manage-sidebar">

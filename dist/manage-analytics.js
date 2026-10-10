@@ -1,4 +1,5 @@
 import {analyticsCopy} from './analytics-copy.js';
+import {syncOwnerVisitHistory,rotateVisitBrowser} from './visit-browser.js';
 import {ownerDevicePreference,ownerDeviceChanged,ownerDeviceState,rememberOwnerDevice,setOwnerDevice} from './owner-device.js';
 
 const format=(template,values)=>template.replace(/\{(\w+)\}/g,(_,key)=>values[key]??'');
@@ -21,7 +22,8 @@ export function createAnalyticsPanel({api,onUnauthorized}){
   const refreshButton=panel.querySelector('[data-analytics-refresh]'),copyButton=panel.querySelector('[data-analytics-copy-link]');
   const copyStatus=panel.querySelector('.analytics-copy-status'),manualCopy=panel.querySelector('.analytics-manual-copy'),linkInput=manualCopy.querySelector('input');
   const deviceChoice=panel.querySelector('[data-analytics-owner-device]'),deviceStatus=panel.querySelector('#owner-device-status');
-  let owner=false,days=7,report=null,state='idle',ticket=0,copyTicket=0,copyState='';
+  let owner=false,days=7,report=null,state='idle',historyState='idle',ticket=0,copyTicket=0,copyState='';
+  const pending=()=>state==='syncing'||state==='loading';
   const language=()=>root.dataset.language==='en'?'en':'zh';
   const words=()=>analyticsCopy[language()];
   const locale=()=>language()==='en'?'en-US':'zh-CN';
@@ -30,20 +32,26 @@ export function createAnalyticsPanel({api,onUnauthorized}){
   const fullDate=value=>new Intl.DateTimeFormat(locale(),{timeZone:'Asia/Shanghai',year:'numeric',month:'short',day:'numeric'}).format(new Date(value+'T00:00:00+08:00'));
 
   function renderOwnerDevice(){
-    const state=ownerDeviceState();deviceChoice.checked=state.excluded;deviceChoice.disabled=!owner;
-    deviceStatus.textContent=words()[!state.saved?'ownerDeviceUnsaved':state.excluded?'ownerDeviceExcluded':'ownerDeviceIncluded'];
+    const preference=ownerDeviceState();deviceChoice.checked=preference.excluded;deviceChoice.disabled=!owner||pending();
+    if(!owner){deviceStatus.textContent='';return;}
+    const key=historyState==='syncing'?'ownerBrowserSyncing':historyState==='limit'?'ownerBrowserLimit':historyState==='failed'?'ownerBrowserSyncFailed':
+      historyState==='rotationFailed'?'ownerBrowserUpdateFailed':!preference.saved?'ownerDeviceUnsaved':
+      historyState!=='ready'?'ownerBrowserPending':preference.excluded?'ownerDeviceExcluded':'ownerDeviceIncluded';
+    deviceStatus.textContent=words()[key];
   }
 
   function renderStatus(){
-    const w=words();status.replaceChildren();progress.hidden=state!=='loading';progress.setAttribute('aria-label',w.loading);
-    refreshButton.disabled=!owner||state==='loading';refreshButton.textContent=['notConfigured','unavailable'].includes(state)?w.retry:w.refresh;
-    refreshButton.setAttribute('aria-busy',String(state==='loading'));content.setAttribute('aria-busy',String(state==='loading'));
-    if(state==='loading')status.textContent=w.loading;
+    const w=words(),busy=pending(),errors=['notConfigured','unavailable','syncFailed','exclusionLimit','browserUpdateFailed'];
+    status.replaceChildren();progress.hidden=!busy;progress.setAttribute('aria-label',state==='syncing'?w.syncing:w.loading);
+    refreshButton.disabled=!owner||busy;refreshButton.textContent=errors.includes(state)?w.retry:w.refresh;
+    refreshButton.setAttribute('aria-busy',String(busy));content.setAttribute('aria-busy',String(busy));
+    for(const button of panel.querySelectorAll('[data-analytics-days]'))button.disabled=!owner||busy;
+    if(busy)status.textContent=state==='syncing'?w.syncing:w.loading;
     else if(state==='ready'&&report)status.textContent=format(w.updated,{time:new Intl.DateTimeFormat(locale(),{timeZone:'Asia/Shanghai',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(report.updatedAt))});
-    else if(['notConfigured','unavailable'].includes(state)){
+    else if(errors.includes(state)){
       status.append(element('strong','analytics-error-title',w[state]),element('span','analytics-error-help',w[state+'Help']));
     }
-    status.classList.toggle('has-error',['notConfigured','unavailable'].includes(state));
+    status.classList.toggle('has-error',errors.includes(state));
   }
   function breakdownLabel(kind,key){
     const w=words();
@@ -110,33 +118,63 @@ export function createAnalyticsPanel({api,onUnauthorized}){
     for(const button of panel.querySelectorAll('[data-analytics-days]'))button.setAttribute('aria-pressed',String(Number(button.dataset.analyticsDays)===days));
     renderStatus();renderData();renderCopy();renderOwnerDevice();
   }
-  async function refresh(){
-    if(!owner)return;
-    const current=++ticket,requestedDays=days;if(report?.days!==requestedDays)report=null;state='loading';translate();
+  async function refresh({includeBrowser=false}={}){
+    if(!owner||pending())return false;
+    const current=++ticket,requestedDays=days,previousReport=report?.days===days?report:null;
+    let phase='sync',exclusionLimit=false;
+    report=null;state='syncing';historyState='syncing';translate();
     try{
-      const result=await api('manage/analytics?days='+requestedDays);
-      if(current!==ticket||!owner)return;
-      if(!validReport(result,requestedDays))throw new Error('analytics_unavailable');
-      report=result;state='ready';translate();
-    }catch(error){
-      if(current!==ticket||!owner)return;
-      if(error.message==='owner_required'||error.message==='auth_changed'){
-        setOwner(false);Promise.resolve(onUnauthorized?.()).catch(()=>{});return;
+      try{await syncOwnerVisitHistory();}
+      catch(error){
+        if(current!==ticket||!owner)return false;
+        if(error.message!=='analytics_exclusion_limit')throw error;
+        // The server still filters every previously registered marker. Read that
+        // report, but keep this browser's unregistered history visibly separate.
+        setOwnerDevice(true);historyState='limit';exclusionLimit=true;
       }
-      report=null;state=error.message==='analytics_not_configured'?'notConfigured':'unavailable';translate();
+      if(current!==ticket||!owner)return false;
+      if(!exclusionLimit)historyState='ready';
+      if(includeBrowser&&!exclusionLimit){
+        phase='rotate';rotateVisitBrowser();
+        if(!setOwnerDevice(false).saved){setOwnerDevice(true);throw new Error('storage_unavailable');}
+      }
+      phase='report';state='loading';translate();
+      const result=await api('manage/analytics?days='+requestedDays);
+      if(current!==ticket||!owner)return false;
+      if(!validReport(result,requestedDays))throw new Error('analytics_unavailable');
+      report=result;state=exclusionLimit?'exclusionLimit':'ready';translate();return !exclusionLimit;
+    }catch(error){
+      if(current!==ticket||!owner)return false;
+      if(error.message==='owner_required'||error.message==='auth_changed'){
+        setOwner(false);Promise.resolve(onUnauthorized?.()).catch(()=>{});return false;
+      }
+      report=null;
+      if(phase==='sync'){historyState='failed';state='syncFailed';report=previousReport;}
+      else if(phase==='rotate'){setOwnerDevice(true);historyState='rotationFailed';state='browserUpdateFailed';}
+      else state=error.message==='analytics_not_configured'?'notConfigured':'unavailable';
+      translate();return false;
     }
   }
   function setOwner(value,{load=true}={}){
-    if(value===true){rememberOwnerDevice();if(owner){renderOwnerDevice();return;}owner=true;panel.hidden=false;if(load)void refresh();else{state='unavailable';translate();}return;}
-    owner=false;++ticket;++copyTicket;report=null;state='idle';copyState='';panel.hidden=true;content.replaceChildren();linkInput.value='';translate();
+    if(value===true){rememberOwnerDevice();if(owner){renderOwnerDevice();return;}owner=true;panel.hidden=false;if(load)void refresh();else{state='unavailable';historyState='idle';translate();}return;}
+    owner=false;++ticket;++copyTicket;report=null;state='idle';historyState='idle';copyState='';panel.hidden=true;content.replaceChildren();linkInput.value='';translate();
   }
   for(const button of panel.querySelectorAll('[data-analytics-days]'))button.addEventListener('click',()=>{
-    const next=Number(button.dataset.analyticsDays);if(!owner||next===days)return;days=next;void refresh();
+    const next=Number(button.dataset.analyticsDays);if(!owner||pending()||next===days)return;days=next;void refresh();
   });
-  refreshButton.addEventListener('click',()=>{if(state!=='loading')void refresh();});
-  deviceChoice.addEventListener('change',()=>{if(owner)setOwnerDevice(deviceChoice.checked);});
+  refreshButton.addEventListener('click',()=>{if(!pending())void refresh();});
+  deviceChoice.addEventListener('change',()=>{
+    if(!owner||pending()){renderOwnerDevice();return;}
+    const includeBrowser=!deviceChoice.checked;
+    // Stop collection before either operation; resuming requires an acknowledged
+    // historical exclusion and a fresh marker, so old visits stay excluded.
+    setOwnerDevice(true);void refresh({includeBrowser});
+  });
   window.addEventListener(ownerDeviceChanged,renderOwnerDevice);
-  window.addEventListener('storage',event=>{if(event.key===ownerDevicePreference||event.key===null)renderOwnerDevice();});
+  window.addEventListener('storage',event=>{
+    if(event.key!==ownerDevicePreference&&event.key!==null)return;
+    if(owner&&!pending()){historyState='idle';void refresh();}else renderOwnerDevice();
+  });
   copyButton.addEventListener('click',async()=>{
     if(!owner||copyState==='copying')return;
     const current=++copyTicket,url=new URL('/',location.origin);url.searchParams.set('from','moments');linkInput.value=url.href;copyState='copying';renderCopy();
