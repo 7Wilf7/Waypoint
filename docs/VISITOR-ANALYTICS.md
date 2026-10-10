@@ -30,20 +30,22 @@ Vercel Hobby 当前包含每月 50,000 次团队共享事件、一个月明细�
 
 这些值不会输出到前端。构建只有在 `VERCEL_ENV=production` 且 token／项目 ID 均已配置时才开启前端采集；本地和 Preview 默认关闭。SDK 也不会因为仅打开管理页就注入。缺少配置或项目未启用时，管理页显示「尚未连接」。凭据失效、限流、查询错误或无法可靠还原时间序列时显示读取失败，不伪装成零访问。
 
+启用免费 Web Analytics 需要账号本人在控制台或交互终端确认；当前 CLI 的非交互模式会返回 `confirmation_required`。CLI OAuth 登录也不能创建查询令牌，实际调用返回 `403 Cannot create tokens for this app.`。应由账号本人在 [Access Tokens](https://vercel.com/account/settings/tokens) 创建仅限本项目的令牌，并保存到 Production 的 `WAYPOINT_ANALYTICS_TOKEN`，不要把令牌发到聊天、加入 Git 或替换为本机短期 CLI 凭据。
+
 每次报告最多 14 次官方查询。按小时分成不超过四天的片段，避免 API 的 100 行上限吞掉 30 天趋势；随后按广州日界汇总。其他维度取前 100 项，服务商的剩余项归入「其他」。不读取内容目录或保存访客明细。
 
 今日和期间 PV 统一来自小时趋势；今日 UV 来自独立的每日范围查询。服务商没有跨查询共同快照保证，迟到数据可能让这些估算短暂不同步，不因此把正常报告判成失败。
 
 部署沿用 [公开内容交付约定](PUBLIC-CONTENT.md)：重新核对当前主分支和生产配置，需要重新导出真实公开内容时先批准并暂停写入，不能把本地虚构数据或旧快照推上生产。
 
-## 当前验证边界
+## 发布前验证记录
 
-2026-10-10 的只读核对显示：现有团队为 Hobby，项目 Web Analytics 尚未启用。实现已在独立候选 worktree 完成；未改变线上设置、未配置正式查询凭据、未发布。
+2026-10-10，发布授权前的只读核对显示：现有团队为 Hobby，项目 Web Analytics 尚未启用。以下为独立候选 worktree 的发布前验证，不作为正式发布成功或线上已连接的证明；正式状态须以本次部署和现场查询证据为准。
 
 `npm run check` 覆盖 owner 权限、撤销会话后的缓存拒绝、日期边界、白名单路径、隐藏页面、关闭统计、DNT／GPC、计数错误和语言完整性。实际浏览器使用虚构数据验证桌面、320 像素窄屏、四主题、键盘明细、语言切换、加载失败、空数据、未连接、复制分享链接及退出时清除待返回数据。双标签复验确认：另一标签登录后，原公开页有效导航不再增加记录；退出后恢复匿名计数。
 
 官方 SDK 的实际上报被本地服务接收，已核对当前网址查询参数和阅读 ID 不进入负载。不同本地端口的外部来源复验中，浏览器默认来源策略仅传递来源 origin，SDK 的非空 referrer 保留该 origin；不能把这一样本推论为所有外部网站的 referrer 都会去除路径／查询。服务商可能处理来源页面，已经在页脚隐私说明中披露。
 
-本地证据保存在忽略的 `.local/verification/visitors/`。其中截图中的数字是虚构示例；不代表真实访客。成功的线上查询、自然访客数据、微信真机、Safari 和实体手机均未验证，须在获准启用和部署后完成相应检查。
+候选的本地证据保存在忽略的 `.local/verification/visitors/`，收尾时可归档到主 checkout 的 `verification/visitor-analytics-release/`。其中截图中的数字是虚构示例；不代表真实访客。发布前本地验证未覆盖成功的线上查询、自然访客数据、微信真机、Safari 和实体手机，不能据此宣称这些检查已通过。
 
 依据：[Vercel 查询 API](https://vercel.com/docs/analytics/web-analytics-api)、[API 分组与上限](https://vercel.com/docs/rest-api/web-analytics/aggregates-page-views)、[隐私](https://vercel.com/docs/analytics/privacy-policy)、[套餐与额度](https://vercel.com/docs/analytics/limits-and-pricing)、[微信网页授权](https://developers.weixin.qq.com/doc/service/guide/h5/auth)。
