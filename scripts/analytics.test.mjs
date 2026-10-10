@@ -59,8 +59,9 @@ test('owner authentication precedes analytics cache/config and client query para
   const call=(path,headers={})=>handle(new Request('https://waypoint.test'+path,{headers}),store,env);
   assert.equal((await call('/api/manage/analytics?days=7')).status,403);
   assert.equal((await call('/api/manage/analytics?days=7',{'oai-authenticated-user-id':'owner'})).status,403);
-  for(const path of ['?days=7&days=30','?days=1','?days=7&projectId=evil',''])assert.equal((await call('/api/manage/analytics'+path,{cookie})).status,400);
+  for(const path of ['?days=7&days=30','?days=1','?days=7&projectId=evil','?days=7&path=wrong','?days=7&path=manage%2Fanalytics&path=manage%2Fanalytics',''])assert.equal((await call('/api/manage/analytics'+path,{cookie})).status,400);
   const disconnected=await call('/api/manage/analytics?days=7',{cookie});assert.equal(disconnected.status,503);assert.deepEqual(await disconnected.json(),{error:'analytics_not_configured'});assert.equal(disconnected.headers.get('cache-control'),'no-store');
+  const rewritten=await call('/api/manage/analytics?days=7&path=manage%2Fanalytics',{cookie});assert.equal(rewritten.status,503);assert.deepEqual(await rewritten.json(),{error:'analytics_not_configured'});
 });
 test('source tags are allowlisted, private paths excluded and daily visitors are never identities',()=>{
   assert.equal(visitSource(new URL('https://site.test/?from=moments&email=private@example.test')),'moments');
@@ -78,8 +79,8 @@ test('a cached report never bypasses revoked owner authentication or reads from 
     const env={...settings,WAYPOINT_ANALYTICS_TOKEN:'cache-test-token',WAYPOINT_SESSION_SECRET:'cache-owner-secret'};
     const store={auth:async()=>record,entries:async()=>{throw new Error('analytics_must_not_scan_content');}};
     const cookie=sessionCookie(new Request('https://waypoint.test'),env).split(';')[0];
-    const call=()=>handle(new Request('https://waypoint.test/api/manage/analytics?days=7',{headers:{cookie}}),store,env);
-    assert.equal((await call()).status,200);const reads=calls;assert.ok(reads>0);
+    const call=(query='days=7')=>handle(new Request('https://waypoint.test/api/manage/analytics?'+query,{headers:{cookie}}),store,env);
+    assert.equal((await call('days=7&path=manage%2Fanalytics')).status,200);const reads=calls;assert.ok(reads>0);
     assert.equal((await call()).status,200);assert.equal(calls,reads);
     record={hash:hashPassword('changed-password'),version:'a'.repeat(32)};
     assert.equal((await call()).status,403);assert.equal(calls,reads);

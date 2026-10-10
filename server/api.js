@@ -78,8 +78,9 @@ export async function handle(request,store,env=process.env) {
   }
   if(path==='/api/manage/entries'&&request.method==='GET')return json({entries:await store.entries()});
   if(path==='/api/manage/analytics'&&request.method==='GET') {
-    const ranges=url.searchParams.getAll('days');
-    if(ranges.length!==1||!['7','30'].includes(ranges[0])||[...url.searchParams.keys()].some(key=>key!=='days'))return json({error:'invalid_range'},400);
+    const ranges=url.searchParams.getAll('days'),routePaths=url.searchParams.getAll('path');
+    // Vercel's /api/:path* rewrite forwards its capture as a query parameter.
+    if(ranges.length!==1||!['7','30'].includes(ranges[0])||routePaths.length>1||routePaths.some(value=>value!=='manage/analytics')||[...url.searchParams.keys()].some(key=>!['days','path'].includes(key)))return json({error:'invalid_range'},400);
     try{return json(await getAnalytics(env,Number(ranges[0])));}
     catch(error){return json({error:error.message==='analytics_not_configured'?'analytics_not_configured':'analytics_unavailable'},503);}
   }
