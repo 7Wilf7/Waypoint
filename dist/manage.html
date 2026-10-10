@@ -57,6 +57,25 @@
           </form>
         </details>
       </section>
+      <section class="manage-analytics" hidden aria-labelledby="analytics-title">
+        <div class="analytics-heading">
+          <div><p class="eyebrow" data-analytics-copy="eyebrow">站点统计</p><h2 id="analytics-title" data-analytics-copy="title">来访</h2><p class="analytics-intro" data-analytics-copy="intro">看看这段路，迎来了多少次相遇。</p></div>
+          <div class="analytics-controls">
+            <div class="analytics-range" role="group" aria-label="统计时间范围" data-analytics-aria="rangeLabel"><button type="button" data-analytics-days="7" aria-pressed="true" data-analytics-copy="days7">近 7 天</button><button type="button" data-analytics-days="30" aria-pressed="false" data-analytics-copy="days30">近 30 天</button></div>
+            <button class="button button-quiet analytics-refresh" type="button" data-analytics-refresh data-analytics-copy="refresh">刷新</button>
+          </div>
+        </div>
+        <p class="analytics-status" role="status" aria-live="polite" aria-atomic="true"></p>
+        <progress class="manage-progress analytics-progress" hidden></progress>
+        <div class="analytics-content" hidden></div>
+        <div class="analytics-share">
+          <div><h3 data-analytics-copy="shareTitle">分享到朋友圈</h3><p data-analytics-copy="shareHelp">此链接带有朋友圈来源标记；转发后的访问也会计入该来源，无法确认具体是谁。</p></div>
+          <button class="button button-quiet analytics-copy" type="button" data-analytics-copy-link data-analytics-copy="copyLink">复制朋友圈链接</button>
+          <p class="analytics-copy-status" role="status" aria-live="polite" aria-atomic="true"></p>
+          <label class="analytics-manual-copy" hidden><span data-analytics-copy="manualCopy">长按或选中后复制这个链接</span><input type="url" readonly autocomplete="off" aria-label="朋友圈分享链接" data-analytics-aria="linkLabel" /></label>
+        </div>
+        <p class="analytics-note" data-analytics-copy="note">按广州时间每日零点统计。浏览量包含页面打开、站内切换和阅读，累计值从启用统计时开始。访问可能漏报；估算访客数不代表微信身份。</p>
+      </section>
       <div class="manage-workspace" hidden>
         <aside class="manage-sidebar">
           <div class="manage-kind-switch" role="group" aria-label="选择内容类型" data-i18n-aria="manageKindLabel">

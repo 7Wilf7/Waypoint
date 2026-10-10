@@ -4,6 +4,7 @@ import {ID,MAX_FILE,validateEntry,fileType} from './content.js';
 import {isOwner,checkPassword,sessionCookie,sameOrigin,hasOwnerCookie,credentialSettings,changedCredentials} from './auth.js';
 import {IMAGE_PRESETS,ensureImageVariants,imageVariant} from './image-variants.js';
 import {runtimePublicationAllowed} from './publication-policy.js';
+import {getAnalytics} from './analytics.js';
 
 const json=(value,status=200,headers={})=>Response.json(value,{status,headers:{'cache-control':'no-store','x-content-type-options':'nosniff',...headers}});
 async function readJson(request,limit=180000) {
@@ -76,6 +77,12 @@ export async function handle(request,store,env=process.env) {
     return json({changed:true},200,{'set-cookie':sessionCookie(request,credentialSettings(env,record))});
   }
   if(path==='/api/manage/entries'&&request.method==='GET')return json({entries:await store.entries()});
+  if(path==='/api/manage/analytics'&&request.method==='GET') {
+    const ranges=url.searchParams.getAll('days');
+    if(ranges.length!==1||!['7','30'].includes(ranges[0])||[...url.searchParams.keys()].some(key=>key!=='days'))return json({error:'invalid_range'},400);
+    try{return json(await getAnalytics(env,Number(ranges[0])));}
+    catch(error){return json({error:error.message==='analytics_not_configured'?'analytics_not_configured':'analytics_unavailable'},503);}
+  }
   const item=path.match(/^\/api\/manage\/entries\/([a-z0-9-]{1,64})$/i);
   if(item&&request.method==='PUT') {
     let entry;try{entry=validateEntry(await readJson(request));}catch(error){return json({error:error.message},400);}

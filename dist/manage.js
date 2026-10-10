@@ -6,6 +6,7 @@ import {raceCategoryKeys} from './race-utils.js';
 import {racePhotoRoles} from './race-photos.js';
 import {requestJSON,renderLoading,clearLoading} from './loading.js';
 import {publicationMode} from './publication-config.js';
+import {createAnalyticsPanel} from './manage-analytics.js';
 const root=document.documentElement,form=document.querySelector('.entry-editor'),status=document.querySelector('#manage-status');
 let publicationDelivery=publicationMode;
 const words=()=>{
@@ -33,12 +34,16 @@ function translate(){
   const toggle=document.querySelector('.language-toggle');toggle.textContent=root.dataset.language==='en'?'中':'EN';toggle.setAttribute('aria-label',w.languageLabel);toggle.title=w.languageLabel;
   for(const [target,state]of messageStates)target.textContent=format(w[state.key],state.values);
   if(sessionLoading)renderLoading(loading,'manageLoading',{rows:3});
-  renderList();renderEditorHeading();renderMedia();renderOperation();
+  renderList();renderEditorHeading();renderMedia();renderOperation();analytics.translate();
 }
 document.querySelector('.language-toggle').addEventListener('click',()=>{root.dataset.language=root.dataset.language==='en'?'zh':'en';try{localStorage.setItem('waypoint-language',root.dataset.language);}catch{}translate();});
 initTheme();
 const messages={request_timeout:'requestTimedOut',invalid_password:'invalidPassword',password_length:'passwordLength',password_mismatch:'passwordMismatch',password_unchanged:'passwordUnchanged',auth_changed:'signInAgain',owner_required:'signInAgain',english_required:'englishRequired',article_body_required:'englishRequired',title_date_required:'titleDateRequired',file_too_large:'fileTooLarge',file_type:'raceFileType',invalid_metrics:'invalidMetrics',invalid_result:'invalidMetrics',invalid_wechat_url:'invalidWechat',invalid_published_time:'invalidPublishedTime',summary_translation_required:'bilingualSummaryRequired',race_photo_limit:'racePhotoLimit',invalid_photo_roles:'invalidPhotoRoles',certificate_image_required:'certificateImageRequired',invalid_article_layout:'invalidArticleLayout'};
 async function api(path,options={},timeoutMs=options.method&&options.method!=='GET'?60000:20000){return requestJSON('./api/'+path,options,timeoutMs);}
+const analytics=createAnalyticsPanel({api,onUnauthorized:async()=>{
+  try{await refreshSession({loadAnalytics:false});message(status,'signInAgain');}
+  catch(error){message(status,errorMessage(error));}
+}});
 function renderList(){
   const w=words(),list=document.querySelector('.managed-entries');list.replaceChildren();
   for(const button of document.querySelectorAll('.manage-kind-switch button'))button.setAttribute('aria-pressed',String(button.dataset.kind===activeKind));
@@ -170,10 +175,13 @@ form.addEventListener('submit',async event=>{
   catch(error){message(editorStatus,errorMessage(error,'saveFailed'));}
   finally{endOperation();}
 });
-async function refreshSession(){
+async function refreshSession({loadAnalytics=true}={}){
+  analytics.setOwner(false);
   sessionLoading=true;loading.hidden=false;retry.hidden=true;signin.hidden=true;logout.hidden=true;account.hidden=true;workspace.hidden=true;recordsReady=false;message(status);if(operation?.progress)operation.progress.hidden=true;renderList();renderLoading(loading,'manageLoading',{rows:3});
   try{
-    const session=await api('session'),entries=session.owner?(await api('manage/entries')).entries:[];
+    const session=await api('session');
+    analytics.setOwner(session.owner,{load:loadAnalytics});
+    const entries=session.owner?(await api('manage/entries')).entries:[];
     if(['live','static'].includes(session.publication))publicationDelivery=session.publication;
     uploadMode=session.uploads;records=entries;recordsReady=true;signin.hidden=session.owner;logout.hidden=!session.owner;account.hidden=!session.owner;workspace.hidden=!session.owner;
     if(!session.owner){activeEntry=null;form.hidden=true;signin.reset();passwordForm.reset();message(editorStatus);message(passwordStatus);}
@@ -204,7 +212,7 @@ signin.addEventListener('submit',async event=>{
 });
 logout.addEventListener('click',async()=>{
   if(busy)return;beginOperation('signingOut',{button:logout});
-  try{await api('logout',{method:'POST'});records=[];recordsReady=false;activeEntry=null;photoRoles={primary:'',secondary:''};certificate='';form.hidden=true;workspace.hidden=true;account.hidden=true;logout.hidden=true;signin.hidden=false;signin.reset();passwordForm.reset();photoFeedback.clear();message(status);message(editorStatus);message(passwordStatus);renderList();renderMedia();}
+  try{await api('logout',{method:'POST'});analytics.setOwner(false);records=[];recordsReady=false;activeEntry=null;photoRoles={primary:'',secondary:''};certificate='';form.hidden=true;workspace.hidden=true;account.hidden=true;logout.hidden=true;signin.hidden=false;signin.reset();passwordForm.reset();photoFeedback.clear();message(status);message(editorStatus);message(passwordStatus);renderList();renderMedia();}
   catch(error){message(status,errorMessage(error));}
   finally{endOperation();if(!signin.hidden)signin.elements.password.focus();}
 });

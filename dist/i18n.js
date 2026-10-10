@@ -1,4 +1,5 @@
 import {homepageCopy} from './homepage-copy.js';
+import {privacyCopy} from './privacy-copy.js';
 // Both editions are authored locally; switching language never sends visitor data.
 export const copy = {
   zh: {
@@ -133,4 +134,4 @@ export const copy = {
   }
 };
 
-for (const locale of ['zh','en']) Object.assign(copy[locale],homepageCopy[locale]);
+for (const locale of ['zh','en']) Object.assign(copy[locale],homepageCopy[locale],privacyCopy[locale]);

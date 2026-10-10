@@ -13,4 +13,5 @@ dist/.openai/
 public/
 server/publication-build.json
 dist/upload-client.js
+dist/analytics-client.js
 !.env.example

@@ -1,0 +1,42 @@
+export const analyticsCopy={
+  zh:{
+    eyebrow:'站点统计',title:'来访',intro:'看看这段路，迎来了多少次相遇。',
+    rangeLabel:'统计时间范围',days7:'近 7 天',days30:'近 30 天',refresh:'刷新',retry:'重试',
+    loading:'正在读取来访统计…',updated:'更新于 {time} · 广州时间',
+    notConfigured:'访客统计尚未连接',notConfiguredHelp:'连接后，这里会显示网站的来访情况。',
+    unavailable:'暂时无法读取来访统计',unavailableHelp:'稍后重试，内容管理仍可正常使用。',
+    todayViews:'今日浏览',todayVisitors:'今日估算访客',periodViews:'期间浏览',totalViews:'累计浏览',
+    pageviews:'浏览量',visitors:'每日估算访客数',period:'近 {days} 天',
+    trend:'每日来访',trendSummary:'近 {days} 天 · 每日浏览量',dailyDetails:'查看逐日明细',date:'日期',
+    empty:'这段时间暂无已记录的访问。',emptyBreakdown:'暂无已记录的数据',peak:'最高 {count}',
+    sources:'来源',devices:'设备',countries:'地区',browsers:'浏览器',pages:'页面',
+    sourceLabels:{moments:'朋友圈标记链接',wechat:'微信内打开',direct:'直接访问 / 来源未识别',other:'其他来源'},
+    deviceLabels:{mobile:'手机',desktop:'电脑',tablet:'平板',other:'其他设备'},
+    pageLabels:{home:'首页',races:'比赛',reading:'阅读',about:'关于',making:'项目',writing:'文章',trails:'跑山',other:'其他页面'},
+    unknown:'未识别',others:'其他',wechatBrowser:'微信内置浏览器',
+    shareTitle:'分享到朋友圈',shareHelp:'此链接带有朋友圈来源标记；转发后的访问也会计入该来源，无法确认具体是谁。',
+    copyLink:'复制朋友圈链接',copying:'正在复制…',copied:'链接已复制，可以分享到朋友圈。',
+    copyFailed:'暂时无法自动复制，请复制下方链接。',manualCopy:'长按或选中后复制这个链接',linkLabel:'朋友圈分享链接',
+    note:'按广州时间每日零点统计。浏览量包含页面打开、站内切换和阅读，累计值从启用统计时开始。访问可能漏报；估算访客数不代表微信身份。'
+  },
+  en:{
+    eyebrow:'SITE ANALYTICS',title:'Visitors',intro:'A quiet look at the visits along the way.',
+    rangeLabel:'Analytics date range',days7:'7 days',days30:'30 days',refresh:'Refresh',retry:'Retry',
+    loading:'Loading visitor analytics…',updated:'Updated {time} · Guangzhou time',
+    notConfigured:'Visitor analytics is not connected yet',notConfiguredHelp:'Once connected, visits to the site will appear here.',
+    unavailable:'Visitor analytics is temporarily unavailable',unavailableHelp:'Try again shortly. You can still manage your content.',
+    todayViews:'Views today',todayVisitors:'Estimated visitors today',periodViews:'Views in period',totalViews:'Total views',
+    pageviews:'Page views',visitors:'Daily estimated visitors',period:'Last {days} days',
+    trend:'Daily visits',trendSummary:'Last {days} days · page views per day',dailyDetails:'View daily figures',date:'Date',
+    empty:'No visits have been recorded in this period yet.',emptyBreakdown:'No data recorded yet',peak:'Peak {count}',
+    sources:'Sources',devices:'Devices',countries:'Regions',browsers:'Browsers',pages:'Pages',
+    sourceLabels:{moments:'Moments-tagged link',wechat:'Opened in WeChat',direct:'Direct / source unknown',other:'Other sources'},
+    deviceLabels:{mobile:'Mobile',desktop:'Desktop',tablet:'Tablet',other:'Other devices'},
+    pageLabels:{home:'Home',races:'Races',reading:'Reading',about:'About',making:'Projects',writing:'Writing',trails:'Trails',other:'Other pages'},
+    unknown:'Unknown',others:'Others',wechatBrowser:'WeChat browser',
+    shareTitle:'Share to WeChat Moments',shareHelp:'This link carries a Moments source tag. Visits after the link is forwarded count toward the same source; it cannot identify who visited.',
+    copyLink:'Copy Moments link',copying:'Copying…',copied:'Link copied, ready to share to Moments.',
+    copyFailed:'Automatic copying is unavailable. Copy the link below.',manualCopy:'Select or press and hold to copy this link',linkLabel:'WeChat Moments sharing link',
+    note:'Days begin at midnight in Guangzhou. Views include page openings, navigation and reading; totals start when analytics is enabled. Some visits may be missed. Visitor estimates do not identify WeChat users.'
+  }
+};

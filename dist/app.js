@@ -11,8 +11,13 @@ import {renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.
 import {mediaURL} from './media-images.js';
 import {initRaceArchive} from './race-archive.js';
 import {initTouchMotion} from './touch-motion.js';
+import {createVisitTracker} from './visits.js';
+import {getVisitorSession} from './visitor-session.js';
+import {initPrivacy} from './privacy.js';
 
 const root = document.documentElement;
+const visits=createVisitTracker({session:getVisitorSession(),refreshSession:()=>getVisitorSession({refresh:true})});
+const privacy=initPrivacy(visits);
 const theme = initTheme();
 const languageButtons = [...document.querySelectorAll('.language-toggle')];
 const announcement = document.querySelector('.theme-announcement');
@@ -54,6 +59,7 @@ function applyLanguage(next, announce = false) {
     button.title = text.languageLabel;
   });
   theme.sync();
+  privacy.sync();
   if (readingKey && dialog.open&&!renderNote(readingKey, dialog.dataset.input === 'keyboard', true))renderPendingNote(readingKey);
   if (announce) announcement.textContent = text.languageChanged;
   else announcement.textContent = '';
@@ -150,10 +156,13 @@ function renderNote(key, keyboard = false, preservePosition = false) {
     document.dispatchEvent(new Event('waypoint-reader'));
   }
   dialog.scrollTop = preservePosition ? position : 0;
+  dialog.dataset.analytics='ready';
+  document.dispatchEvent(new Event('waypoint-route'));
   return true;
 }
 
 function renderPendingNote(key) {
+  dialog.dataset.analytics='pending';
   readingKey=key;readerTitle.textContent=words().recordLoading;document.title=words().recordLoading+' — Waypoint';
   document.querySelector('#reader-category').textContent='Waypoint';document.querySelector('#reader-lead').textContent='';
   clearMedia(readerBody);
@@ -211,6 +220,7 @@ function applyRoute({position='preserve',keyboard=false,origin=null}={}) {
     if(match[1]==='entry'&&!getEntry(match[2])&&journalState()==='loading')void initJournal();
   }else if(dialog.open){routing=true;dialog.close();routing=false;}
   scheduleNavigation();
+  document.dispatchEvent(new Event('waypoint-route'));
   if(dialog.open||position==='preserve'&&!(keyboard&&origin?.matches('.race-filter')))return;
   requestAnimationFrame(()=>{
     if(ticket!==routeSequence||dialog.open)return;

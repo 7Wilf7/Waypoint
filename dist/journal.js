@@ -5,6 +5,7 @@ import {articleStats,sortArticles} from './article-utils.js';
 import {racePhotoRoles} from './race-photos.js';
 import {requestJSON,renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
 import {requestPublishedEntries} from './public-content.js';
+import {getVisitorSession} from './visitor-session.js';
 const root=document.documentElement;
 const words=()=>copy[root.dataset.language==='en'?'en':'zh'];
 let entries=[];
@@ -118,5 +119,5 @@ export function initJournalOnDemand(hasStaticNote=()=>false) {
   window.addEventListener('hashchange',route);
   route();
   // Owner discovery is independent of reading and runs once, including list retries.
-  requestJSON('./api/session').then(session=>{document.querySelector('.manage-link').hidden=!session.owner;}).catch(()=>{/* The reader remains available without a management link. */});
+  getVisitorSession().then(session=>{document.querySelector('.manage-link').hidden=!session.owner;}).catch(()=>{/* The reader remains available without a management link. */});
 }

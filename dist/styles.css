@@ -948,3 +948,17 @@
     .race-filter,.race-highlight,.archive-race-summary {transition:none;}
   }
 }
+/* Visit preferences stay in the footer; no entry prompt interrupts reading. */
+.privacy-link {border:0;background:none;color:var(--muted);padding:8px 0;font:inherit;min-height:44px;text-align:left;touch-action:manipulation;cursor:pointer;}
+.privacy-dialog {width:min(620px,calc(100% - 32px));max-height:calc(100dvh - 48px);padding:0;border:1px solid var(--line);border-radius:18px;background:var(--bg);color:var(--text);overflow:auto;overscroll-behavior:contain;}
+.privacy-dialog::backdrop {background:rgb(0 0 0 / .6);}
+.privacy-content {padding:clamp(24px,5vw,44px);display:grid;gap:22px;}
+.privacy-content h2 {font-size:clamp(1.5rem,4vw,2rem);line-height:1.4;letter-spacing:-.035em;font-weight:500;}
+.privacy-content p,.privacy-content a,.privacy-choice {font-size:.9375rem;line-height:1.8;}
+.privacy-content p:not(.eyebrow) {color:var(--muted);}
+.privacy-content a {text-decoration:underline;text-underline-offset:4px;overflow-wrap:anywhere;}
+.privacy-choice {display:flex;align-items:flex-start;gap:12px;cursor:pointer;padding-block:8px;}
+.privacy-choice input {width:20px;height:20px;flex:0 0 auto;margin-top:3px;accent-color:var(--accent);}
+.privacy-content .privacy-help {font-size:.8125rem;}
+.privacy-close {justify-self:start;border:1px solid var(--line);background:var(--surface);color:var(--text);}
+@media (hover:hover) and (pointer:fine) {.privacy-link:hover {color:var(--text);}}

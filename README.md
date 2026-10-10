@@ -24,9 +24,11 @@ npm run dev
 
 Open `http://127.0.0.1:4173`. The same owner-password login is used in local development and production; no identity headers are trusted. Local content is stored under ignored `.local/content/`. Owner credentials are generated once in `.local/admin-access.txt` and `.env.local`; never commit them.
 
-`npm run build` bundles the direct-upload client, then copies only public frontend files into generated `public/`. Do not edit `dist/upload-client.js` or `public/`; they are generated. Server source, credentials, local content, and verification artifacts stay outside that output. `.vercelignore` also excludes local data, credentials and generated output from CLI source uploads; `.gitignore` alone does not do this. `npm run check` verifies languages, assets, navigation, login, publication visibility, private files, and input validation.
+`npm run build` bundles the direct-upload and analytics clients, then copies only public frontend files into generated `public/`. Do not edit `dist/upload-client.js`, `dist/analytics-client.js` or `public/`; they are generated. Server source, credentials, local content, and verification artifacts stay outside that output. `.vercelignore` also excludes local data, credentials and generated output from CLI source uploads; `.gitignore` alone does not do this. `npm run check` verifies languages, assets, navigation, login, publication visibility, private files, visitor analytics, and input validation.
 
 For same-network phone review, run `WAYPOINT_HOST=0.0.0.0 npm run dev` and open the computer's LAN address on the phone. The default server binds only to `127.0.0.1`. See [current experience acceptance](docs/EXPERIENCE-ACCEPTANCE.md) for review steps and verified boundaries. Production follows the latest successful Vercel deployment from `main`; verify the live page and its assets after each push.
+
+The owner dashboard also includes anonymous visit analytics and a Moments-tagged sharing link. Collection is disabled in local/Preview builds and until Production reporting is configured. See [visitor analytics](docs/VISITOR-ANALYTICS.md) for setup, counting rules, privacy controls, and the current verification boundary.
 
 ## Files
 
@@ -57,6 +59,8 @@ For same-network phone review, run `WAYPOINT_HOST=0.0.0.0 npm run dev` and open 
 - `dist/index.html`, `race-archive.js`, and `race-utils.js`: a shared visitor shell, full race archive, category filters, recorded results, and representative selection. `races.html` remains a compatibility fallback.
 - `dist/app-preview.js`, `preview-controller.js`, and `preview-screens.js`: prepared image loading, interrupted selection handling, and interactive App screen navigation.
 - `dist/manage.html`, `manage.js`, and `manage.css`: themed owner editing, separate race/article workspaces, category filters, and three race image slots.
+- `dist/manage-analytics.js`, `analytics-copy.js`, and `server/analytics.js`: owner-only Vercel Web Analytics reports, Guangzhou daily boundaries, and a tagged Moments sharing link.
+- `dist/visits.js`, `visit-policy.js`, `visitor-session.js`, and `privacy.js`: bounded anonymous page reporting, a shared owner-session read, and bilingual footer privacy preferences.
 - `server/`: signed owner sessions, content validation, private Blob storage, and local development storage.
 - `api/index.js`: Vercel Node.js function entry point.
 - `vercel.json`: public frontend routing and API/media rewrites.

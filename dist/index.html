@@ -170,7 +170,7 @@
 
       <footer class="site-footer section-shell">
         <div class="footer-main"><p class="eyebrow" data-i18n="footerLabel">继续，保持好奇</p><p class="footer-statement" data-i18n="footerStatement">下一站，<br /><span>留给好奇心。</span></p><a class="footer-link" href="#home"><span data-i18n="back">回到起点</span> <span aria-hidden="true">↑</span></a></div>
-        <div class="footer-bottom"><span data-i18n="signature">Waypoint · Wilf 吴凡</span><span data-i18n="location">广州，中国</span><span>© 2026</span><a class="manage-link" href="/manage" data-i18n="manage" hidden>内容管理</a></div>
+        <div class="footer-bottom"><span data-i18n="signature">Waypoint · Wilf 吴凡</span><span data-i18n="location">广州，中国</span><span>© 2026</span><button type="button" class="privacy-link" data-i18n="privacyPreferences">隐私与访问统计</button><a class="manage-link" href="/manage" data-i18n="manage" hidden>内容管理</a></div>
         <p class="footer-music" hidden></p>
       </footer>
       </div>
@@ -180,7 +180,7 @@
 <div class="race-archive-controls"><div class="race-filters" role="group" aria-label="按赛事类型筛选" data-i18n-aria="raceFilterLabel"></div></div>
 <div class="race-archive-summary"><p class="race-archive-status" role="status" aria-live="polite" data-i18n="racesLoading"><span data-loading-language="zh">正在载入比赛记录…</span><span data-loading-language="en">Loading race records…</span></p><p class="race-archive-best" hidden></p></div>
 <div class="race-archive-results" aria-busy="true"><div class="loading-state" role="status"><p class="loading-copy" data-i18n="racesLoading"><span data-loading-language="zh">正在载入比赛记录…</span><span data-loading-language="en">Loading race records…</span></p><div class="loading-progress" role="progressbar" aria-label="正在载入比赛记录…"></div><p class="loading-detail" data-i18n="loadingHint"><span data-loading-language="zh">内容准备好后会立即显示。</span><span data-loading-language="en">Content will appear as soon as it is ready.</span></p><div class="loading-rows" aria-hidden="true"><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div><div class="loading-row"><span class="loading-date"></span><span class="loading-title"></span><span class="loading-meta"></span></div></div></div></div>
-<footer class="race-archive-footer"><a class="brand" href="/">Waypoint.</a><span data-i18n="signature">Waypoint · Wilf 吴凡</span><p class="footer-music" hidden></p></footer>
+<footer class="race-archive-footer"><a class="brand" href="/">Waypoint.</a><span data-i18n="signature">Waypoint · Wilf 吴凡</span><button type="button" class="privacy-link" data-i18n="privacyPreferences">隐私与访问统计</button><p class="footer-music" hidden></p></footer>
 </section>
     </main>
 
@@ -204,6 +204,19 @@
     <div class="note-preview" aria-hidden="true"><div class="preview-art"><img src="./assets/mountain.jpg" alt="" /></div><div class="preview-copy"><span class="preview-category"></span><strong class="preview-title"></strong><p class="preview-summary"></p><span class="preview-meta"></span></div></div>
     <div class="pointer-bubble" aria-hidden="true"><span></span></div>
     <div class="theme-announcement sr-only" role="status" aria-live="polite"></div>
+    <dialog class="privacy-dialog" aria-labelledby="privacy-title">
+      <div class="privacy-content">
+        <p class="eyebrow" data-i18n="privacyPreferences">隐私与访问统计</p>
+        <h2 id="privacy-title" data-i18n="privacyTitle">让好奇心，轻装来访。</h2>
+        <p data-i18n="privacyIntro">本站通过 Vercel 的匿名统计了解页面浏览、来源、设备及大致地区。不要求微信登录，也不会显示昵称、头像或个人访客名单。</p>
+        <p data-i18n="privacyDetails">分析不设置身份 Cookie，也不在浏览器保存持久访客 ID。Vercel 会处理请求并生成每日更新的匿名标识，可能记录来源页面、城市级大致地区、系统和浏览器版本；这些信息用于汇总统计。本站只展示国家／地区等概况，不做跨站追踪。</p>
+        <label class="privacy-choice"><input type="checkbox" /><span data-i18n="privacyOptOut">在此浏览器关闭访问统计</span></label>
+        <p class="privacy-system" hidden data-i18n="privacySystem">浏览器已开启隐私信号，访问统计已停用。</p>
+        <p class="privacy-help" data-i18n="privacyPreferenceHelp">选择仅保存在此浏览器。关闭后不再发送新的统计，已有汇总不会被删除。</p>
+        <a href="https://vercel.com/docs/analytics/privacy-policy" target="_blank" rel="noopener noreferrer" data-i18n="privacyProvider">了解 Vercel 的统计与隐私说明</a>
+        <button type="button" class="button button-quiet privacy-close" data-i18n="privacyClose">关闭隐私说明</button>
+      </div>
+    </dialog>
     <audio id="ambient-audio" preload="none" loop hidden></audio>
   </body>
 </html>

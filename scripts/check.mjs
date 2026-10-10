@@ -6,12 +6,25 @@ import { notes, notesByLanguage } from '../dist/content.js';
 import { copy } from '../dist/i18n.js';
 import { ambientTracks } from '../dist/ambient-tracks.js';
 import {previewProducts,previewScreens,previewViewport} from '../dist/preview-screens.js';
+import {analyticsCopy} from '../dist/analytics-copy.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../dist');
 for (const filename of ['app.js', 'theme.js', 'homepage-copy.js', 'hero-gallery.js', 'hero-motion.js', 'surface-motion.js', 'scroll-motion.js', 'pointer-field.js', 'elastic-details.js', 'ambient-motion.js', 'ambient-audio.js', 'ambient-tracks.js', 'conductor.js', 'app-preview.js', 'preview-controller.js', 'preview-screens.js', 'content.js', 'i18n.js', 'motion.js', 'journal.js', 'article-layout.js', 'article-utils.js', 'race-utils.js', 'race-photos.js', 'race-archive.js', 'manage.js', 'loading.js', 'media-images.js', 'public-content.js', 'publication-config.js']) {
   const result = spawnSync(process.execPath, ['--check', resolve(root, filename)], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr);
 }
+for (const filename of ['analytics-config.js','analytics-copy.js','manage-analytics.js','privacy-copy.js','privacy.js','visit-policy.js','visitor-session.js','visits.js','../server/analytics.js']) {
+  const result=spawnSync(process.execPath,['--check',resolve(root,filename)],{encoding:'utf8'});
+  if(result.status!==0)throw new Error(result.stderr);
+}
+function checkAnalyticsCopy(zh,en,path='analytics') {
+  if(Object.keys(zh).sort().join(',')!==Object.keys(en).sort().join(','))throw new Error('Translation editions differ: '+path);
+  for(const key of Object.keys(zh)) {
+    if(typeof zh[key]==='object')checkAnalyticsCopy(zh[key],en[key],path+'.'+key);
+    else if(!zh[key]||!en[key]||/\p{Script=Han}/u.test(en[key]))throw new Error('Missing analytics translation: '+path+'.'+key);
+  }
+}
+checkAnalyticsCopy(analyticsCopy.zh,analyticsCopy.en);
 const html = await readFile(resolve(root, 'index.html'), 'utf8');
 const manager = await readFile(resolve(root, 'manage.html'), 'utf8');
 const archive = await readFile(resolve(root, 'races.html'), 'utf8');
@@ -86,6 +99,8 @@ const audioTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/a
 if(audioTests.status!==0)throw new Error(audioTests.stdout+audioTests.stderr);
 const publicationTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/export-public.test.mjs'),resolve(root,'../scripts/public-delivery.test.mjs')],{encoding:'utf8'});
 if(publicationTests.status!==0)throw new Error(publicationTests.stdout+publicationTests.stderr);
+const analyticsTests=spawnSync(process.execPath,['--test',resolve(root,'../scripts/analytics.test.mjs')],{encoding:'utf8'});
+if(analyticsTests.status!==0)throw new Error(analyticsTests.stdout+analyticsTests.stderr);
 console.log('JavaScript syntax, assets, navigation, complete language dictionaries, and both reading editions passed.');
 console.log('Interactive bilingual preview routes and interrupted product/language selections passed.');
 console.log('Owner authorization, password changes and session revocation, publication visibility, file validation, draft media privacy, and input validation passed.');
@@ -94,3 +109,4 @@ console.log('Race categories, divisions, original dates, representative selectio
 console.log('Complete text-only articles, bilingual summaries, reading estimates, original times, stable article ordering, and fixed race photo roles passed.');
 console.log('Immediate first paint, stored themes/languages, storage-denial recovery, bounded response bodies, and no automatic write replay passed.');
 console.log('Deployment snapshots, draft/media isolation, no-store public delivery, strict live PDFs, Preview boundaries, and withdrawal-safe rebuilds passed.');
+console.log('Owner-only visitor reporting, Shanghai day boundaries, URL redaction, visit preferences and bounded analytics queries passed.');

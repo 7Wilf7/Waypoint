@@ -1,7 +1,7 @@
 # Waypoint
 
 - Personal website for Wilf 吴凡. Maintain complete authored Chinese and English editions, including reading content, accessible labels, and metadata. Preserve both language and theme preferences.
-- Editable frontend files remain in `dist/`; the Vercel API and storage/auth implementation are in `api/` and `server/`. `npm run build` generates `public/` and `dist/upload-client.js`; do not edit those generated files.
+- Editable frontend files remain in `dist/`; the Vercel API and storage/auth implementation are in `api/` and `server/`. `npm run build` generates `public/`, `dist/upload-client.js` and `dist/analytics-client.js`; do not edit those generated files.
 - Run `npm run dev` and `npm run check` from this checkout. Preserve both complete theme palettes and the stored preference.
 - Main visitor paths are profile, project discovery, and reading. Verify requested behavior in the browser, including narrow mobile widths and keyboard use.
 - Biography and race writing are sourced drafts: do not invent results, metrics, job titles, contact details, or real-life photographs. Keep artwork provenance in README.
