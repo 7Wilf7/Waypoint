@@ -88,8 +88,9 @@ test('a cached report never bypasses revoked owner authentication or reads from 
 
 async function trackerHarness({owner=false,dnt,gpc=false,enabled=true,hidden=false,fail=false,refreshSession}={}) {
   const bundle=await build({entryPoints:[new URL('../dist/visits.js',import.meta.url).pathname],bundle:true,write:false,format:'iife',globalName:'trackerModule',plugins:[{name:'isolated-analytics',setup(build){
-    build.onLoad({filter:/analytics-config\.js$/},()=>({contents:'export const analyticsEnabled='+enabled+';',loader:'js'}));
-    build.onLoad({filter:/analytics-client\.js$/},()=>({contents:'export function inject(options){capture.injected.push(options)};export function pageview(options){capture.views.push(options)}',loader:'js'}));
+    build.onResolve({filter:/analytics-(?:config|client)\.js$/},args=>({path:args.path,namespace:'analytics-fixture'}));
+    build.onLoad({filter:/analytics-config\.js$/,namespace:'analytics-fixture'},()=>({contents:'export const analyticsEnabled='+enabled+';',loader:'js'}));
+    build.onLoad({filter:/analytics-client\.js$/,namespace:'analytics-fixture'},()=>({contents:'export function inject(options){capture.injected.push(options)};export function pageview(options){capture.views.push(options)}',loader:'js'}));
   }}]});
   const document=new EventTarget(),window=new EventTarget(),reader={open:false,dataset:{analytics:'pending'}},location=new URL('https://site.test/?from=moments&token=secret');
   document.visibilityState=hidden?'hidden':'visible';document.referrer='';document.querySelector=()=>reader;
