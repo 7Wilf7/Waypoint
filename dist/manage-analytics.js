@@ -1,4 +1,5 @@
 import {analyticsCopy} from './analytics-copy.js';
+import {ownerDevicePreference,ownerDeviceChanged,ownerDeviceState,rememberOwnerDevice,setOwnerDevice} from './owner-device.js';
 
 const format=(template,values)=>template.replace(/\{(\w+)\}/g,(_,key)=>values[key]??'');
 const count=value=>Number.isSafeInteger(value)&&value>=0;
@@ -19,6 +20,7 @@ export function createAnalyticsPanel({api,onUnauthorized}){
   const content=panel.querySelector('.analytics-content'),status=panel.querySelector('.analytics-status'),progress=panel.querySelector('.analytics-progress');
   const refreshButton=panel.querySelector('[data-analytics-refresh]'),copyButton=panel.querySelector('[data-analytics-copy-link]');
   const copyStatus=panel.querySelector('.analytics-copy-status'),manualCopy=panel.querySelector('.analytics-manual-copy'),linkInput=manualCopy.querySelector('input');
+  const deviceChoice=panel.querySelector('[data-analytics-owner-device]'),deviceStatus=panel.querySelector('#owner-device-status');
   let owner=false,days=7,report=null,state='idle',ticket=0,copyTicket=0,copyState='';
   const language=()=>root.dataset.language==='en'?'en':'zh';
   const words=()=>analyticsCopy[language()];
@@ -26,6 +28,11 @@ export function createAnalyticsPanel({api,onUnauthorized}){
   const number=value=>new Intl.NumberFormat(locale()).format(value);
   const date=value=>new Intl.DateTimeFormat(locale(),{timeZone:'Asia/Shanghai',month:'short',day:'numeric'}).format(new Date(value+'T00:00:00+08:00'));
   const fullDate=value=>new Intl.DateTimeFormat(locale(),{timeZone:'Asia/Shanghai',year:'numeric',month:'short',day:'numeric'}).format(new Date(value+'T00:00:00+08:00'));
+
+  function renderOwnerDevice(){
+    const state=ownerDeviceState();deviceChoice.checked=state.excluded;deviceChoice.disabled=!owner;
+    deviceStatus.textContent=words()[!state.saved?'ownerDeviceUnsaved':state.excluded?'ownerDeviceExcluded':'ownerDeviceIncluded'];
+  }
 
   function renderStatus(){
     const w=words();status.replaceChildren();progress.hidden=state!=='loading';progress.setAttribute('aria-label',w.loading);
@@ -101,7 +108,7 @@ export function createAnalyticsPanel({api,onUnauthorized}){
     const w=words();panel.querySelectorAll('[data-analytics-copy]').forEach(node=>node.textContent=w[node.dataset.analyticsCopy]);
     panel.querySelectorAll('[data-analytics-aria]').forEach(node=>node.setAttribute('aria-label',w[node.dataset.analyticsAria]));
     for(const button of panel.querySelectorAll('[data-analytics-days]'))button.setAttribute('aria-pressed',String(Number(button.dataset.analyticsDays)===days));
-    renderStatus();renderData();renderCopy();
+    renderStatus();renderData();renderCopy();renderOwnerDevice();
   }
   async function refresh(){
     if(!owner)return;
@@ -120,13 +127,16 @@ export function createAnalyticsPanel({api,onUnauthorized}){
     }
   }
   function setOwner(value,{load=true}={}){
-    if(value===true){if(owner)return;owner=true;panel.hidden=false;if(load)void refresh();else{state='unavailable';translate();}return;}
+    if(value===true){rememberOwnerDevice();if(owner){renderOwnerDevice();return;}owner=true;panel.hidden=false;if(load)void refresh();else{state='unavailable';translate();}return;}
     owner=false;++ticket;++copyTicket;report=null;state='idle';copyState='';panel.hidden=true;content.replaceChildren();linkInput.value='';translate();
   }
   for(const button of panel.querySelectorAll('[data-analytics-days]'))button.addEventListener('click',()=>{
     const next=Number(button.dataset.analyticsDays);if(!owner||next===days)return;days=next;void refresh();
   });
   refreshButton.addEventListener('click',()=>{if(state!=='loading')void refresh();});
+  deviceChoice.addEventListener('change',()=>{if(owner)setOwnerDevice(deviceChoice.checked);});
+  window.addEventListener(ownerDeviceChanged,renderOwnerDevice);
+  window.addEventListener('storage',event=>{if(event.key===ownerDevicePreference||event.key===null)renderOwnerDevice();});
   copyButton.addEventListener('click',async()=>{
     if(!owner||copyState==='copying')return;
     const current=++copyTicket,url=new URL('/',location.origin);url.searchParams.set('from','moments');linkInput.value=url.href;copyState='copying';renderCopy();

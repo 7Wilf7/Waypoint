@@ -65,6 +65,11 @@
             <button class="button button-quiet analytics-refresh" type="button" data-analytics-refresh data-analytics-copy="refresh">刷新</button>
           </div>
         </div>
+        <div class="analytics-owner-device">
+          <label><input type="checkbox" data-analytics-owner-device aria-describedby="owner-device-status owner-device-help" /><span data-analytics-copy="ownerDeviceLabel">不统计我的访问</span></label>
+          <p id="owner-device-status" role="status" aria-live="polite" aria-atomic="true"></p>
+          <p id="owner-device-help" data-analytics-copy="ownerDeviceHelp">电脑、手机和微信内置浏览器需要分别标记。清除网站数据后需重新设置；已有统计不会被删除。</p>
+        </div>
         <p class="analytics-status" role="status" aria-live="polite" aria-atomic="true"></p>
         <progress class="manage-progress analytics-progress" hidden></progress>
         <div class="analytics-content" hidden></div>

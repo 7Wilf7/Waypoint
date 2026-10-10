@@ -2,6 +2,10 @@ export const analyticsCopy={
   zh:{
     eyebrow:'站点统计',title:'来访',intro:'看看这段路，迎来了多少次相遇。',
     rangeLabel:'统计时间范围',days7:'近 7 天',days30:'近 30 天',refresh:'刷新',retry:'重试',
+    ownerDeviceLabel:'不统计我的访问',ownerDeviceExcluded:'本浏览器已标记为自己的设备，退出登录后也不计入。',
+    ownerDeviceIncluded:'本浏览器未标记；退出登录后的访问会计入统计。',
+    ownerDeviceUnsaved:'此浏览器无法保存设置；重新打开网站后可能恢复原设置。',
+    ownerDeviceHelp:'电脑、手机和微信内置浏览器需要分别标记。清除网站数据后需重新设置；已有统计不会被删除。',
     loading:'正在读取来访统计…',updated:'更新于 {time} · 广州时间',
     notConfigured:'访客统计尚未连接',notConfiguredHelp:'连接后，这里会显示网站的来访情况。',
     unavailable:'暂时无法读取来访统计',unavailableHelp:'稍后重试，内容管理仍可正常使用。',
@@ -22,6 +26,10 @@ export const analyticsCopy={
   en:{
     eyebrow:'SITE ANALYTICS',title:'Visitors',intro:'A quiet look at the visits along the way.',
     rangeLabel:'Analytics date range',days7:'7 days',days30:'30 days',refresh:'Refresh',retry:'Retry',
+    ownerDeviceLabel:'Exclude my visits',ownerDeviceExcluded:'This browser is marked as yours. Visits stay excluded after you sign out.',
+    ownerDeviceIncluded:'This browser is not marked. Visits after you sign out will be counted.',
+    ownerDeviceUnsaved:'This browser could not save the setting. It may revert when you reopen the site.',
+    ownerDeviceHelp:'Mark each computer, phone and WeChat browser separately. Set it again after clearing site data. Existing analytics are retained.',
     loading:'Loading visitor analytics…',updated:'Updated {time} · Guangzhou time',
     notConfigured:'Visitor analytics is not connected yet',notConfiguredHelp:'Once connected, visits to the site will appear here.',
     unavailable:'Visitor analytics is temporarily unavailable',unavailableHelp:'Try again shortly. You can still manage your content.',

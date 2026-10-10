@@ -42,6 +42,11 @@
 .analytics-controls button,.analytics-share button {touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:transform 120ms var(--ease-out),background-color 160ms ease,color 160ms ease;}
 .analytics-controls button:active,.analytics-share button:active {transform:scale(.97);}
 .analytics-controls button:focus-visible:active,.analytics-share button:focus-visible:active {transform:none;}
+.analytics-owner-device {margin-top:24px;padding:18px 20px;border:1px solid var(--line);border-radius:12px;background:var(--bg);}
+.analytics-owner-device label {display:flex;align-items:center;gap:12px;min-height:44px;width:fit-content;font-size:.875rem;line-height:1.6;cursor:pointer;touch-action:manipulation;}
+.analytics-owner-device input {flex-shrink:0;width:20px;height:20px;margin:0;accent-color:var(--accent);}
+.analytics-owner-device p {color:var(--muted);font-size:.75rem;line-height:1.8;overflow-wrap:anywhere;}
+#owner-device-help {margin-top:5px;}
 .analytics-status {margin-top:22px;min-height:1.6em;color:var(--muted);font-size:.75rem;line-height:1.8;}
 .analytics-status.has-error {padding:20px;border:1px solid var(--line);border-radius:10px;background:var(--bg);}
 .analytics-error-title,.analytics-error-help {display:block;}

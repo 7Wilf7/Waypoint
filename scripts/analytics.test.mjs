@@ -87,7 +87,7 @@ test('a cached report never bypasses revoked owner authentication or reads from 
   }finally{globalThis.fetch=originalFetch;}
 });
 
-async function trackerHarness({owner=false,dnt,gpc=false,enabled=true,hidden=false,fail=false,refreshSession}={}) {
+async function trackerHarness({owner=false,dnt,gpc=false,enabled=true,hidden=false,fail=false,refreshSession,saved=new Map()}={}) {
   const bundle=await build({entryPoints:[new URL('../dist/visits.js',import.meta.url).pathname],bundle:true,write:false,format:'iife',globalName:'trackerModule',plugins:[{name:'isolated-analytics',setup(build){
     build.onResolve({filter:/analytics-(?:config|client)\.js$/},args=>({path:args.path,namespace:'analytics-fixture'}));
     build.onLoad({filter:/analytics-config\.js$/,namespace:'analytics-fixture'},()=>({contents:'export const analyticsEnabled='+enabled+';',loader:'js'}));
@@ -95,8 +95,8 @@ async function trackerHarness({owner=false,dnt,gpc=false,enabled=true,hidden=fal
   }}]});
   const document=new EventTarget(),window=new EventTarget(),reader={open:false,dataset:{analytics:'pending'}},location=new URL('https://site.test/?from=moments&token=secret');
   document.visibilityState=hidden?'hidden':'visible';document.referrer='';document.querySelector=()=>reader;
-  const saved=new Map(),capture={injected:[],views:[]};
-  const context={capture,document,window,location,navigator:{userAgent:'Chrome',doNotTrack:dnt,globalPrivacyControl:gpc},URL,localStorage:{getItem:key=>saved.get(key),setItem:(key,value)=>saved.set(key,value),removeItem:key=>saved.delete(key)}};
+  const capture={injected:[],views:[]};
+  const context={capture,document,window,location,navigator:{userAgent:'Chrome',doNotTrack:dnt,globalPrivacyControl:gpc},URL,Event,localStorage:{getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value),removeItem:key=>saved.delete(key)}};
   runInNewContext(bundle.outputFiles[0].text,context);
   const tracker=context.trackerModule.createVisitTracker({session:fail?Promise.reject(new Error('offline')):Promise.resolve({owner}),refreshSession});await new Promise(resolve=>setImmediate(resolve));
   return {capture,document,window,location,tracker,reader,saved};
@@ -117,7 +117,7 @@ test('tracker avoids duplicate routes, counts distinct completed readings and st
   h.tracker.setOptOut(true);h.location.hash='#about';h.tracker.send();assert.equal(h.capture.views.length,3);assert.equal(middleware({type:'pageview',url:'https://site.test/visits/moments/home'}),null);
   assert.equal(h.saved.get('waypoint-analytics-opt-out'),'1');
 });
-test('returning to an open public tab rechecks owner identity before any new report',async()=>{
+test('a verified owner remains excluded after sign-out and in a fresh anonymous page',async()=>{
   let resolveSession,calls=0;
   const h=await trackerHarness({refreshSession:()=>{calls++;return new Promise(resolve=>{resolveSession=resolve;});}});
   assert.equal(h.capture.views.length,1);
@@ -126,14 +126,20 @@ test('returning to an open public tab rechecks owner identity before any new rep
   h.tracker.send();assert.equal(h.capture.views.length,1);
   await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,1);
   resolveSession({owner:true});await new Promise(resolve=>setImmediate(resolve));h.tracker.send();assert.equal(h.capture.views.length,1);
-  h.window.dispatchEvent(new Event('focus'));await new Promise(resolve=>setImmediate(resolve));resolveSession({owner:false});await new Promise(resolve=>setImmediate(resolve));assert.equal(h.capture.views.length,2);
+  assert.equal(h.saved.get('waypoint-owner-device'),'1');
+  h.window.dispatchEvent(new Event('focus'));h.location.hash='#trails';h.document.dispatchEvent(new Event('waypoint-route'));await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,1);assert.equal(h.capture.views.length,1);
+  const reopened=await trackerHarness({owner:false,saved:h.saved});assert.equal(reopened.capture.injected.length,0);assert.equal(reopened.capture.views.length,0);
+});
+test('a superseded owner check cannot report a hidden or stale route',async()=>{
+  let resolveSession;
+  const h=await trackerHarness({refreshSession:()=>new Promise(resolve=>{resolveSession=resolve;})});
   h.window.dispatchEvent(new Event('focus'));await new Promise(resolve=>setImmediate(resolve));
   const old=resolveSession;
   h.document.visibilityState='hidden';h.document.dispatchEvent(new Event('visibilitychange'));
   h.document.visibilityState='visible';h.document.dispatchEvent(new Event('visibilitychange'));await new Promise(resolve=>setImmediate(resolve));
-  const latest=resolveSession;h.location.hash='#trails';h.tracker.send();assert.equal(h.capture.views.length,2);
-  old({owner:false});await new Promise(resolve=>setImmediate(resolve));h.tracker.send();assert.equal(h.capture.views.length,2);
-  latest({owner:true});await new Promise(resolve=>setImmediate(resolve));assert.equal(h.capture.views.length,2);
+  const latest=resolveSession;h.location.hash='#trails';h.tracker.send();assert.equal(h.capture.views.length,1);
+  old({owner:false});await new Promise(resolve=>setImmediate(resolve));h.tracker.send();assert.equal(h.capture.views.length,1);
+  latest({owner:true});await new Promise(resolve=>setImmediate(resolve));assert.equal(h.capture.views.length,1);
 });
 test('failed identity refresh stays untracked until a later successful check',async()=>{
   let fails=true;
@@ -147,6 +153,31 @@ test('a route change excludes a new owner even without browser focus or visibili
   h.location.hash='#about';h.document.dispatchEvent(new Event('waypoint-route'));h.document.dispatchEvent(new Event('waypoint-route'));
   await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,1);assert.equal(h.capture.views.length,1);
   currentOwner=false;h.location.hash='#trails';h.document.dispatchEvent(new Event('waypoint-route'));
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,1);assert.equal(h.capture.views.length,1);
+  h.saved.set('waypoint-owner-device','0');h.window.dispatchEvent(Object.assign(new Event('storage'),{key:'waypoint-owner-device',newValue:'0'}));
   await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,2);assert.equal(h.capture.views.length,2);
   h.document.dispatchEvent(new Event('waypoint-route'));await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,2);
+});
+test('each owner browser is marked separately while other visitors remain counted',async()=>{
+  const computer=await trackerHarness({owner:true}),phone=await trackerHarness({owner:true}),visitor=await trackerHarness();
+  for(const device of [computer,phone]){assert.equal(device.saved.get('waypoint-owner-device'),'1');assert.equal(device.capture.injected.length,0);}
+  assert.equal(visitor.saved.has('waypoint-owner-device'),false);assert.equal(visitor.capture.views.length,1);
+  const choice=await trackerHarness({owner:true,saved:new Map([['waypoint-owner-device','0']])});assert.equal(choice.saved.get('waypoint-owner-device'),'0');
+  const reopened=await trackerHarness({saved:choice.saved});assert.equal(reopened.capture.views.length,1);
+});
+test('marking an open public browser blocks queued reports and preserves independent privacy opt-out',async()=>{
+  const h=await trackerHarness({refreshSession:async()=>({owner:false})}),middleware=h.capture.injected[0].beforeSend;
+  h.saved.set('waypoint-owner-device','1');h.window.dispatchEvent(Object.assign(new Event('storage'),{key:'waypoint-owner-device',newValue:'1'}));
+  h.location.hash='#about';h.tracker.send();assert.equal(h.capture.views.length,1);
+  assert.equal(middleware({type:'pageview',url:'https://site.test/visits/moments/home'}),null);
+  h.tracker.setOptOut(true);h.saved.set('waypoint-owner-device','0');h.window.dispatchEvent(Object.assign(new Event('storage'),{key:'waypoint-owner-device',newValue:'0'}));
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(h.capture.views.length,1);assert.equal(h.saved.get('waypoint-analytics-opt-out'),'1');
+});
+test('blocked browser storage keeps the current page excluded without claiming persistence',async()=>{
+  const bundle=await build({entryPoints:[new URL('../dist/owner-device.js',import.meta.url).pathname],bundle:true,write:false,format:'iife',globalName:'deviceModule'});
+  const context={window:new EventTarget(),Event,localStorage:{getItem(){throw new Error('blocked');},setItem(){throw new Error('blocked');}}};
+  runInNewContext(bundle.outputFiles[0].text,context);
+  const state=context.deviceModule.rememberOwnerDevice();assert.equal(state.excluded,true);assert.equal(state.saved,false);
+  assert.equal(context.deviceModule.ownerDeviceState().excluded,true);
+  context.deviceModule.setOwnerDevice(false);assert.equal(context.deviceModule.rememberOwnerDevice().excluded,false);
 });
