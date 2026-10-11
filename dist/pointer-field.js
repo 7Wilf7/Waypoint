@@ -264,7 +264,9 @@ export function initPointerField() {
   on(document,'pointerleave',releaseSampling);on(window,'blur',()=>{focused=false;clear();});on(window,'focus',()=>{focused=true;updateGate();});
   on(document,'keydown',()=>{keyboard=true;clear();});on(document,'visibilitychange',updateGate);
   on(document,'waypoint-reader',updateGate);on(document,'toggle',updateGate,true);on(document,'close',updateGate,true);
-  on(window,'scroll',()=>{clear();releaseOffscreen();},{passive:true});on(window,'resize',()=>{resize();clear();},{passive:true});
+  // Clouds keep drifting through scrolls. Fresh pointer input starts with a
+  // new velocity sample after the page has moved.
+  on(window,'scroll',()=>{releaseSampling();releaseOffscreen();},{passive:true});on(window,'resize',()=>{resize();clear();},{passive:true});
   on(reduce,'change',updateGate);on(fine,'change',updateGate);on(document,'load',queueRefresh,true);
   on(document,'journal-ready',queueRefresh);on(document,'journal-loading',queueRefresh);
   const rootObserver=new MutationObserver(records=>{
@@ -276,7 +278,9 @@ export function initPointerField() {
   const bodyObserver=new MutationObserver(records=>{
     const relevant=records.filter(record=>record.target!==canvas&&!record.target.closest?.('.pointer-image-guide'));
     if(!relevant.length)return;
-    if(relevant.some(record=>record.type==='attributes')){clear();updateGate();}
+    // Lazy-loaded content can change while scrolling. Recheck motion gates
+    // without discarding clouds just because a loading or view flag changed.
+    if(relevant.some(record=>record.type==='attributes'))updateGate();
     queueRefresh();
   });
   bodyObserver.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','data-app','data-view','data-locale','aria-busy','open']});

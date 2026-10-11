@@ -25,6 +25,8 @@ html[lang="en"] .waypoint-home h1 {font-size:clamp(2.8rem,5.4vw,5.7rem);line-hei
 .scroll-heading .muted-heading {color:var(--muted);}
 .hero-bottom {display:flex;flex-direction:column;align-items:flex-start;gap:30px;margin-top:36px;}
 .waypoint-home .hero-intro {font-size:1.125rem;line-height:1.8;margin:0;color:var(--muted);animation:none;}
+.waypoint-home .hero-viewing-note {display:flex;align-items:flex-start;gap:8px;margin:16px 0 0;font-size:.75rem;line-height:1.7;color:var(--muted);}
+.hero-viewing-note svg {width:15px;height:15px;flex:none;margin-top:2px;fill:none;stroke:currentColor;stroke-width:1.5;}
 .waypoint-home .hero-actions {display:flex;gap:28px;margin:0;flex-wrap:wrap;}
 .hero-link {display:flex;align-items:center;gap:30px;min-height:48px;font-size:.9375rem;padding:8px 0;border-bottom:1px solid var(--line-strong);}
 .hero-link-secondary {color:var(--muted);}
