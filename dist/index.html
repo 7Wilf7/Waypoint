@@ -16,6 +16,7 @@
       .welcome-screen>*{z-index:1}
       html.intro-pending{overflow:hidden}
       html.intro-pending body{overflow:hidden}
+      html.intro-pending body>:not(.welcome-screen,script){pointer-events:none}
       html.intro-pending:not(.intro-leaving) body>:not(.welcome-screen,script){visibility:hidden}
       html.intro-pending .welcome-screen{display:grid;position:fixed;inset:0;z-index:90;place-items:center;background:#1a1a1a;color:#f3f3f3;transition:transform 500ms cubic-bezier(.77,0,.175,1)}
       html.intro-leaving .welcome-screen{transform:translate3d(0,-125%,0)}
@@ -23,32 +24,42 @@
       .welcome-brand{position:absolute;top:calc(env(safe-area-inset-top,0px) + clamp(24px,4vw,60px));left:clamp(24px,4vw,60px);font:500 1.1rem/1.3 system-ui,sans-serif}
       .welcome-word{margin:0;max-width:100%;padding:0 24px;font:400 clamp(2rem,5vw,4.5rem)/1.7 system-ui,sans-serif;letter-spacing:-.035em;text-align:center}
       .welcome-window{display:block;height:1.7em;overflow:hidden}
-      .welcome-track{display:block;animation:welcome-greetings 3440ms linear both}
+      .welcome-track{display:block;animation:welcome-greetings 5520ms linear both}
       .welcome-greeting{display:flex;align-items:center;justify-content:center;gap:20px;height:1.7em;white-space:nowrap}
       .welcome-greeting::before{content:'';width:10px;height:10px;background:currentColor;border-radius:50%;flex:none}
       .welcome-accessible{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-      /* Ten slots: 600 / 480 / 360, 160 / 120 / 120 / 160, 360 / 480 / 600 ms.
-         Hold each greeting, then move one row. The final two moves ease to rest. */
+      /* Slow first/last three slots (660 / 540 / 420 ms), fourteen faster
+         middle slots (240 down to 100 and back), then a 660ms final hold. */
       @keyframes welcome-greetings{
-        0%,12.2093%{transform:translate3d(0,0,0);animation-timing-function:var(--ease-in-out,cubic-bezier(.77,0,.175,1))}
-        17.4419%,26.1628%{transform:translate3d(0,-10%,0);animation-timing-function:var(--ease-in-out,cubic-bezier(.77,0,.175,1))}
-        31.3953%,36.6279%{transform:translate3d(0,-20%,0);animation-timing-function:var(--ease-in-out,cubic-bezier(.77,0,.175,1))}
-        41.8605%,43.6047%{transform:translate3d(0,-30%,0)}
-        46.5116%,47.6744%{transform:translate3d(0,-40%,0)}
-        50%,51.1628%{transform:translate3d(0,-50%,0)}
-        53.4884%,55.2326%{transform:translate3d(0,-60%,0)}
-        58.1395%,61.6279%{transform:translate3d(0,-70%,0);animation-timing-function:var(--ease-out,cubic-bezier(.23,1,.32,1))}
-        68.6047%,73.8372%{transform:translate3d(0,-80%,0);animation-timing-function:var(--ease-out,cubic-bezier(.23,1,.32,1))}
-        82.5581%,100%{transform:translate3d(0,-90%,0)}
+        0%,8.152174%{transform:translate3d(0,0,0);animation-timing-function:var(--ease-in-out,cubic-bezier(.77,0,.175,1))}
+        11.956522%,17.934783%{transform:translate3d(0,-5%,0);animation-timing-function:var(--ease-in-out,cubic-bezier(.77,0,.175,1))}
+        21.73913%,25.543478%{transform:translate3d(0,-10%,0);animation-timing-function:var(--ease-in-out,cubic-bezier(.77,0,.175,1))}
+        29.347826%,31.15942%{transform:translate3d(0,-15%,0)}
+        33.695652%,35.326087%{transform:translate3d(0,-20%,0)}
+        37.318841%,38.768116%{transform:translate3d(0,-25%,0)}
+        40.57971%,41.847826%{transform:translate3d(0,-30%,0)}
+        43.478261%,44.565217%{transform:translate3d(0,-35%,0)}
+        46.014493%,46.92029%{transform:translate3d(0,-40%,0)}
+        48.188406%,48.913043%{transform:translate3d(0,-45%,0)}
+        50%,50.724638%{transform:translate3d(0,-50%,0)}
+        51.811594%,52.717391%{transform:translate3d(0,-55%,0)}
+        53.985507%,55.072464%{transform:translate3d(0,-60%,0)}
+        56.521739%,57.789855%{transform:translate3d(0,-65%,0)}
+        59.42029%,60.869565%{transform:translate3d(0,-70%,0)}
+        62.681159%,64.311594%{transform:translate3d(0,-75%,0)}
+        66.304348%,68.115942%{transform:translate3d(0,-80%,0)}
+        70.652174%,73.913043%{transform:translate3d(0,-85%,0);animation-timing-function:var(--ease-out,cubic-bezier(.23,1,.32,1))}
+        78.26087%,82.608696%{transform:translate3d(0,-90%,0);animation-timing-function:var(--ease-out,cubic-bezier(.23,1,.32,1))}
+        88.043478%,100%{transform:translate3d(0,-95%,0)}
       }
       .welcome-signature{position:absolute;bottom:8svh;font:500 .875rem/1.5 monospace;letter-spacing:.12em}
+      .welcome-viewing-note{position:absolute;bottom:14svh;left:24px;right:24px;display:flex;align-items:center;justify-content:center;gap:8px;margin:0;font:400 .8125rem/1.6 system-ui,sans-serif;color:#c1c1c1;text-align:center}
+      .welcome-viewing-note svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5}
       .welcome-line{position:absolute;bottom:5svh;left:25%;width:50%;height:1px;background:rgb(255 255 255 / 15%);overflow:hidden}
-      .welcome-line::after{content:'';position:absolute;inset:0;background:currentColor;transform-origin:left;animation:welcome-line 3440ms linear both}
+      .welcome-line::after{content:'';position:absolute;inset:0;background:currentColor;transform-origin:left;animation:welcome-line 5520ms linear both}
       @keyframes welcome-line{from{transform:scaleX(.02)}to{transform:scaleX(1)}}
-      .welcome-skip{position:absolute;top:calc(env(safe-area-inset-top,0px) + clamp(24px,4vw,60px));right:clamp(24px,4vw,60px);background:transparent;border:1px solid rgb(255 255 255 / 25%);border-radius:100px;padding:10px 20px;min-height:44px;color:inherit;font:400 1rem/1.3 system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
-      .welcome-skip:focus-visible{outline:2px solid currentColor;outline-offset:4px}
       html[data-language="en"] [data-welcome="zh"],html[data-language="zh"] [data-welcome="en"]{display:none}
-      @media(prefers-reduced-motion:reduce){html.intro-pending .welcome-screen{display:none;transition:none}.welcome-track,.welcome-line::after{animation:none}}
+      @media(prefers-reduced-motion:reduce){html.intro-pending .welcome-screen{transition:none;transform:none}.welcome-track{animation:none;transform:translate3d(0,-95%,0)}.welcome-line::after{animation:none;transform:scaleX(1)}}
       .startup-error{display:none}
       html.app-failed .startup-error{display:block}
       html.app-failed :is(.race-entries,.article-entries,.preview-message,.race-archive-results,.race-archive-status){display:none}
@@ -67,8 +78,8 @@
       document.documentElement.dataset.view = location.pathname === '/races' ? 'races' : 'home';
       // Decide before first paint, without a persistent visit marker.
       (() => {
-        const root=document.documentElement,reduce=matchMedia('(prefers-reduced-motion: reduce)');
-        if(reduce.matches||location.pathname!=='/'||(location.hash&&location.hash!=='#home')){root.classList.add('intro-complete');return;}
+        const root=document.documentElement;
+        if(location.pathname!=='/'||(location.hash&&location.hash!=='#home')){root.classList.add('intro-complete');return;}
         root.classList.add('intro-pending');
       })();
     </script>
@@ -95,6 +106,16 @@
           <span class="welcome-greeting" lang="it">Ciao</span>
           <span class="welcome-greeting" lang="de">Hallo</span>
           <span class="welcome-greeting" lang="pt">Olá</span>
+          <span class="welcome-greeting" lang="nl">Hoi</span>
+          <span class="welcome-greeting" lang="sv">Hej</span>
+          <span class="welcome-greeting" lang="pl">Cześć</span>
+          <span class="welcome-greeting" lang="ga">Dia duit</span>
+          <span class="welcome-greeting" lang="tr">Merhaba</span>
+          <span class="welcome-greeting" lang="vi">Xin chào</span>
+          <span class="welcome-greeting" lang="el">Γεια σας</span>
+          <span class="welcome-greeting" lang="hi">नमस्ते</span>
+          <span class="welcome-greeting" lang="he"><bdi dir="rtl">שלום</bdi></span>
+          <span class="welcome-greeting" lang="fa"><bdi dir="rtl">سلام</bdi></span>
           <span class="welcome-greeting" lang="ja">こんにちは</span>
           <span class="welcome-greeting" lang="ko">안녕하세요</span>
           <span class="welcome-greeting" lang="ar"><bdi dir="rtl">مرحبًا</bdi></span>
@@ -103,35 +124,28 @@
       </p>
       <span class="welcome-line" aria-hidden="true"></span>
       <span class="welcome-signature">WILF WU / GUANGZHOU</span>
-      <button class="welcome-skip" type="button"><span data-welcome="zh">跳过</span><span data-welcome="en">Skip</span></button>
+      <p class="welcome-viewing-note"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="3" width="16" height="11" rx="1.5" /><path d="M7 17h6M10 14v3" /></svg><span data-welcome="zh">电脑访问效果会更好。</span><span data-welcome="en">The visual effects work best on a computer.</span></p>
     </div>
     <script data-waypoint-welcome>
       // A classic body script waits for CSS, but never for the deferred app modules.
       // Starting here prevents a slow stylesheet from consuming the greeting unseen.
       (() => {
-        const root=document.documentElement,reduce=matchMedia('(prefers-reduced-motion: reduce)');
+        const root=document.documentElement;
         if(!root.classList.contains('intro-pending'))return;
         const finish=()=>{
           clearTimeout(leaveTimer);clearTimeout(finishTimer);
           root.classList.remove('intro-pending','intro-leaving');root.classList.add('intro-complete');
-          document.removeEventListener('keydown',skip);document.removeEventListener('click',skip);
-          document.removeEventListener('visibilitychange',onVisibility);
-          window.removeEventListener('pagehide',finish);window.removeEventListener('hashchange',finish);
-          reduce.removeEventListener('change',onReduce);
+          document.removeEventListener('keydown',blockInput,true);
+          window.removeEventListener('pagehide',finish);
         };
-        const skip=event=>{
-          if(event.type!=='keydown'&&!event.target.closest('.welcome-skip'))return;
-          root.dataset.input=event.type==='keydown'?'keyboard':'pointer';finish();
+        const blockInput=event=>{
+          if(event.metaKey||event.ctrlKey||event.altKey)return;
+          event.preventDefault();event.stopImmediatePropagation();
         };
-        const onReduce=()=>{if(reduce.matches)finish();};
-        const onVisibility=()=>{if(document.hidden)finish();};
-        const leaveTimer=setTimeout(()=>root.classList.add('intro-leaving'),3440);
-        const finishTimer=setTimeout(finish,3940);
-        document.addEventListener('keydown',skip);document.addEventListener('click',skip);
-        document.addEventListener('visibilitychange',onVisibility);
-        window.addEventListener('pagehide',finish);window.addEventListener('hashchange',finish);
-        reduce.addEventListener('change',onReduce);
-        if(reduce.matches||document.hidden)finish();
+        const leaveTimer=setTimeout(()=>root.classList.add('intro-leaving'),5520);
+        const finishTimer=setTimeout(finish,6020);
+        document.addEventListener('keydown',blockInput,true);
+        window.addEventListener('pagehide',finish);
       })();
     </script>
     <div class="ambient-backdrop" aria-hidden="true"><div class="ambient-depth"><div class="ambient-glow ambient-glow-dark"></div><div class="ambient-glow ambient-glow-light"></div><div class="ambient-glow ambient-glow-moss"></div><div class="ambient-glow ambient-glow-gray"></div><div class="ambient-grain"></div></div></div>
@@ -161,7 +175,7 @@
           <div class="hero-writing">
           <p class="eyebrow hero-eyebrow"><span class="live-dot" aria-hidden="true"></span><span data-i18n="heroEyebrow">Wilf 吴凡的个人坐标</span></p>
           <h1 id="hero-heading" data-i18n="heroHeadline">跑山，<br /><span>做点新东西。</span></h1>
-          <div class="hero-bottom"><div><p class="hero-intro" data-i18n="heroIntro">跑山，也用 AI 做些自己想用的工具。<br />照片、赛记和做出来的小项目，都收在这里。</p><p class="hero-viewing-note"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="3" width="16" height="11" rx="1.5" /><path d="M7 17h6M10 14v3" /></svg><span data-i18n="desktopExperience">电脑访问效果会更好。</span></p></div><div class="hero-actions"><a class="hero-link" href="#trails"><span data-i18n="browseTrails">浏览山野</span><span aria-hidden="true">↗</span></a><a class="hero-link hero-link-secondary" href="#making"><span data-i18n="browseMaking">看看作品</span><span aria-hidden="true">↗</span></a></div></div>
+          <div class="hero-bottom"><div><p class="hero-intro" data-i18n="heroIntro">跑山，也用 AI 做些自己想用的工具。<br />照片、赛记和做出来的小项目，都收在这里。</p></div><div class="hero-actions"><a class="hero-link" href="#trails"><span data-i18n="browseTrails">浏览山野</span><span aria-hidden="true">↗</span></a><a class="hero-link hero-link-secondary" href="#making"><span data-i18n="browseMaking">看看作品</span><span aria-hidden="true">↗</span></a></div></div>
           </div>
           <figure class="hero-gallery" role="region" aria-label="山野照片" data-i18n-aria="heroGalleryLabel" aria-roledescription="轮播" data-i18n-roledescription="heroCarouselRole">
             <div class="hero-gallery-track" id="hero-gallery-track">

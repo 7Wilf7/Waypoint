@@ -21,7 +21,7 @@ export function initMotion() {
   document.addEventListener('keydown', event => {
     if (['Tab', 'Enter', ' ', 'ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', 'Escape'].includes(event.key)) {
       root.dataset.input = 'keyboard';
-      root.classList.add('intro-complete');
+      if (!root.classList.contains('intro-pending')) root.classList.add('intro-complete');
       stopDecorativeMotion();
     }
   });

@@ -107,6 +107,6 @@ console.log('Owner authorization, password changes and session revocation, publi
 console.log('Original image integrity, proportional previews, EXIF orientation, private variants, publication withdrawal, and bounded generation passed.');
 console.log('Race categories, divisions, original dates, representative selection, result formatting, and archive ordering passed.');
 console.log('Complete text-only articles, bilingual summaries, reading estimates, original times, stable article ordering, and fixed race photo roles passed.');
-console.log('First-paint greeting, independent skip/deadline, stored themes/languages, storage-denial recovery, bounded response bodies, and no automatic write replay passed.');
+console.log('First-paint greeting, required playback/deadline, stored themes/languages, storage-denial recovery, bounded response bodies, and no automatic write replay passed.');
 console.log('Deployment snapshots, draft/media isolation, no-store public delivery, strict live PDFs, Preview boundaries, and withdrawal-safe rebuilds passed.');
 console.log('Owner-only visitor reporting, Shanghai day boundaries, URL redaction, visit preferences and bounded analytics queries passed.');

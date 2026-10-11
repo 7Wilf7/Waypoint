@@ -32,33 +32,48 @@ test('language and all four background preferences are applied before the main m
   for(const theme of ['dark','light','moss','gray'])assert.equal(startup({theme}).root.dataset.theme,theme);
   assert.equal(startup({theme:'invalid'}).root.dataset.theme,'dark');
 });
-test('reduced motion and direct content links bypass the greeting',()=>{
-  for(const options of [{reduced:true},{hash:'#read/about'},{hash:'#races'},{pathname:'/races'},{pathname:'/manage'}]) {
+test('direct content links bypass the homepage greeting',()=>{
+  for(const options of [{hash:'#read/about'},{hash:'#races'},{pathname:'/races'},{pathname:'/manage'}]) {
     const state=startup(options);assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.classes.has('intro-complete'),true);assert.equal(state.timers.size,0);
   }
 });
 test('reopening the homepage does not suppress the greeting through an old session marker',()=>{
   for(const options of [{seen:true},{hash:'#home'}])assert.equal(startup(options).classes.has('intro-pending'),true);
 });
-test('the ten-language greeting releases the page within four seconds without any main-module response',()=>{
+test('the twenty-language greeting releases the page in about six seconds without any main-module response',()=>{
   const state=startup();
   for(const [id,{fn,delay}] of [...state.timers].sort((a,b)=>a[1].delay-b[1].delay)) {
-    assert.ok(delay<=4000);state.timers.delete(id);fn();
+    assert.ok(delay<=6100);state.timers.delete(id);fn();
   }
   assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.classes.has('intro-leaving'),false);assert.equal(state.classes.has('intro-complete'),true);
   assert.equal(state.listeners.size,0);assert.equal(state.timers.size,0);
 });
-test('keyboard, Skip, navigation, hidden pages and reduced motion release the greeting immediately',()=>{
-  for(const [target,type,event] of [['document','keydown',{}],['document','click',{target:{closest:()=>({})}}],['window','hashchange',{}],['window','pagehide',{}],['document','visibilitychange',{}],['media','change',{}]]) {
-    const state=startup();state.document.hidden=true;state.media.matches=true;state.emit(target,type,event);
-    assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.classes.has('intro-complete'),true);
-    assert.equal(state.listeners.size,0);assert.equal(state.timers.size,0);
+test('keys, clicks, hidden pages, hash changes and reduced-motion changes cannot dismiss the greeting early',()=>{
+  assert.doesNotMatch(html,/class="welcome-skip"/);
+  for(const [target,type] of [['document','keydown'],['document','click'],['window','hashchange'],['document','visibilitychange'],['media','change']]) {
+    const state=startup();state.document.hidden=true;state.media.matches=true;
+    let prevented=false,stopped=false;
+    state.emit(target,type,{preventDefault:()=>{prevented=true;},stopImmediatePropagation:()=>{stopped=true;}});
+    assert.equal(state.classes.has('intro-pending'),true);assert.equal(state.classes.has('intro-complete'),false);
+    assert.equal(state.timers.size,2);
+    assert.equal(prevented,type==='keydown');assert.equal(stopped,type==='keydown');
   }
+});
+test('reduced motion retains the same bounded homepage wait',()=>{
+  const state=startup({reduced:true});assert.equal(state.classes.has('intro-pending'),true);
+  assert.equal(Math.max(...[...state.timers.values()].map(timer=>timer.delay)),6020);
+});
+test('browser shortcuts stay available and leaving the page cleans up the greeting',()=>{
+  const state=startup();let prevented=false;
+  state.emit('document','keydown',{metaKey:true,preventDefault:()=>{prevented=true;}});
+  assert.equal(prevented,false);assert.equal(state.classes.has('intro-pending'),true);
+  state.emit('window','pagehide');
+  assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.listeners.size,0);assert.equal(state.timers.size,0);
 });
 test('storage denial retains default preferences and a bounded greeting',()=>{
   const state=startup({storageFails:true});assert.equal(state.classes.has('intro-pending'),true);
   assert.equal(state.root.dataset.language,'zh');assert.equal(state.root.lang,'zh-CN');assert.equal(state.root.dataset.theme,'dark');
-  assert.equal(Math.max(...[...state.timers.values()].map(timer=>timer.delay)),3940);
+  assert.equal(Math.max(...[...state.timers.values()].map(timer=>timer.delay)),6020);
 });
 test('request deadlines include a response body that never finishes',async t=>{
   const original=globalThis.fetch;t.after(()=>{globalThis.fetch=original;});
