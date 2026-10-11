@@ -113,20 +113,20 @@ export const notesEn = {
 export const notesByLanguage = { zh: notes, en: notesEn };
 
 notes.about = {
-  category: '关于 / 吴凡', title: '山野与创造，是我的两条路。',
-  lead: '我是 Wilf 吴凡，住在广州。',
+  category: '关于 / WAYPOINT', title: '关于这个网站',
+  lead: '这里记录我的比赛、赛记和 AI 项目。',
   paragraphs: [
-    '越野跑把我带到日常以外。风景、身体的感受，以及路上的选择，都是经历的一部分。这个网站留着一些跑山经历、比赛记录和已有赛记，方便以后回来看看。',
-    '我不是程序员，借助 AI 实践自己的想法。从日常的需要到纯粹的好奇，工具、交互页面和好玩的东西，都可以成为作品。现在，创造板块以 Aevum 为核心。',
-    '这里首先是让别人认识我的入口，也是自己的留存与回看。记录不必有固定频率；有值得展示的结果，再慢慢放进来。'
+    '我住在广州，平时喜欢跑山。这里整理了跑过的比赛、成绩和照片，也放了一些赛记。',
+    '我不是程序员，用 AI 做了一些自己想用的东西。现在主要在做 Aevum，把训练、账本、日历和笔记放在一起。',
+    '这些内容放在一个网站里，自己查找、回看也方便。以后有新的记录或项目，再加进来。'
   ]
 };
 notesEn.about = {
-  category: 'ABOUT / WILF WU', title: 'Trails and making. Two paths of my own.',
-  lead: 'I’m Wilf Wu, based in Guangzhou.',
+  category: 'ABOUT / WAYPOINT', title: 'About this site',
+  lead: 'A place for my race records, reports, and AI projects.',
   paragraphs: [
-    'Trail running takes me beyond the everyday. Scenery, how the body feels, and decisions along the way all belong to the experience. This space keeps some mountain experiences, race records and existing stories to return to later.',
-    'I’m not a programmer. I use AI to put my ideas into practice. Everyday needs and simple curiosity can both lead to useful tools, interactive pages or things made just for fun. For now, Aevum is at the heart of Making.',
-    'This is an introduction for people getting to know me, and a place for my own memories. There is no fixed publishing schedule. When there is something worth showing, I can add it here.'
+    'I live in Guangzhou and enjoy trail running. This site collects the races I’ve run, results, photos, and some race reports.',
+    'I’m not a programmer. I use AI to build things I want to use. My main project is Aevum, which brings training, finances, a calendar, and notes together.',
+    'Keeping these things on one site makes them easier for me to find and look back at. I’ll add new records and projects as I go.'
   ]
 };

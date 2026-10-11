@@ -1,6 +1,6 @@
 export const analyticsCopy={
   zh:{
-    eyebrow:'站点统计',title:'来访',intro:'看看这段路，迎来了多少次相遇。',
+    eyebrow:'站点统计',title:'来访',intro:'查看网站的浏览量、访问来源和设备分布。',
     rangeLabel:'统计时间范围',days7:'近 7 天',days30:'近 30 天',refresh:'刷新',retry:'重试',
     ownerDeviceLabel:'不统计我的访问',ownerDeviceExcluded:'本浏览器可关联的新版历史已从管理页统计排除；退出登录后，后续访问也不计入。',
     ownerDeviceIncluded:'本浏览器已有历史仍被排除；如未停用统计，退出登录后的新访问会使用新标记计入。',
@@ -32,7 +32,7 @@ export const analyticsCopy={
     note:'按广州时间每日零点统计。新版从零累计，只统计带浏览器标记且未被排除的访问；旧匿名汇总无法关联，不纳入本面板。浏览量包含打开、切换和阅读，可能漏报。估算访客数不代表微信身份。'
   },
   en:{
-    eyebrow:'SITE ANALYTICS',title:'Visitors',intro:'A quiet look at the visits along the way.',
+    eyebrow:'SITE ANALYTICS',title:'Visitors',intro:'View page views, traffic sources, and device types.',
     rangeLabel:'Analytics date range',days7:'7 days',days30:'30 days',refresh:'Refresh',retry:'Retry',
     ownerDeviceLabel:'Exclude my visits',ownerDeviceExcluded:'Linkable history from this browser is excluded from the new dashboard. Future visits stay excluded after sign-out.',
     ownerDeviceIncluded:'Earlier visits stay excluded. If analytics is allowed, new visits after sign-out will count with a fresh browser marker.',

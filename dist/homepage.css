@@ -24,8 +24,7 @@ html[lang="en"] .waypoint-home h1 {font-size:clamp(2.8rem,5.4vw,5.7rem);line-hei
 .scroll-surface[data-scroll-progress]:not([data-scroll-progress="0.000"],[data-scroll-progress="1.000"]) {will-change:transform;}
 .scroll-heading .muted-heading {color:var(--muted);}
 .hero-bottom {display:flex;flex-direction:column;align-items:flex-start;gap:30px;margin-top:36px;}
-.waypoint-home .hero-statement {margin:0;font-size:1.125rem;line-height:1.7;animation:none;}
-.waypoint-home .hero-intro {font-size:1.125rem;line-height:1.8;margin:8px 0 0;color:var(--muted);animation:none;}
+.waypoint-home .hero-intro {font-size:1.125rem;line-height:1.8;margin:0;color:var(--muted);animation:none;}
 .waypoint-home .hero-actions {display:flex;gap:28px;margin:0;flex-wrap:wrap;}
 .hero-link {display:flex;align-items:center;gap:30px;min-height:48px;font-size:.9375rem;padding:8px 0;border-bottom:1px solid var(--line-strong);}
 .hero-link-secondary {color:var(--muted);}
@@ -137,11 +136,11 @@ html[lang="en"] .waypoint-home h1 {font-size:clamp(2.8rem,5.4vw,5.7rem);line-hei
   .hero-gallery {height:clamp(370px,114vw,560px);border-radius:14px;}
   .hero-gallery-bar {padding:24px 12px 12px;gap:8px;}
   .hero-gallery-label {font-size:.625rem;letter-spacing:.06em;}
-  .waypoint-home h1 {font-size:clamp(3.5rem,16vw,5.4rem);line-height:1.17;}
-  html[lang="en"] .waypoint-home h1 {font-size:clamp(2.8rem,10.5vw,4.5rem);line-height:1.17;}
+  .waypoint-home h1 {font-size:clamp(2.5rem,14vw,5.4rem);line-height:1.17;}
+  html[lang="en"] .waypoint-home h1 {font-size:clamp(2rem,10.5vw,4.5rem);line-height:1.17;}
   .waypoint-home .hero-eyebrow {font-size:.6875rem;margin-bottom:30px;}
   .hero-bottom {margin-top:35px;gap:28px;}
-  .waypoint-home .hero-statement,.waypoint-home .hero-intro {font-size:1rem;}
+  .waypoint-home .hero-intro {font-size:1rem;}
   .waypoint-home .hero-actions {gap:26px;}
   .hero-link {font-size:.875rem;gap:20px;}
   .hero-coordinate {display:none;}
