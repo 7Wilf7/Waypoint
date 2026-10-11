@@ -8,7 +8,7 @@ import { initAmbientMotion } from './ambient-motion.js';
 import { initAmbientAudio } from './ambient-audio.js';
 import { initTheme } from './theme.js';
 import {renderLoading,clearLoading,createMediaImage,clearMedia} from './loading.js';
-import {mediaURL} from './media-images.js';
+import {createRaceGallery} from './race-media.js';
 import {initRaceArchive} from './race-archive.js';
 import {initTouchMotion} from './touch-motion.js';
 import {createVisitTracker} from './visits.js';
@@ -29,6 +29,7 @@ let readingKey = null;
 let routing = false;
 let readerOrigin = null;
 let homeInitialized=false,activeView=null,routeSequence=0,historySequence=0,routeURL=null,restoredHref=null;
+let homeReturn=null;
 const homeView=document.querySelector('#home-view'),archiveView=document.querySelector('#race-archive-view');
 const routeOrigins=new Map();
 const readingDestination = key => ['aevum','memory'].includes(key) ? '#making' : ['about','waypoint'].includes(key) ? '#about' : getEntry(key)?.kind === 'race' ? '#races' : '#writing';
@@ -135,16 +136,11 @@ function renderNote(key, keyboard = false, preservePosition = false) {
     link.textContent = note.link.label;
     readerBody.append(link);
   }
-  if (note.photos?.length) {
+  if(note.kind==='race')readerBody.append(createRaceGallery(note));
+  else if (note.photos?.length) {
     const gallery=document.createElement('div');gallery.className='reader-gallery';
     for (const [index,id] of note.photos.entries())gallery.append(createMediaImage('./media/'+id,note.title+' · '+words().galleryPhoto+' '+(index+1),{entry:note.id}));
     readerBody.append(gallery);
-  }
-  if (note.certificates?.length) {
-    const section=document.createElement('div');section.className='reader-certificates';
-    const title=document.createElement('h3');title.textContent=words().raceCertificates;section.append(title);
-    for (const [index,id] of note.certificates.entries()) {const link=document.createElement('a');link.href=mediaURL('./media/'+id,note.id);link.target='_blank';link.rel='noopener';link.className='button button-quiet';link.textContent=words().viewMedia+' '+(index+1);section.append(link);}
-    readerBody.append(section);
   }
   readingKey = key;
   document.title = note.title + ' — Waypoint';
@@ -192,14 +188,18 @@ function savePosition(origin) {
   history.replaceState(state,'',location.href);
   if(origin)routeOrigins.set(state.waypointKey,origin);
 }
-function navigate(target,{keyboard=false,origin=null,preserveScroll=false}={}) {
+function navigate(target,{keyboard=false,origin=null,preserveScroll=false,restore=null}={}) {
   const url=new URL(target,location.href);
   if(url.origin!==location.origin||!['/','/races'].includes(url.pathname))return;
   savePosition(origin);
+  if(activeView==='home'&&url.pathname==='/races')homeReturn={url:location.pathname+location.search+location.hash,scroll:[scrollX,scrollY],key:history.state.waypointKey};
   const reading=/^#(?:read|entry)\//.test(url.hash)&&url.pathname==='/';
   if(reading){readerOrigin=origin;returnHash=/^#(?:read|entry)\//.test(location.hash)?readingDestination(url.hash.split('/')[1]):location.hash||'#trails';}
-  history.pushState({waypointKey:'route-'+(++historySequence),waypointScroll:preserveScroll?[scrollX,scrollY]:[0,0],reading},'',url.pathname+url.search+url.hash);
-  applyRoute({position:preserveScroll?'preserve':'navigate',keyboard,origin});
+  const state={waypointKey:'route-'+(++historySequence),waypointScroll:restore?.scroll||(preserveScroll?[scrollX,scrollY]:[0,0]),reading};
+  if(url.pathname==='/races'&&homeReturn)state.waypointHomeReturn=homeReturn;
+  if(restore)routeOrigins.set(state.waypointKey,routeOrigins.get(restore.key)||homeView.querySelector('.race-archive-link'));
+  history.pushState(state,'',url.pathname+url.search+url.hash);
+  applyRoute({position:restore?'restore':preserveScroll?'preserve':'navigate',keyboard,origin});
 }
 function applyRoute({position='preserve',keyboard=false,origin=null}={}) {
   const url=new URL(location.href),nextView=url.pathname==='/races'?'races':'home';
@@ -207,6 +207,7 @@ function applyRoute({position='preserve',keyboard=false,origin=null}={}) {
   routeURL=url.href;
   const changed=nextView!==activeView;
   activeView=nextView;root.dataset.view=nextView;
+  if(nextView==='races')homeReturn=history.state?.waypointHomeReturn||homeReturn;
   homeView.hidden=nextView!=='home';archiveView.hidden=nextView!=='races';
   document.body.classList.toggle('waypoint-home',nextView==='home');
   document.body.classList.toggle('race-archive-page',nextView==='races');
@@ -226,10 +227,16 @@ function applyRoute({position='preserve',keyboard=false,origin=null}={}) {
     if(ticket!==routeSequence||dialog.open)return;
     const stored=position==='restore'?history.state?.waypointScroll:null;
     const anchor=url.hash&&document.getElementById(url.hash.slice(1));
-    if(stored)scrollTo({left:stored[0],top:stored[1],behavior:'instant'});
+    if(stored){
+      scrollTo({left:stored[0],top:stored[1],behavior:'instant'});
+      if(nextView==='home'&&journalState()==='loading')void initJournal().then(()=>{
+        if(ticket===routeSequence&&location.href===url.href)applyRoute({position:'restore'});
+      });
+    }
     else if(anchor&&!anchor.closest('[hidden]'))anchor.scrollIntoView({behavior:'instant'});
     else if(changed||position==='navigate')scrollTo({left:0,top:0,behavior:'instant'});
-    const previous=position==='restore'?routeOrigins.get(history.state?.waypointKey):null;
+    let previous=position==='restore'?routeOrigins.get(history.state?.waypointKey):null;
+    if(previous?.matches('.race-archive-link')&&!previous.isConnected)previous=homeView.querySelector('.race-archive-link');
     if(previous?.isConnected&&previous.getClientRects().length)previous.focus({preventScroll:true});
     else if(keyboard) {
       const focus=origin?.matches('.race-filter')?archiveView.querySelector('.race-filter[aria-pressed="true"]'):nextView==='races'?archiveView.querySelector('h1'):anchor?.querySelector('h2,h1')||anchor;
@@ -245,7 +252,9 @@ document.addEventListener('click',event=>{
   if(url.origin!==location.origin||!['/','/races'].includes(url.pathname))return;
   // The active view's skip link keeps the browser's native anchor behavior.
   if(link.classList.contains('skip-link'))return;
-  event.preventDefault();navigate(url,{keyboard:event.detail===0,origin:link});
+  event.preventDefault();
+  const restore=activeView==='races'&&link.matches('.race-back-link')?history.state?.waypointHomeReturn||homeReturn:null;
+  navigate(restore?.url||url,{keyboard:event.detail===0,origin:link,restore});
 });
 document.querySelector('.reader-close').addEventListener('click',()=>dialog.close());
 dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});

@@ -105,3 +105,24 @@ test('media URLs retain the entry hint for images and original links without acc
   assert.throws(()=>mediaURL('https://other.test/media/photo','race-one'),/invalid_image_source/);
   assert.throws(()=>mediaURL('/settings/auth.json','race-one'),/invalid_image_source/);
 });
+
+test('journal loading notifications can reenter a direct-entry route without starting another request',async()=>{
+  const source=await readFile(new URL('../dist/journal.js',import.meta.url),'utf8');
+  const loader=source.slice(source.indexOf('export function initJournal('),source.indexOf('// Request the current deployment catalog')).replace('export ','');
+  let resolve,calls=0,notifications=0,renders=0,reentered;
+  const response=new Promise(done=>{resolve=done;});
+  const context={request:null,requested:false,loading:false,failed:false,errorKey:'',entries:[],Event,
+    requestPublishedEntries:()=>{calls++;return response;},renderJournal:()=>{renders++;},
+    document:{dispatchEvent:event=>{
+      if(event.type==='journal-loading') {
+        if(++notifications>1)throw new Error('recursive_loading_notification');
+        reentered=context.initJournal();
+      }
+    }}};
+  runInNewContext(loader,context);
+  const first=context.initJournal();
+  assert.equal(reentered,first);assert.equal(context.initJournal(),first);assert.equal(calls,1);
+  resolve({entries:[{id:'direct-entry'}]});await first;
+  assert.equal(context.entries[0].id,'direct-entry');assert.equal(context.loading,false);
+  assert.equal(context.request,null);assert.equal(notifications,1);assert.equal(renders,2);
+});

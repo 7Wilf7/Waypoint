@@ -9,7 +9,6 @@ export function initConductor() {
   const images = [...document.querySelectorAll('[data-conductor-image]')];
   const buttons = [...document.querySelectorAll('[data-conductor-toggle]')];
   const status = feature.querySelector('.conductor-status');
-  const zoom = dialog.querySelector('[data-conductor-zoom]');
   const detail = dialog.querySelector('.conductor-detail');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const listeners = [];
@@ -45,8 +44,6 @@ export function initConductor() {
       button.setAttribute('aria-pressed', String(playing));
       button.querySelector('span').textContent = label;
     }
-    zoom.querySelector('span').textContent = detail.classList.contains('is-zoomed') ? words().conductorFit : words().conductorZoom;
-    zoom.setAttribute('aria-pressed', String(detail.classList.contains('is-zoomed')));
     detail.setAttribute('aria-label', words().conductorPan);
     status.textContent = failed ? words().conductorFailed : loading ? words().conductorLoading : '';
   }
@@ -87,7 +84,6 @@ export function initConductor() {
   const expand = feature.querySelector('[data-conductor-expand]');
   expand.hidden = false;
   listen(expand, 'click', () => {
-    detail.classList.remove('is-zoomed');
     dialog.showModal();
     root.classList.add('reading');
     sync();
@@ -99,11 +95,6 @@ export function initConductor() {
     if (!document.querySelector('.reader-dialog')?.open) root.classList.remove('reading');
     sync();
     feature.querySelector('[data-conductor-expand]').focus({preventScroll:true});
-  });
-  listen(zoom, 'click', () => {
-    detail.classList.toggle('is-zoomed');
-    syncControls();
-    detail.focus({preventScroll:true});
   });
   const closeOnNavigation = () => { if (dialog.open) dialog.close(); };
   listen(window, 'popstate', closeOnNavigation);

@@ -154,13 +154,30 @@ function acquire(source,{size='read',entry:entryId,priority=true}={}) {
   return entry;
 }
 
-export async function loadMediaImage(source,options) {
+export async function loadMediaImage(source,options={}) {
+  const signal=options.signal;
+  signal?.throwIfAborted();
   const entry=acquire(source,options);
+  let onAbort;
   try {
-    const value=await entry.promise;
+    const aborted=signal&&new Promise((_,reject)=>{
+      onAbort=()=>reject(signal.reason);signal.addEventListener('abort',onAbort,{once:true});
+    });
+    const value=await (aborted?Promise.race([entry.promise,aborted]):entry.promise);
     // A fresh element can be attached to each surface without moving another image.
     return await decode(value.src);
-  }finally{entry.users--;entry.used=Date.now();trim();}
+  }finally{
+    if(onAbort)signal.removeEventListener('abort',onAbort);
+    entry.users--;entry.used=Date.now();
+    // Retired hover previews release their pending work, including queued items.
+    // A shared request stays alive while another visible surface still needs it.
+    if(!entry.users&&!entry.value) {
+      if(entry.started)entry.controller.abort();
+      else {const index=queue.indexOf(entry);if(index>=0)queue.splice(index,1);entry.reject(new Error('image_cancelled'));}
+      discard(entry);
+    }
+    trim();
+  }
 }
 export async function preloadMediaImage(source,options={}) {
   const entry=acquire(source,{...options,priority:false});

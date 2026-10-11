@@ -26,7 +26,7 @@ export function getEntry(id) {
   const stats=entry.kind==='article'?articleStats(body,locale):null;
   const readingMeta=stats?words().articleStats.replace('{count}',new Intl.NumberFormat(locale).format(stats.count)).replace('{minutes}',stats.minutes):'';
   const summary=entry.kind==='article'?(en?entry.summaryEn:entry.summaryZh)||reading.paragraphs[0]||'':'';
-  return {id:entry.id,title:en?entry.titleEn:entry.titleZh,category:entry.kind==='race'?words()[raceCategoryKeys[entry.category]]||words().raceRecord:words().channelLabel,lead:formatDate(entry.date)+(entry.kind==='article'&&entry.publishedTime?' '+entry.publishedTime:'')+(metrics?' · '+metrics:''),...reading,summary,readingMeta,primaryPhoto:entry.kind==='race'?racePhotoRoles(entry).primary:'',certificates:entry.kind==='race'?entry.certificates:[],link:entry.wechatUrl?{href:entry.wechatUrl,label:words().wechatRead}:null,kind:entry.kind};
+  return {id:entry.id,title:en?entry.titleEn:entry.titleZh,category:entry.kind==='race'?words()[raceCategoryKeys[entry.category]]||words().raceRecord:words().channelLabel,lead:formatDate(entry.date)+(entry.kind==='article'&&entry.publishedTime?' '+entry.publishedTime:'')+(metrics?' · '+metrics:''),...reading,summary,readingMeta,primaryPhoto:entry.kind==='race'?racePhotoRoles(entry).primary:'',secondaryPhoto:entry.kind==='race'?racePhotoRoles(entry).secondary:'',certificates:entry.kind==='race'?entry.certificates:[],link:entry.wechatUrl?{href:entry.wechatUrl,label:words().wechatRead}:null,kind:entry.kind};
 }
 function formatDate(date){return new Intl.DateTimeFormat(root.dataset.language==='en'?'en-GB':'zh-CN',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date(date+'T00:00:00Z'));}
 function renderRaces(container) {
@@ -90,7 +90,7 @@ function renderArticles(container) {
 export function renderJournal(){renderRaces(document.querySelector('.race-entries'));renderArticles(document.querySelector('.article-entries'));}
 export function initJournal(focusContainer=null) {
   if(request)return request;
-  requested=true;loading=true;failed=false;renderJournal();document.dispatchEvent(new Event('journal-loading'));
+  requested=true;loading=true;failed=false;
   request=(async()=>{
     try {const data=await requestPublishedEntries();if(!Array.isArray(data.entries))throw new Error('unavailable');entries=data.entries;}
     catch(error){failed=true;errorKey=error.message==='request_timeout'?'loadTimedOut':'unavailable';}
@@ -99,6 +99,9 @@ export function initJournal(focusContainer=null) {
       if(focusContainer)focusContainer.querySelector('a,button')?.focus({preventScroll:true});
     }
   })();
+  // Route listeners may request the same entry while handling this notification.
+  // Install the shared request first so that reentry cannot start another load.
+  renderJournal();document.dispatchEvent(new Event('journal-loading'));
   return request;
 }
 

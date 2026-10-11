@@ -7,6 +7,8 @@ export function initScrollMotion() {
   if (!main) return null;
   const root = document.documentElement;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const coarse = matchMedia('(pointer: coarse)');
+  const surfaceDistance = () => coarse.matches ? 56 : 44;
   const easeOut = getComputedStyle(root).getPropertyValue('--ease-out').trim() || 'cubic-bezier(.23, 1, .32, 1)';
   const records = new Map();
   const listeners = [];
@@ -144,7 +146,7 @@ export function initScrollMotion() {
     } else {
       const remaining = 1 - progress;
       state.element.style.transform = remaining < .001 ? state.originalTransform :
-        'translate3d(0,' + (remaining * 44 * state.direction).toFixed(2) + 'px,0)';
+        'translate3d(0,' + (remaining * surfaceDistance() * state.direction).toFixed(2) + 'px,0)';
       state.element.style.opacity = progress >= 1 ? state.originalOpacity : String(.22 + .78 * progress);
     }
   }
@@ -181,7 +183,7 @@ export function initScrollMotion() {
     })) : state.kind === 'passage' ? state.units.map(unit => ({
       target: unit, from: {opacity: .18}, to: {opacity: 1}
     })) : [{target: state.element,
-      from: {transform: 'translate3d(0,' + (44 * state.direction) + 'px,0)', opacity: .22},
+      from: {transform: 'translate3d(0,' + (surfaceDistance() * state.direction) + 'px,0)', opacity: .22},
       to: {transform: state.originalTransform || 'none', opacity: state.originalOpacity || '1'}}];
     state.played = true; state.phase = 'running'; apply(state, 1);
     state.element.dataset.revealState = state.phase;
@@ -224,7 +226,7 @@ export function initScrollMotion() {
       let shift = 0;
       for (let element = state.element; element && element !== main; element = element.parentElement) {
         const surface = records.get(element);
-        if (surface?.kind === 'surface' && surface.phase === 'waiting') shift += 44 * surface.direction;
+        if (surface?.kind === 'surface' && surface.phase === 'waiting') shift += surfaceDistance() * surface.direction;
       }
       return { state, top: rect.top - shift, height: rect.height };
     });

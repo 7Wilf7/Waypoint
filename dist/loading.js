@@ -63,24 +63,45 @@ export function clearMedia(container) {
 }
 
 // Decode before showing the photo, then let its natural proportions set the frame.
-export function createMediaImage(src,alt,{size='read',entry,originalLink=true}={}) {
+export function createMediaImage(src,alt,{size='read',entry,originalLink=true,allowPDF=false,interactive=true}={}) {
   const frame=document.createElement('div');frame.className='media-frame';
-  let revision=0,timer,disposed=false;
+  let revision=0,timer,disposed=false,request;
   const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();load();}},{rootMargin:'240px'});
   function load(keyboard=false) {
     if(disposed)return;
-    const ticket=++revision;clearTimeout(timer);frame.classList.remove('is-ready');renderLoading(frame,'imageLoading',{rows:0});
+    const ticket=++revision;request?.abort();request=new AbortController();
+    const signal=request.signal;
+    clearTimeout(timer);frame.classList.remove('is-ready');renderLoading(frame,'imageLoading',{rows:0});
     const failed=()=>{
       if(disposed||revision!==ticket)return;
-      revision++;clearTimeout(timer);clearLoading(frame);
+      revision++;request.abort();clearTimeout(timer);clearLoading(frame);
       const error=document.createElement('div');error.className='load-error';error.setAttribute('role','status');
       const text=document.createElement('p');text.textContent=words().imageFailed;
-      const retry=document.createElement('button');retry.className='button button-quiet';retry.type='button';retry.textContent=words().retry;
-      retry.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();load(event.detail===0);});error.append(text,retry);frame.replaceChildren(error);
-      if(keyboard)retry.focus({preventScroll:true});
+      error.append(text);
+      if(interactive) {
+        const retry=document.createElement('button');retry.className='button button-quiet';retry.type='button';retry.textContent=words().retry;
+        retry.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();load(event.detail===0);});error.append(retry);
+        if(keyboard)queueMicrotask(()=>retry.isConnected&&retry.focus({preventScroll:true}));
+      }
+      frame.replaceChildren(error);
     };
     timer=setTimeout(failed,20000);
-    loadMediaImage(src,{size,entry}).then(image=>{
+    const prepare=async()=>{
+      if(allowPDF) {
+        const original=mediaURL(src,entry);
+        const pdf=publicationMode==='static'?new URL(original).searchParams.get('format')==='pdf':
+          (await fetch(original,{method:'HEAD',signal,cache:'no-store'})).headers.get('content-type')?.split(';')[0]==='application/pdf';
+        if(pdf) {
+          if(disposed||revision!==ticket)return;
+          const documentView=document.createElement('object');documentView.type='application/pdf';documentView.data=original;
+          documentView.className='media-pdf';documentView.setAttribute('aria-label',alt);
+          const fallback=document.createElement(interactive?'a':'span');fallback.textContent=words().viewMedia;
+          if(interactive){fallback.href=original;fallback.target='_blank';fallback.rel='noopener';}
+          documentView.append(fallback);
+          clearTimeout(timer);clearLoading(frame);frame.classList.add('is-ready');frame.replaceChildren(documentView);return;
+        }
+      }
+      const image=await loadMediaImage(src,{size,entry,signal});
       if(disposed||revision!==ticket)return;
       clearTimeout(timer);clearLoading(frame);image.className='media-image';image.alt=alt;
       frame.style.setProperty('--media-width',image.naturalWidth+'px');frame.classList.add('is-ready');
@@ -92,11 +113,12 @@ export function createMediaImage(src,alt,{size='read',entry,originalLink=true}={
         link.append(image,label);frame.replaceChildren(link);
       }else frame.replaceChildren(image);
       if(keyboard){frame.tabIndex=-1;frame.focus({preventScroll:true});}
-    },failed);
+    };
+    prepare().catch(failed);
   }
   renderLoading(frame,'imageLoading',{rows:0});
   clearLoading(frame);
   observer.observe(frame);
-  mediaCleanup.set(frame,()=>{disposed=true;revision++;observer.disconnect();clearTimeout(timer);clearLoading(frame);});
+  mediaCleanup.set(frame,()=>{disposed=true;revision++;request?.abort();observer.disconnect();clearTimeout(timer);clearLoading(frame);});
   return frame;
 }

@@ -13,7 +13,7 @@ for (const filename of ['app.js', 'theme.js', 'homepage-copy.js', 'hero-gallery.
   const result = spawnSync(process.execPath, ['--check', resolve(root, filename)], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr);
 }
-for (const filename of ['analytics-config.js','analytics-copy.js','manage-analytics.js','owner-device.js','visit-browser.js','privacy-copy.js','privacy.js','visit-policy.js','visitor-session.js','visits.js','../server/analytics.js','../server/analytics-exclusions.js']) {
+for (const filename of ['race-media.js','touch-motion.js','analytics-config.js','analytics-copy.js','manage-analytics.js','owner-device.js','visit-browser.js','privacy-copy.js','privacy.js','visit-policy.js','visitor-session.js','visits.js','../server/analytics.js','../server/analytics-exclusions.js']) {
   const result=spawnSync(process.execPath,['--check',resolve(root,filename)],{encoding:'utf8'});
   if(result.status!==0)throw new Error(result.stderr);
 }

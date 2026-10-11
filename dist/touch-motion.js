@@ -1,10 +1,12 @@
 // A passive touch trail. Only this small transparent surface is redrawn; the
 // document, its images, native scrolling and touch targets stay in place.
 let controller = null;
-const LIFE = 1.2, SAMPLE_INTERVAL = 1 / 60, MAX_POINTS = Math.ceil(LIFE / SAMPLE_INTERVAL) + 1;
+const LIFE = 1.6, SAMPLE_INTERVAL = 1 / 60, MAX_POINTS = Math.ceil(LIFE / SAMPLE_INTERVAL) + 1;
+const START_RADIUS = 22, GROWTH = 20;
 const SPRITE_EDGE = 96, SPRITE_PIXELS = 2 * SPRITE_EDGE * SPRITE_EDGE;
 const MAX_PIXELS = 640000, MAX_DIRTY_PIXELS = 280000, MAX_DPR = 1.25;
-const ENVELOPE = 56; // Largest radius, bounded drift and an antialiasing margin.
+// Include the largest radius, velocity drift, vertical curl/rise and soft edge.
+const ENVELOPE = Math.ceil(START_RADIUS + LIFE * GROWTH + LIFE * (900 * .003 + 7) + 2);
 const protectedSelector = '.preview-device,.preview-display,.preview-screen,.reader-dialog,dialog,.site-header,.header-controls,.race-archive-controls,a[href],button,input,textarea,select,summary,[role="button"],[role="tab"],[role="link"],[role="slider"],[contenteditable]:not([contenteditable="false"])';
 const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
 const union = (a, b) => !a ? b : !b ? a : ({
@@ -142,7 +144,7 @@ export function initTouchMotion() {
     if (move && ensureCanvas()) inject(move,time);
     if (!points.length) { clear(); return; }
     const drawing = points.map(point => {
-      const age = time - point.t, radius = 20 + age * 18;
+      const age = time - point.t, radius = START_RADIUS + age * GROWTH;
       const x = point.x + point.vx * age * .003 + Math.sin(point.seed + age * 2) * age * 5;
       const y = point.y + point.vy * age * .003 + Math.cos(point.seed + age * 1.8) * age * 3 - age * 4;
       return { point, age, radius, x, y };
@@ -156,10 +158,10 @@ export function initTouchMotion() {
     const exclusions = protectionRects(dirty);
     erase(dirty); canvas.hidden = false;
     const light = root.dataset.theme === 'light', material = sprites[light ? 1 : 0];
-    const strength = light ? .055 : root.dataset.theme === 'gray' ? .075 : .105;
+    const strength = light ? .1375 : root.dataset.theme === 'gray' ? .1875 : .2625;
     for (const {point,age,radius,x,y} of drawing) {
       context.save(); context.translate(x,y); context.rotate(Math.sin(point.seed) * .5 + age * .15);
-      context.globalAlpha = strength * (1-age/LIFE) ** 1.5 * (20/radius) ** .65;
+      context.globalAlpha = strength * (1-age/LIFE) ** 1.5 * (START_RADIUS/radius) ** .65;
       context.drawImage(material,-radius,-radius,radius*2,radius*2); context.restore();
     }
     exclusions.forEach(erase); lastDirty = nextDirty;

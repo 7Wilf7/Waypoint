@@ -28,8 +28,6 @@
 .conductor-detail {max-height:calc(100dvh - 146px);min-height:0;flex:1 1 auto;overflow:auto;overscroll-behavior:contain;background:#070b14;}
 .conductor-detail:focus-visible {outline:2px solid var(--accent);outline-offset:-2px;}
 .conductor-detail img {display:block;width:min(100%,1200px);height:auto;margin-inline:auto;}
-.conductor-detail.is-zoomed img {width:1200px;max-width:none;margin-inline:0;}
-.conductor-detail-hint {padding:10px 20px;margin:0;color:var(--muted);font-size:0.75rem;line-height:1.6;flex:none;}
 @media (hover:hover) and (pointer:fine) {.conductor-control:not(:disabled):hover {background:var(--surface);}}
 @media (max-width:900px) {.conductor-card {grid-template-columns:1fr 1fr;gap:28px;}.conductor-copy h3 {font-size:clamp(2.6rem,5vw,3.6rem);}}
 @media (max-width:700px) {
@@ -43,7 +41,6 @@
   .conductor-toolbar-controls {gap:6px;max-width:none;width:100%;justify-content:flex-start;}
   .conductor-toolbar-controls .conductor-control {font-size:0.72rem;padding-inline:10px;}
   .conductor-detail {max-height:calc(100dvh - 176px);}
-  .conductor-detail-hint {padding:10px 12px;}
 }
 html[data-input="keyboard"] .conductor-control {transition:none;}
 @media (prefers-reduced-motion:reduce) {.conductor-control {transition:none;}}
