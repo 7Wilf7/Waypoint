@@ -114,19 +114,19 @@ export const notesByLanguage = { zh: notes, en: notesEn };
 
 notes.about = {
   category: '关于 / WAYPOINT', title: '关于这个网站',
-  lead: '这里记录我的比赛、赛记和 AI 项目。',
+  lead: '放一些跑山的经历，也放一些用 AI 做的尝试。',
   paragraphs: [
-    '我住在广州，平时喜欢跑山。这里整理了跑过的比赛、成绩和照片，也放了一些赛记。',
-    '我不是程序员，用 AI 做了一些自己想用的东西。现在主要在做 Aevum，把训练、账本、日历和笔记放在一起。',
-    '这些内容放在一个网站里，自己查找、回看也方便。以后有新的记录或项目，再加进来。'
+    '我住在广州，喜欢跑山。跑过的比赛、路上拍的照片，还有当时写的赛记，慢慢收在了这里。',
+    '平时也会折腾些自己想用的工具。我不是程序员，用 AI 一边做一边试，现在主要在做 Aevum，把训练、账本、日历和笔记放在一起。',
+    '这个网站像一本可以随手翻翻的记录。把这些零散的东西放在一起，过一阵子回来，还能看看自己当时在跑什么、做什么。'
   ]
 };
 notesEn.about = {
   category: 'ABOUT / WAYPOINT', title: 'About this site',
-  lead: 'A place for my race records, reports, and AI projects.',
+  lead: 'Some trail-running experiences, and a few things I’ve tried making with AI.',
   paragraphs: [
-    'I live in Guangzhou and enjoy trail running. This site collects the races I’ve run, results, photos, and some race reports.',
-    'I’m not a programmer. I use AI to build things I want to use. My main project is Aevum, which brings training, finances, a calendar, and notes together.',
-    'Keeping these things on one site makes them easier for me to find and look back at. I’ll add new records and projects as I go.'
+    'I live in Guangzhou and enjoy trail running. The races I’ve run, photos from the course, and reports I wrote at the time have gradually found their way here.',
+    'I also tinker with tools I’d like to use. I’m not a programmer, so I work with AI and try things as I go. My main project is Aevum, which brings training, finances, a calendar, and notes together.',
+    'I think of this site as a notebook I can leaf through. Keeping these bits together gives me something to come back to and see what I was running or working on at the time.'
   ]
 };
