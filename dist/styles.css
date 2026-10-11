@@ -1,20 +1,7 @@
 @layer reset, theme, base, layout, components, responsive, experience;
 
 @layer experience {
-  .welcome-screen { position:fixed; inset:0; z-index:90; display:none; place-items:center; background:#1a1a1a; color:#f3f3f3; pointer-events:none; }
-  .welcome-screen[hidden] { display:none; }
-  .welcome-screen::after { content:''; position:absolute; bottom:-12svh; width:140%; height:24svh; border-radius:0 0 50% 50%; background:#1a1a1a; }
-  .welcome-brand { position:absolute; top:clamp(24px,4vw,60px); left:clamp(24px,4vw,60px); font-size:1.1rem; }
-  .welcome-word { display:flex; align-items:center; gap:20px; font-size:clamp(2rem,5vw,4.5rem); font-weight:400; letter-spacing:-.035em; text-align:center; padding:24px; }
-  .welcome-word::before { content:''; width:10px; height:10px; background:currentColor; border-radius:50%; flex:none; }
-  .welcome-signature { position:absolute; bottom:8svh; font:500 .875rem var(--font-mono); letter-spacing:.12em; }
-  .welcome-line { position:absolute; bottom:5svh; left:25%; width:50%; height:1px; background:rgb(255 255 255 / 15%); overflow:hidden; }
-  .welcome-line::after { content:''; position:absolute; inset:0; background:#f3f3f3; transform-origin:left; animation:welcome-line 1600ms linear both; }
-  @keyframes welcome-line { from {transform:scaleX(0.02)} to {transform:scaleX(1)} }
-  .welcome-skip {position:absolute;top:clamp(24px,4vw,60px);right:clamp(24px,4vw,60px);background:transparent;border:1px solid rgb(255 255 255 / 25%);border-radius:100px;padding:10px 20px;min-height:44px;color:inherit;font:inherit;cursor:pointer;pointer-events:auto;}
-  .welcome-skip:focus-visible {outline:2px solid currentColor;outline-offset:4px;}
   html.intro-pending:not(.intro-leaving) :is(.hero-visual,.hero-eyebrow,h1,.hero-statement,.hero-intro,.hero-actions,.hero-location) { animation-play-state:paused; }
-  @media (prefers-reduced-motion:reduce) { .welcome-screen { display:none; } }
   .button { position:relative; isolation:isolate; overflow:hidden; border-radius:100px; }
   .button::before { content:''; position:absolute; inset:-55% -15%; z-index:-1; background:#e0e0e0; border-radius:45%; transform:translateY(105%); transition:transform 280ms var(--ease-out); }
   .button-quiet::before { background:var(--surface-raised); }

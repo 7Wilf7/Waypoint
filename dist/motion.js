@@ -13,7 +13,7 @@ export function initMotion() {
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
   const wide = matchMedia('(min-width: 1101px)');
   const preview = document.querySelector('.note-preview');
-  setTimeout(() => root.classList.add('intro-complete'), 1100);
+  setTimeout(() => { if (!root.classList.contains('intro-pending')) root.classList.add('intro-complete'); }, 1100);
 
   function stopDecorativeMotion() {
     preview.classList.remove('is-visible');

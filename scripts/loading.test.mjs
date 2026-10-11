@@ -7,21 +7,22 @@ import {mediaURL,mediaImageURL} from '../dist/media-images.js';
 
 const html=await readFile(new URL('../dist/index.html',import.meta.url),'utf8');
 const bootstrap=html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
-function startup({seen=false,reduced=false,hash='',english=false,theme=null,storageFails=false}={}) {
+const welcome=html.match(/<script data-waypoint-welcome>\s*([\s\S]*?)<\/script>/)[1];
+function startup({seen=false,reduced=false,hash='',pathname='/',english=false,theme=null,storageFails=false}={}) {
   const classes=new Set(),listeners=new Map(),timers=new Map();let nextTimer=0;
-  const root={dataset:{theme:'dark',language:'zh'},lang:'zh-CN',classList:{add:(...items)=>items.forEach(item=>classes.add(item)),remove:(...items)=>items.forEach(item=>classes.delete(item))}};
-  const events={addEventListener:(type,fn)=>listeners.set(type,fn),removeEventListener:(type,fn)=>{if(listeners.get(type)===fn)listeners.delete(type);}};
+  const root={dataset:{theme:'dark',language:'zh'},lang:'zh-CN',classList:{add:(...items)=>items.forEach(item=>classes.add(item)),remove:(...items)=>items.forEach(item=>classes.delete(item)),contains:item=>classes.has(item)}};
+  const events=target=>({addEventListener:(type,fn)=>listeners.set(target+':'+type,fn),removeEventListener:(type,fn)=>{if(listeners.get(target+':'+type)===fn)listeners.delete(target+':'+type);}});
   const storage={getItem:key=>{if(storageFails)throw Error('Denied');return key==='waypoint-theme'?theme:key==='waypoint-welcome'&&seen?'seen':key==='waypoint-language'&&english?'en':null;},setItem:()=>{}};
-  runInNewContext(bootstrap,{document:{documentElement:root,...events},localStorage:storage,sessionStorage:storage,matchMedia:()=>({matches:reduced,...events}),location:{hash},setTimeout:fn=>{const id=++nextTimer;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id)});
-  return {root,classes,listeners,timers};
+  const document={documentElement:root,hidden:false,...events('document')},media={matches:reduced,...events('media')};
+  runInNewContext(bootstrap+'\n'+welcome,{document,window:events('window'),localStorage:storage,sessionStorage:storage,matchMedia:()=>media,location:{hash,pathname},setTimeout:(fn,delay)=>{const id=++nextTimer;timers.set(id,{fn,delay});return id;},clearTimeout:id=>timers.delete(id)});
+  return {root,classes,listeners,timers,document,media,emit:(target,type,event={})=>listeners.get(target+':'+type)?.({type,...event})};
 }
 
-test('the homepage is visible immediately with no blocking greeting deadline',()=>{
-  const first=startup();assert.equal(first.classes.has('intro-pending'),false);
-  assert.equal(first.classes.has('intro-complete'),true);
-  assert.equal(first.timers.size,0);
-  assert.equal(first.listeners.size,0);
-  assert.doesNotMatch(html,/intro-pending[^}]*visibility:hidden/);
+test('a fresh homepage shows its greeting before the main module runs',()=>{
+  const first=startup();assert.equal(first.classes.has('intro-pending'),true);
+  assert.equal(first.classes.has('intro-complete'),false);
+  assert.match(html,/class="welcome-screen"/);
+  assert.match(html,/data-welcome="zh">你好</);
 });
 test('language and all four background preferences are applied before the main module runs',()=>{
   const english=startup({english:true,theme:'light'});
@@ -31,15 +32,33 @@ test('language and all four background preferences are applied before the main m
   for(const theme of ['dark','light','moss','gray'])assert.equal(startup({theme}).root.dataset.theme,theme);
   assert.equal(startup({theme:'invalid'}).root.dataset.theme,'dark');
 });
-test('repeat visits, reduced motion, and direct content links always retain visible content',()=>{
-  for(const options of [{seen:true},{reduced:true},{hash:'#home'},{hash:'#entry/article-example'},{hash:'#races'}]) {
+test('reduced motion and direct content links bypass the greeting',()=>{
+  for(const options of [{reduced:true},{hash:'#read/about'},{hash:'#races'},{pathname:'/races'},{pathname:'/manage'}]) {
     const state=startup(options);assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.classes.has('intro-complete'),true);assert.equal(state.timers.size,0);
   }
 });
-test('storage denial keeps the homepage visible with its default language and theme',()=>{
-  const state=startup({storageFails:true});assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.classes.has('intro-complete'),true);
-  assert.equal(state.root.dataset.language,'zh');assert.equal(state.root.lang,'zh-CN');assert.equal(state.root.dataset.theme,'dark');
+test('reopening the homepage does not suppress the greeting through an old session marker',()=>{
+  for(const options of [{seen:true},{hash:'#home'}])assert.equal(startup(options).classes.has('intro-pending'),true);
+});
+test('the greeting releases the page within two seconds without any main-module response',()=>{
+  const state=startup();
+  for(const [id,{fn,delay}] of [...state.timers].sort((a,b)=>a[1].delay-b[1].delay)) {
+    assert.ok(delay<=2000);state.timers.delete(id);fn();
+  }
+  assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.classes.has('intro-leaving'),false);assert.equal(state.classes.has('intro-complete'),true);
   assert.equal(state.listeners.size,0);assert.equal(state.timers.size,0);
+});
+test('keyboard, Skip, navigation, hidden pages and reduced motion release the greeting immediately',()=>{
+  for(const [target,type,event] of [['document','keydown',{}],['document','click',{target:{closest:()=>({})}}],['window','hashchange',{}],['window','pagehide',{}],['document','visibilitychange',{}],['media','change',{}]]) {
+    const state=startup();state.document.hidden=true;state.media.matches=true;state.emit(target,type,event);
+    assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.classes.has('intro-complete'),true);
+    assert.equal(state.listeners.size,0);assert.equal(state.timers.size,0);
+  }
+});
+test('storage denial retains default preferences and a bounded greeting',()=>{
+  const state=startup({storageFails:true});assert.equal(state.classes.has('intro-pending'),true);
+  assert.equal(state.root.dataset.language,'zh');assert.equal(state.root.lang,'zh-CN');assert.equal(state.root.dataset.theme,'dark');
+  assert.equal(Math.max(...[...state.timers.values()].map(timer=>timer.delay)),2000);
 });
 test('request deadlines include a response body that never finishes',async t=>{
   const original=globalThis.fetch;t.after(()=>{globalThis.fetch=original;});

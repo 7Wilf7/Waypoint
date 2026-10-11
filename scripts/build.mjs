@@ -10,7 +10,7 @@ await build({stdin:{contents:"export {inject,pageview} from '@vercel/analytics';
 await rm(resolve(root,'public'),{recursive:true,force:true});
 await mkdir(resolve(root,'public'),{recursive:true});
 for(const file of await readdir(resolve(root,'dist'),{withFileTypes:true})) {
-  if((file.isDirectory()&&file.name==='assets')||(file.isFile()&&['.html','.css','.js','.svg'].includes(extname(file.name))))await cp(resolve(root,'dist',file.name),resolve(root,'public',file.name),{recursive:true});
+  if((file.isDirectory()&&file.name==='assets')||(file.isFile()&&['.html','.css','.js','.svg','.webmanifest'].includes(extname(file.name))))await cp(resolve(root,'dist',file.name),resolve(root,'public',file.name),{recursive:true});
 }
 await writeFile(resolve(root,'public/analytics-config.js'),'export const analyticsEnabled='+String(process.env.VERCEL_ENV==='production'&&Boolean(process.env.WAYPOINT_ANALYTICS_TOKEN&&process.env.WAYPOINT_ANALYTICS_PROJECT_ID))+';\n');
 if(policy.mode==='static') {

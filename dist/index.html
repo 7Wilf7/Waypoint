@@ -7,8 +7,30 @@
     <meta name="color-scheme" content="dark light" />
     <meta name="description" content="Wilf 吴凡的个人网站，记录跑过的比赛、写过的赛记和用 AI 做的项目。" />
     <title>Waypoint — Wilf 吴凡的个人空间</title>
-    <link rel="icon" href="./assets/aevum-refined.png" type="image/png" />
+    <link rel="icon" href="./assets/icons/waypoint-refined-v2-512.png" type="image/png" sizes="512x512" />
+    <link rel="apple-touch-icon" href="./assets/icons/waypoint-refined-v2-180.png" sizes="180x180" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="Waypoint" />
     <style>
+      .welcome-screen{display:none}
+      .welcome-screen>*{z-index:1}
+      html.intro-pending{overflow:hidden}
+      html.intro-pending body{overflow:hidden}
+      html.intro-pending:not(.intro-leaving) body>:not(.welcome-screen,script){visibility:hidden}
+      html.intro-pending .welcome-screen{display:grid;position:fixed;inset:0;z-index:90;place-items:center;background:#1a1a1a;color:#f3f3f3;transition:transform 500ms cubic-bezier(.77,0,.175,1)}
+      html.intro-leaving .welcome-screen{transform:translate3d(0,-125%,0)}
+      .welcome-screen::after{content:'';position:absolute;bottom:-12svh;width:140%;height:24svh;border-radius:0 0 50% 50%;background:#1a1a1a;pointer-events:none}
+      .welcome-brand{position:absolute;top:calc(env(safe-area-inset-top,0px) + clamp(24px,4vw,60px));left:clamp(24px,4vw,60px);font:500 1.1rem/1.3 system-ui,sans-serif}
+      .welcome-word{display:flex;align-items:center;gap:20px;font:400 clamp(2rem,5vw,4.5rem)/1.3 system-ui,sans-serif;letter-spacing:-.035em;text-align:center;padding:24px}
+      .welcome-word::before{content:'';width:10px;height:10px;background:currentColor;border-radius:50%;flex:none}
+      .welcome-signature{position:absolute;bottom:8svh;font:500 .875rem/1.5 monospace;letter-spacing:.12em}
+      .welcome-line{position:absolute;bottom:5svh;left:25%;width:50%;height:1px;background:rgb(255 255 255 / 15%);overflow:hidden}
+      .welcome-line::after{content:'';position:absolute;inset:0;background:currentColor;transform-origin:left;animation:welcome-line 1500ms linear both}
+      @keyframes welcome-line{from{transform:scaleX(.02)}to{transform:scaleX(1)}}
+      .welcome-skip{position:absolute;top:calc(env(safe-area-inset-top,0px) + clamp(24px,4vw,60px));right:clamp(24px,4vw,60px);background:transparent;border:1px solid rgb(255 255 255 / 25%);border-radius:100px;padding:10px 20px;min-height:44px;color:inherit;font:400 1rem/1.3 system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+      .welcome-skip:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+      html[data-language="en"] [data-welcome="zh"],html[data-language="zh"] [data-welcome="en"]{display:none}
+      @media(prefers-reduced-motion:reduce){html.intro-pending .welcome-screen{display:none;transition:none}}
       .startup-error{display:none}
       html.app-failed .startup-error{display:block}
       html.app-failed :is(.race-entries,.article-entries,.preview-message,.race-archive-results,.race-archive-status){display:none}
@@ -24,8 +46,13 @@
         document.documentElement.lang = language === 'en' ? 'en' : 'zh-CN';
         document.documentElement.dataset.theme = ['dark', 'light', 'moss', 'gray'].includes(saved) ? saved : 'dark';
       } catch { document.documentElement.dataset.theme = 'dark'; }
-      document.documentElement.classList.add('intro-complete');
       document.documentElement.dataset.view = location.pathname === '/races' ? 'races' : 'home';
+      // Decide before first paint, without a persistent visit marker.
+      (() => {
+        const root=document.documentElement,reduce=matchMedia('(prefers-reduced-motion: reduce)');
+        if(reduce.matches||location.pathname!=='/'||(location.hash&&location.hash!=='#home')){root.classList.add('intro-complete');return;}
+        root.classList.add('intro-pending');
+      })();
     </script>
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./homepage.css" />
@@ -39,6 +66,36 @@
     <script type="module" src="./conductor.js"></script>
   </head>
   <body class="waypoint-home">
+    <div class="welcome-screen"><span class="welcome-brand">Waypoint.</span><p class="welcome-word"><span data-welcome="zh">你好</span><span data-welcome="en">Hello</span></p><span class="welcome-line" aria-hidden="true"></span><span class="welcome-signature">WILF WU / GUANGZHOU</span><button class="welcome-skip" type="button"><span data-welcome="zh">跳过</span><span data-welcome="en">Skip</span></button></div>
+    <script data-waypoint-welcome>
+      // A classic body script waits for CSS, but never for the deferred app modules.
+      // Starting here prevents a slow stylesheet from consuming the greeting unseen.
+      (() => {
+        const root=document.documentElement,reduce=matchMedia('(prefers-reduced-motion: reduce)');
+        if(!root.classList.contains('intro-pending'))return;
+        const finish=()=>{
+          clearTimeout(leaveTimer);clearTimeout(finishTimer);
+          root.classList.remove('intro-pending','intro-leaving');root.classList.add('intro-complete');
+          document.removeEventListener('keydown',skip);document.removeEventListener('click',skip);
+          document.removeEventListener('visibilitychange',onVisibility);
+          window.removeEventListener('pagehide',finish);window.removeEventListener('hashchange',finish);
+          reduce.removeEventListener('change',onReduce);
+        };
+        const skip=event=>{
+          if(event.type!=='keydown'&&!event.target.closest('.welcome-skip'))return;
+          root.dataset.input=event.type==='keydown'?'keyboard':'pointer';finish();
+        };
+        const onReduce=()=>{if(reduce.matches)finish();};
+        const onVisibility=()=>{if(document.hidden)finish();};
+        const leaveTimer=setTimeout(()=>root.classList.add('intro-leaving'),1500);
+        const finishTimer=setTimeout(finish,2000);
+        document.addEventListener('keydown',skip);document.addEventListener('click',skip);
+        document.addEventListener('visibilitychange',onVisibility);
+        window.addEventListener('pagehide',finish);window.addEventListener('hashchange',finish);
+        reduce.addEventListener('change',onReduce);
+        if(reduce.matches||document.hidden)finish();
+      })();
+    </script>
     <div class="ambient-backdrop" aria-hidden="true"><div class="ambient-depth"><div class="ambient-glow ambient-glow-dark"></div><div class="ambient-glow ambient-glow-light"></div><div class="ambient-glow ambient-glow-moss"></div><div class="ambient-glow ambient-glow-gray"></div><div class="ambient-grain"></div></div></div>
     <noscript><style>:is(.race-entries,.article-entries,.preview-message,.preview-options){display:none!important}</style><p class="section-shell load-error">请启用 JavaScript，以浏览比赛、文章和交互预览。 / Enable JavaScript to browse race records, articles, and interactive previews.</p></noscript>
 
