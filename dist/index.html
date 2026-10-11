@@ -21,16 +21,34 @@
       html.intro-leaving .welcome-screen{transform:translate3d(0,-125%,0)}
       .welcome-screen::after{content:'';position:absolute;bottom:-12svh;width:140%;height:24svh;border-radius:0 0 50% 50%;background:#1a1a1a;pointer-events:none}
       .welcome-brand{position:absolute;top:calc(env(safe-area-inset-top,0px) + clamp(24px,4vw,60px));left:clamp(24px,4vw,60px);font:500 1.1rem/1.3 system-ui,sans-serif}
-      .welcome-word{display:flex;align-items:center;gap:20px;font:400 clamp(2rem,5vw,4.5rem)/1.3 system-ui,sans-serif;letter-spacing:-.035em;text-align:center;padding:24px}
-      .welcome-word::before{content:'';width:10px;height:10px;background:currentColor;border-radius:50%;flex:none}
+      .welcome-word{margin:0;max-width:100%;padding:0 24px;font:400 clamp(2rem,5vw,4.5rem)/1.7 system-ui,sans-serif;letter-spacing:-.035em;text-align:center}
+      .welcome-window{display:block;height:1.7em;overflow:hidden}
+      .welcome-track{display:block;animation:welcome-greetings 3440ms linear both}
+      .welcome-greeting{display:flex;align-items:center;justify-content:center;gap:20px;height:1.7em;white-space:nowrap}
+      .welcome-greeting::before{content:'';width:10px;height:10px;background:currentColor;border-radius:50%;flex:none}
+      .welcome-accessible{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+      /* Ten slots: 600 / 480 / 360, 160 / 120 / 120 / 160, 360 / 480 / 600 ms.
+         Hold each greeting, then move one row. The final two moves ease to rest. */
+      @keyframes welcome-greetings{
+        0%,12.2093%{transform:translate3d(0,0,0);animation-timing-function:var(--ease-in-out,cubic-bezier(.77,0,.175,1))}
+        17.4419%,26.1628%{transform:translate3d(0,-10%,0);animation-timing-function:var(--ease-in-out,cubic-bezier(.77,0,.175,1))}
+        31.3953%,36.6279%{transform:translate3d(0,-20%,0);animation-timing-function:var(--ease-in-out,cubic-bezier(.77,0,.175,1))}
+        41.8605%,43.6047%{transform:translate3d(0,-30%,0)}
+        46.5116%,47.6744%{transform:translate3d(0,-40%,0)}
+        50%,51.1628%{transform:translate3d(0,-50%,0)}
+        53.4884%,55.2326%{transform:translate3d(0,-60%,0)}
+        58.1395%,61.6279%{transform:translate3d(0,-70%,0);animation-timing-function:var(--ease-out,cubic-bezier(.23,1,.32,1))}
+        68.6047%,73.8372%{transform:translate3d(0,-80%,0);animation-timing-function:var(--ease-out,cubic-bezier(.23,1,.32,1))}
+        82.5581%,100%{transform:translate3d(0,-90%,0)}
+      }
       .welcome-signature{position:absolute;bottom:8svh;font:500 .875rem/1.5 monospace;letter-spacing:.12em}
       .welcome-line{position:absolute;bottom:5svh;left:25%;width:50%;height:1px;background:rgb(255 255 255 / 15%);overflow:hidden}
-      .welcome-line::after{content:'';position:absolute;inset:0;background:currentColor;transform-origin:left;animation:welcome-line 1500ms linear both}
+      .welcome-line::after{content:'';position:absolute;inset:0;background:currentColor;transform-origin:left;animation:welcome-line 3440ms linear both}
       @keyframes welcome-line{from{transform:scaleX(.02)}to{transform:scaleX(1)}}
       .welcome-skip{position:absolute;top:calc(env(safe-area-inset-top,0px) + clamp(24px,4vw,60px));right:clamp(24px,4vw,60px);background:transparent;border:1px solid rgb(255 255 255 / 25%);border-radius:100px;padding:10px 20px;min-height:44px;color:inherit;font:400 1rem/1.3 system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
       .welcome-skip:focus-visible{outline:2px solid currentColor;outline-offset:4px}
       html[data-language="en"] [data-welcome="zh"],html[data-language="zh"] [data-welcome="en"]{display:none}
-      @media(prefers-reduced-motion:reduce){html.intro-pending .welcome-screen{display:none;transition:none}}
+      @media(prefers-reduced-motion:reduce){html.intro-pending .welcome-screen{display:none;transition:none}.welcome-track,.welcome-line::after{animation:none}}
       .startup-error{display:none}
       html.app-failed .startup-error{display:block}
       html.app-failed :is(.race-entries,.article-entries,.preview-message,.race-archive-results,.race-archive-status){display:none}
@@ -66,7 +84,27 @@
     <script type="module" src="./conductor.js"></script>
   </head>
   <body class="waypoint-home">
-    <div class="welcome-screen"><span class="welcome-brand">Waypoint.</span><p class="welcome-word"><span data-welcome="zh">你好</span><span data-welcome="en">Hello</span></p><span class="welcome-line" aria-hidden="true"></span><span class="welcome-signature">WILF WU / GUANGZHOU</span><button class="welcome-skip" type="button"><span data-welcome="zh">跳过</span><span data-welcome="en">Skip</span></button></div>
+    <div class="welcome-screen">
+      <span class="welcome-brand">Waypoint.</span>
+      <p class="welcome-word">
+        <span class="welcome-accessible"><span data-welcome="zh" lang="zh-CN">你好</span><span data-welcome="en" lang="en">Hello</span></span>
+        <span class="welcome-window" aria-hidden="true"><span class="welcome-track">
+          <span class="welcome-greeting"><span data-welcome="zh" lang="en">Hello</span><span data-welcome="en" lang="zh-CN">你好</span></span>
+          <span class="welcome-greeting" lang="fr">Bonjour</span>
+          <span class="welcome-greeting" lang="es">Hola</span>
+          <span class="welcome-greeting" lang="it">Ciao</span>
+          <span class="welcome-greeting" lang="de">Hallo</span>
+          <span class="welcome-greeting" lang="pt">Olá</span>
+          <span class="welcome-greeting" lang="ja">こんにちは</span>
+          <span class="welcome-greeting" lang="ko">안녕하세요</span>
+          <span class="welcome-greeting" lang="ar"><bdi dir="rtl">مرحبًا</bdi></span>
+          <span class="welcome-greeting"><span data-welcome="zh" lang="zh-CN">你好</span><span data-welcome="en" lang="en">Hello</span></span>
+        </span></span>
+      </p>
+      <span class="welcome-line" aria-hidden="true"></span>
+      <span class="welcome-signature">WILF WU / GUANGZHOU</span>
+      <button class="welcome-skip" type="button"><span data-welcome="zh">跳过</span><span data-welcome="en">Skip</span></button>
+    </div>
     <script data-waypoint-welcome>
       // A classic body script waits for CSS, but never for the deferred app modules.
       // Starting here prevents a slow stylesheet from consuming the greeting unseen.
@@ -87,8 +125,8 @@
         };
         const onReduce=()=>{if(reduce.matches)finish();};
         const onVisibility=()=>{if(document.hidden)finish();};
-        const leaveTimer=setTimeout(()=>root.classList.add('intro-leaving'),1500);
-        const finishTimer=setTimeout(finish,2000);
+        const leaveTimer=setTimeout(()=>root.classList.add('intro-leaving'),3440);
+        const finishTimer=setTimeout(finish,3940);
         document.addEventListener('keydown',skip);document.addEventListener('click',skip);
         document.addEventListener('visibilitychange',onVisibility);
         window.addEventListener('pagehide',finish);window.addEventListener('hashchange',finish);

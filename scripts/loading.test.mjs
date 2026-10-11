@@ -22,7 +22,7 @@ test('a fresh homepage shows its greeting before the main module runs',()=>{
   const first=startup();assert.equal(first.classes.has('intro-pending'),true);
   assert.equal(first.classes.has('intro-complete'),false);
   assert.match(html,/class="welcome-screen"/);
-  assert.match(html,/data-welcome="zh">你好</);
+  assert.match(html,/data-welcome="zh" lang="zh-CN">你好</);
 });
 test('language and all four background preferences are applied before the main module runs',()=>{
   const english=startup({english:true,theme:'light'});
@@ -40,10 +40,10 @@ test('reduced motion and direct content links bypass the greeting',()=>{
 test('reopening the homepage does not suppress the greeting through an old session marker',()=>{
   for(const options of [{seen:true},{hash:'#home'}])assert.equal(startup(options).classes.has('intro-pending'),true);
 });
-test('the greeting releases the page within two seconds without any main-module response',()=>{
+test('the ten-language greeting releases the page within four seconds without any main-module response',()=>{
   const state=startup();
   for(const [id,{fn,delay}] of [...state.timers].sort((a,b)=>a[1].delay-b[1].delay)) {
-    assert.ok(delay<=2000);state.timers.delete(id);fn();
+    assert.ok(delay<=4000);state.timers.delete(id);fn();
   }
   assert.equal(state.classes.has('intro-pending'),false);assert.equal(state.classes.has('intro-leaving'),false);assert.equal(state.classes.has('intro-complete'),true);
   assert.equal(state.listeners.size,0);assert.equal(state.timers.size,0);
@@ -58,7 +58,7 @@ test('keyboard, Skip, navigation, hidden pages and reduced motion release the gr
 test('storage denial retains default preferences and a bounded greeting',()=>{
   const state=startup({storageFails:true});assert.equal(state.classes.has('intro-pending'),true);
   assert.equal(state.root.dataset.language,'zh');assert.equal(state.root.lang,'zh-CN');assert.equal(state.root.dataset.theme,'dark');
-  assert.equal(Math.max(...[...state.timers.values()].map(timer=>timer.delay)),2000);
+  assert.equal(Math.max(...[...state.timers.values()].map(timer=>timer.delay)),3940);
 });
 test('request deadlines include a response body that never finishes',async t=>{
   const original=globalThis.fetch;t.after(()=>{globalThis.fetch=original;});
